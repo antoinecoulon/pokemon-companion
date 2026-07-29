@@ -1,0 +1,77 @@
+# Pokemon Companion
+
+Companion de suivi d'une partie de Pokémon Unbound (post-game).
+
+## Contexte
+
+J'ai construit avec Claude Web un document de suivi de mon parcours post-game de Pokémon Unbound.
+
+Ce [document](../docs/guide_endgame_pokemon_unbound_v2%203ac169213df18014bcb7f8b3a586c169.md) avait deux limitations :
+
+- le confort de lecture : un grand fichier markdown m'obligeait à remonter/descendre toute la page constamment ;
+- le suivi de progression se limitait à une checklist et n'était pas très engageant.
+
+## Objectif
+
+Faciliter mon suivi via une application web qui me permette de suivre mes progrès et de noter mes notes
+et statistiques simplement et rapidement. Navigation fluide et organisée, mobile-friendly.
+
+**État : l'application est construite et fonctionnelle.** Le guide markdown reste archivé dans `docs/`
+comme source de vérité éditoriale, mais l'app le remplace à l'usage.
+
+## Décisions techniques prises
+
+| Sujet | Choix | Raison |
+| --- | --- | --- |
+| Framework | Nuxt 4 + Nuxt UI v4, pnpm | terrain connu, composants et thème mobile-first gratuits |
+| Rendu | SPA (`ssr: false`) | l'état vit dans le `localStorage` ; aucun intérêt au prerender, zéro risque de mismatch d'hydratation |
+| Contenu | découpé en TypeScript dans `app/data/` | `satisfies` fait échouer le build sur un id invalide, ce qui protège la sauvegarde |
+| Persistance | `localStorage` + export/import JSON | pas de backend, pas de compte, hors-ligne |
+| Accès | build statique + PWA installable | consultable sur téléphone, y compris hors connexion |
+| Navigation | dashboard + Roadmap / Équipe / Ressources / Référence, + Journal | met l'action en avant tout en suivant la structure du guide |
+| Engagement | progression visuelle + « prochaine action » calculée | retenu ; la gamification (badges, streaks) a été écartée |
+
+TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec TypeScript 7.
+
+## Règles de travail sur ce projet
+
+- **Ne jamais renommer un `id` de tâche existant** (`phase-<n>.<m>`, `mon-<slug>-<n>`,
+  `ready-<slug>-<key>`). Les libellés peuvent changer librement ; les ids sont le contrat avec les
+  sauvegardes déjà écrites.
+- **Ne pas inventer de données Pokémon.** Le guide est la seule source. Là où il est muet, la fiche
+  porte `incomplete: true` et l'UI affiche « fiche à compléter » — voir Excadrill et Motisma-Lavage.
+- **Vérifier avec `pnpm check`, puis `pnpm smoke` et `pnpm smoke:features`** (serveur de dev lancé), et
+  `pnpm smoke:offline` sur le build de production quand on touche à la PWA ou aux icônes. L'app étant un
+  SPA, ni `typecheck` ni `generate` ne détectent une erreur de rendu : seul le test navigateur le fait.
+- Ce document et le README sont écrits au fil de l'eau et maintenus à jour.
+- Utiliser des modèles plus légers pour les tâches mécaniques (transcription de tables, application
+  d'un motif déjà établi), en relisant systématiquement leur sortie avant intégration.
+- S'arrêter et me poser la question dès qu'une alternative technique intéressante apparaît, qu'un choix
+  produit n'est pas couvert, ou que le guide est ambigu.
+
+## Trous connus dans le guide source
+
+- **§6 n'a pas de fiche pour Excadrill ni Motisma-Lavage**, alors que §7.3 les place aux slots 2 et 4.
+  Il en garde en revanche des fiches complètes pour Dusknoir et Zeraora, tous deux sortis de l'équipe.
+- **§5 phase 3 saute de 3.1 à 3.3** (pas de 3.2), et ne couvre que Togekiss et Tyranitar sur les six
+  membres de la composition finale.
+- Sceptile est cité comme sortant sans avoir de fiche.
+
+## Notes
+
+- La conversation ClaudeWeb donne davantage d'informations que n'en contient le guide : les ajouts se
+  font dans `app/data/`, voir la section « Ajouter ou modifier du contenu » du README.
+- Déploiement : **GitHub Pages**, via `.github/workflows/deploy.yml` (push sur `main`). Il reste à créer le
+  dépôt distant et à régler *Settings → Pages → Source : GitHub Actions*.
+
+## Pièges de déploiement déjà rencontrés
+
+- **Ne jamais valider la PWA avec `pnpm preview`.** Nitro résout `/200` et `/404`, un hébergeur statique
+  non. Utiliser `pnpm serve:pages` puis `pnpm smoke:offline`.
+- Le précache du service worker incluait `200.html`/`404.html` sous les URLs `200` et `404` : GitHub Pages
+  les renvoie en 404, ce qui faisait **échouer l'installation entière du service worker** et supprimait le
+  hors-ligne, sans aucune erreur visible. D'où `workbox.globIgnores`.
+- Le plugin d'enregistrement de `@vite-pwa/nuxt` n'enregistre rien derrière un sous-chemin : c'est
+  `app/plugins/pwa.client.ts` qui s'en charge.
+- `<link rel="manifest">` n'est pas injecté par le module — il est déclaré à la main dans `app.head.link`.
+- Tout chemin vers `public/` doit être préfixé par `app.baseURL` (voir `logo` dans le layout).

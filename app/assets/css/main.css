@@ -1,0 +1,23 @@
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+:root {
+  --ui-radius: 0.5rem;
+  --ui-container: 72rem;
+}
+
+/* Zone sûre pour la bottom-nav sur iOS (encoche / barre gestuelle). */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Les tables de référence sont larges : elles scrollent dans leur conteneur,
+   jamais la page. */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}

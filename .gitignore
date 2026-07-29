@@ -1,0 +1,27 @@
+# Nuxt
+.nuxt
+.output
+.data
+dist
+
+# Dependencies
+node_modules
+
+# Logs
+*.log
+logs
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.DS_Store
+.idea
+*.swp
+
+# PWA generated assets
+public/sw.js
+public/workbox-*.js
+dev-dist

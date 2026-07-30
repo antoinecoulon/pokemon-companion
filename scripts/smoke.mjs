@@ -12,10 +12,11 @@ import { chromium } from 'playwright'
 
 const baseUrl = process.argv[2] ?? 'http://localhost:3000'
 
+// `links` : préfixe de href dont la page doit contenir au moins un lien.
 const routes = [
-  { path: '/', expect: 'Progression globale' },
+  { path: '/', expect: 'Progression globale', links: '/equipe/' },
   { path: '/roadmap', expect: 'tâches' },
-  { path: '/equipe', expect: null },
+  { path: '/equipe', expect: null, links: '/equipe/' },
   { path: '/equipe/tyranitar', expect: 'Tyranitar' },
   { path: '/equipe/excadrill', expect: 'Excadrill' },
   { path: '/ressources', expect: null },
@@ -58,6 +59,27 @@ async function checkRoutes(context, viewport) {
     const overflow = await page.evaluate(() =>
       document.documentElement.scrollWidth - document.documentElement.clientWidth)
     if (overflow > 2) failures.push(`${label} — débordement horizontal de ${overflow}px`)
+
+    /*
+     * Un composant dynamique référencé par son nom (`:is="'NuxtLink'"`) ne
+     * résout pas : Vue rend un élément littéral `<nuxtlink>`, sans `<a>` ni
+     * navigation, et sans aucune erreur. C'est arrivé sur AppCard et rien ne
+     * l'avait détecté. Toute balise inconnue en minuscules est donc un échec.
+     */
+    const unresolved = await page.evaluate(() =>
+      [...new Set(
+        [...document.querySelectorAll('*')]
+          .map(element => element.tagName.toLowerCase())
+          .filter(tag => /^(nuxt|u)[a-z]+$/.test(tag) && tag !== 'ul'),
+      )])
+    if (unresolved.length) {
+      failures.push(`${label} — composants non résolus dans le DOM : <${unresolved.join('>, <')}>`)
+    }
+
+    if (route.links) {
+      const count = await page.locator(`a[href^="${route.links}"]`).count()
+      if (count === 0) failures.push(`${label} — aucun lien vers « ${route.links} » : cartes non cliquables ?`)
+    }
 
     await page.close()
   }

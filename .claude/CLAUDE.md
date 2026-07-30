@@ -50,6 +50,12 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   réseau coupé. `pnpm validate` échoue si un sprite déclaré manque sur le disque.
 - **Ne pas inventer de données Pokémon.** Le guide est la seule source. Là où il est muet, la fiche
   porte `incomplete: true` et l'UI affiche « fiche à compléter » — voir Excadrill et Motisma-Lavage.
+- **Ne jamais référencer un composant par son nom dans `:is`.** `:is="'NuxtLink'"` ne résout pas : Vue
+  rend un élément littéral `<nuxtlink>`, donc aucun `<a>` et aucune navigation — sans la moindre erreur.
+  Importer le composant depuis `#components` (voir `AppCard.vue`). `pnpm smoke` échoue désormais sur
+  toute balise de composant non résolue dans le DOM.
+- **`pnpm typecheck` peut passer sur des types périmés.** `pnpm check` lance donc `nuxt prepare` d'abord :
+  une erreur de `nuxt.config.ts` est restée invisible jusqu'à une régénération.
 - **Vérifier avec `pnpm check`, puis `pnpm smoke` et `pnpm smoke:features`** (serveur de dev lancé), et
   `pnpm smoke:offline` sur le build de production quand on touche à la PWA ou aux icônes. L'app étant un
   SPA, ni `typecheck` ni `generate` ne détectent une erreur de rendu : seul le test navigateur le fait.

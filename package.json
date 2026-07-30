@@ -2,6 +2,7 @@
   "name": "pokemon-companion",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.33.0",
   "description": "Companion de suivi du post-game de Pokémon Unbound",
   "scripts": {
     "dev": "nuxt dev",
@@ -11,7 +12,7 @@
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
     "validate": "node scripts/validate-content.mjs",
-    "check": "pnpm validate && pnpm test:stats && pnpm typecheck",
+    "check": "nuxt prepare && pnpm validate && pnpm test:stats && pnpm typecheck",
     "smoke": "node scripts/smoke.mjs",
     "icons": "node scripts/make-icons.mjs",
     "sprites": "node scripts/fetch-sprites.mjs",

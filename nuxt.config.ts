@@ -52,7 +52,9 @@ export default defineNuxtConfig({
          * n'est pas généré et la requête retombe sur le shell HTML du SPA — que
          * le navigateur signale en erreur de syntaxe JSON dans la console.
          */
-        ...(isDev ? [] : [{ rel: 'manifest', href: withBase('manifest.webmanifest') }]),
+        // `as const` sur `rel` : dans un tableau conditionnel, TypeScript élargit
+        // sinon le type à `string`, que `link` n'accepte pas.
+        ...(isDev ? [] : [{ rel: 'manifest' as const, href: withBase('manifest.webmanifest') }]),
       ],
     },
   },

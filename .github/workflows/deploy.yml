@@ -21,11 +21,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: pnpm/action-setup@v4
+      # La version de pnpm est lue dans le champ `packageManager` du
+      # package.json : sans lui, l'action échoue sur « No pnpm version is
+      # specified ». Cette étape doit précéder setup-node, dont le cache pnpm
+      # a besoin que la commande existe.
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: pnpm
@@ -37,17 +41,23 @@ jobs:
       - name: Vérifier le contenu et les types
         run: pnpm check
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
 
+      # Dépôt de projet → l'app est servie depuis /<nom-du-depot>/. Le nom est
+      # dérivé de GITHUB_REPOSITORY, toujours défini, plutôt que de la charge
+      # utile de l'événement, qui varie d'un déclencheur à l'autre.
+      #
+      # Pour un dépôt utilisateur (<pseudo>.github.io) ou un domaine
+      # personnalisé, remplacer la valeur par NUXT_APP_BASE_URL="/".
       - name: Construire le site statique
-        env:
-          # Dépôt de projet → l'app est servie depuis /<nom-du-depot>/.
-          # Pour un dépôt utilisateur (<pseudo>.github.io) ou un domaine
-          # personnalisé, remplacer par NUXT_APP_BASE_URL: /
-          NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/
-        run: pnpm generate
+        run: |
+          export NUXT_APP_BASE_URL="/${GITHUB_REPOSITORY#*/}/"
+          echo "Chemin de base : $NUXT_APP_BASE_URL"
+          pnpm generate
 
-      - uses: actions/upload-pages-artifact@v3
+      # Doit rester en phase avec deploy-pages : le format d'artefact a changé
+      # entre les majeures.
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: .output/public
 
@@ -59,4 +69,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

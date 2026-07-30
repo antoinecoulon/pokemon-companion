@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/*
+ * Import explicite indispensable : `:is="'NuxtLink'"` — la chaîne — ne résout
+ * pas et rend un élément littéral `<nuxtlink>`, sans `<a>` ni navigation. Il
+ * faut passer le composant lui-même.
+ */
+import { NuxtLink } from '#components'
+
 /**
  * La boîte de l'app : bordure, rayon, fond et padding définis à un seul endroit.
  *
@@ -30,7 +37,7 @@ const clickable = computed(() => props.interactive || Boolean(props.to))
 
 <template>
   <component
-    :is="to ? 'NuxtLink' : 'div'"
+    :is="to ? NuxtLink : 'div'"
     :to="to"
     class="block rounded-[var(--ui-radius)] border border-default transition-colors"
     :class="[

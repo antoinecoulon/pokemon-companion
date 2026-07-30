@@ -53,10 +53,17 @@ export const taskEntriesById = new Map(taskEntries.map(entry => [entry.task.id, 
  * plus les six membres de la composition finale. Les fiches `retired` et
  * `utility` restent consultables mais ne pèsent pas sur l'avancement — ce sont
  * des références, pas du travail restant.
+ *
+ * Prend les slugs actifs en paramètre au lieu de lire `mon.status` : depuis que
+ * la composition est modifiable en cours de partie, le statut d'une fiche n'est
+ * plus une constante de compilation. Une constante de module figerait la
+ * progression sur l'équipe du guide.
  */
-export const trackedTaskEntries = taskEntries.filter(
-  entry => entry.source === 'phase' || entry.mon?.status === 'active',
-)
+export function trackedEntriesFor(activeSlugs: ReadonlySet<string>): TaskEntry[] {
+  return taskEntries.filter(
+    entry => entry.source === 'phase' || (entry.mon && activeSlugs.has(entry.mon.slug)),
+  )
+}
 
 export function taskLabelOf(id: TaskId): string {
   return taskEntriesById.get(id)?.task.label ?? id

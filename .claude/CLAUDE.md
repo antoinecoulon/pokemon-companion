@@ -40,14 +40,28 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   sauvegardes déjà écrites. **Depuis la v2, cela vaut aussi pour les ids de PNJ et de quête**, persistés
   sous les clés préfixées `npc:<id>` et `quest:<id>` — le préfixe évite une collision réelle
   (`objets-pouvoir` est à la fois un consommable et une quête).
-- **Passer par `pnpm new:pokemon` / `new:npc` / `new:quest` / `new:task`** pour ajouter du contenu : les
-  scripts impriment le squelette avec la bonne convention d'id et refusent un id déjà pris.
+- **Passer par `pnpm new:npc` / `new:quest` / `new:task`** pour ajouter du contenu : les scripts
+  impriment le squelette avec la bonne convention d'id et refusent un id déjà pris.
+- **Une fiche Pokémon ne s'écrit pas à la main.** Une fiche par fichier dans `app/data/pokemon/<slug>.ts`,
+  assemblées par un `index.ts` **généré** — ne pas éditer la liste du barrel, la régénérer. Le cycle est :
+  `pnpm new:pokemon <Nom>` (squelette JSON) → rédaction selon `docs/fiche-pokemon.md` → `pnpm
+  import:pokemon <fichier> [--dry-run]` → `pnpm sprites` → `pnpm check`. Retrait : `pnpm rm:pokemon <slug>`.
+  `scripts/lib/fiche.mjs` est la seule définition du contrat : `validate` et l'import l'appliquent tous
+  les deux, ils ne doivent jamais diverger.
+- **La composition jouée vit dans la sauvegarde, pas dans le contenu.** `status` et `slot` d'une fiche
+  sont la composition *du guide* (§7.3) ; l'écart est persisté sous `roster` et se modifie dans l'app
+  (/equipe → Modifier). Ne pas éditer une fiche pour faire tourner un membre — c'est la phase 4 du
+  guide, pas une correction de contenu. Tout ce qui compte l'équipe passe par `useRoster()`, jamais par
+  les exports statiques `activePokemon` & co., calculés à l'import et donc figés.
 - **Mise en page : `SectionBlock`, `AppCard`, `PokemonSprite`.** L'échelle d'espacement est documentée
   en tête de `app/assets/css/main.css` ; ne pas recopier les classes de boîte à la main. Une page n'a
   jamais de `<h1>` — la barre du layout rend le titre.
-- **Un sprite se déclare puis se télécharge** (`sprite` dans la fiche, puis `pnpm sprites`). Les images
-  vivent dans `public/sprites/`, versionnées : l'app est hors-ligne, une image distante serait invisible
-  réseau coupé. `pnpm validate` échoue si un sprite déclaré manque sur le disque.
+- **Un sprite se résout puis se télécharge.** `pnpm import:pokemon` interroge pokemondb depuis `nameEn`,
+  vérifie le slug et inscrit le jeu du sprite pixel (`spritePixelSet`) quand l'espèce est postérieure à
+  Noir/Blanc — ne plus coder d'exception en dur dans `fetch-sprites.mjs`. Les images vivent dans
+  `public/sprites/`, versionnées : l'app est hors-ligne, une image distante serait invisible réseau
+  coupé. `pnpm validate` échoue si un sprite déclaré manque sur le disque, refuse un `sprite: ''` (falsy,
+  il sautait tout contrôle) et signale les images sans fiche.
 - **Ne pas inventer de données Pokémon.** Le guide est la seule source. Là où il est muet, la fiche
   porte `incomplete: true` et l'UI affiche « fiche à compléter » — voir Excadrill et Motisma-Lavage.
 - **Ne jamais référencer un composant par son nom dans `:is`.** `:is="'NuxtLink'"` ne résout pas : Vue
@@ -56,6 +70,10 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   toute balise de composant non résolue dans le DOM.
 - **`pnpm typecheck` peut passer sur des types périmés.** `pnpm check` lance donc `nuxt prepare` d'abord :
   une erreur de `nuxt.config.ts` est restée invisible jusqu'à une régénération.
+- **Une clé de sauvegarde qui perd son contenu ne disparaît pas toute seule.** `normalize()` conserve
+  tout ce qu'il reconnaît par sa forme. Après toute suppression de contenu, la purge se fait dans l'app
+  (Sauvegarde → Nettoyer) ; l'ensemble des clés légitimes est `knownContent` dans `useSave.ts` — y
+  penser en ajoutant une catégorie persistée, sinon la purge effacerait des cases valides.
 - **Vérifier avec `pnpm check`, puis `pnpm smoke` et `pnpm smoke:features`** (serveur de dev lancé), et
   `pnpm smoke:offline` sur le build de production quand on touche à la PWA ou aux icônes. L'app étant un
   SPA, ni `typecheck` ni `generate` ne détectent une erreur de rendu : seul le test navigateur le fait.
@@ -66,6 +84,8 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   produit n'est pas couvert, ou que le guide est ambigu.
 
 ## Trous connus dans le guide source
+
+`/equipe` les regroupe sous « Fiches à compléter » ; c'est ce que `pnpm import:pokemon` sert à combler.
 
 - **§6 n'a pas de fiche pour Excadrill ni Motisma-Lavage**, alors que §7.3 les place aux slots 2 et 4.
   Il en garde en revanche des fiches complètes pour Dusknoir et Zeraora, tous deux sortis de l'équipe.

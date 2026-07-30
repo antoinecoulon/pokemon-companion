@@ -22,9 +22,10 @@ function sortKey(a: TaskEntry, b: TaskEntry) {
  */
 export function useNextActions(limit = 5) {
   const { isDone } = useSave()
+  const { activeSlugs } = useRoster()
 
   const decorated = computed<ActionableTask[]>(() =>
-    trackedTaskEntries
+    trackedEntriesFor(activeSlugs.value)
       .filter(entry => !isDone(entry.task.id))
       .map(entry => ({
         ...entry,

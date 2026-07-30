@@ -8,11 +8,7 @@ const { progressFor } = useSave()
 const progress = computed(() => progressFor(props.mon.slug))
 
 /** Build de référence : celui choisi, sinon le recommandé. */
-const build = computed<Build | undefined>(() =>
-  props.mon.builds?.find(candidate => candidate.id === progress.value.buildId)
-  ?? props.mon.builds?.find(candidate => candidate.recommended)
-  ?? props.mon.builds?.[0],
-)
+const build = computed<Build | undefined>(() => buildFor(props.mon, progress.value))
 
 const natureItems = natures.map(nature => ({
   label: `${nature.fr} (${nature.en})`,

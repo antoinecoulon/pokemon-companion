@@ -8,18 +8,17 @@
  * D'où ce script, à lancer avec `pnpm validate`.
  */
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { createJiti } from 'jiti'
+import { loadData, loadPokemon, root } from './lib/data.mjs'
+import { TEAM_SIZE, validateFiche } from './lib/fiche.mjs'
 
-const jiti = createJiti(import.meta.url, { alias: { '~': new URL('../app', import.meta.url).pathname } })
-
-const { phases } = await jiti.import('../app/data/phases.ts')
-const { pokemon } = await jiti.import('../app/data/pokemon.ts')
-const { counters } = await jiti.import('../app/data/counters.ts')
-const { readinessCriteria } = await jiti.import('../app/data/readiness.ts')
-const { npcs } = await jiti.import('../app/data/npcs.ts')
-const { battleItems, consumables } = await jiti.import('../app/data/items.ts')
-const { quests } = await jiti.import('../app/data/quests.ts')
-const { farmingTopics } = await jiti.import('../app/data/farming.ts')
+const { phases } = await loadData('phases.ts')
+const { pokemon } = await loadPokemon()
+const { counters } = await loadData('counters.ts')
+const { readinessCriteria } = await loadData('readiness.ts')
+const { npcs } = await loadData('npcs.ts')
+const { battleItems, consumables } = await loadData('items.ts')
+const { quests } = await loadData('quests.ts')
+const { farmingTopics } = await loadData('farming.ts')
 
 const errors = []
 const warnings = []
@@ -79,9 +78,14 @@ for (const id of allTasks.keys()) visit(id, [])
 
 /* --- 3. Convention de nommage des ids ---------------------------------- */
 
-for (const [id, { origin }] of allTasks) {
+for (const [id, { task, origin }] of allTasks) {
   const ok = /^phase-\d+\.\d+$/.test(id) || /^mon-[a-z0-9-]+-\d+$/.test(id)
   if (!ok) warnings.push(`« ${id} » (${origin}) ne suit pas la convention phase-<n>.<m> / mon-<slug>-<n>`)
+
+  // Une tâche sans libellé se rend en ligne vide, cochable, et impossible à identifier.
+  if (typeof task.label !== 'string' || !task.label.trim()) {
+    errors.push(`« ${id} » (${origin}) n'a pas de libellé`)
+  }
 }
 
 /* --- 4. Les liens internes pointent vers des routes connues ------------ */
@@ -99,6 +103,14 @@ for (const [id, { task }] of allTasks) {
 
 /* --- 5. Cohérence des fiches ------------------------------------------- */
 
+/*
+ * Chaque fiche repasse par le contrat de `pnpm import:pokemon`.
+ *
+ * C'est ce qui garantit qu'une fiche acceptée à l'import reste acceptable
+ * ensuite, et qu'une fiche corrigée à la main ne s'écarte pas des règles que
+ * l'import impose : mêmes types fermés, mêmes conventions d'id, mêmes bornes
+ * d'EV, aucun champ inventé.
+ */
 const seenSlugs = new Set()
 for (const mon of pokemon) {
   if (seenSlugs.has(mon.slug)) errors.push(`slug de Pokémon dupliqué : « ${mon.slug} »`)
@@ -108,23 +120,31 @@ for (const mon of pokemon) {
     errors.push(`« ${mon.slug} » est actif mais n'a pas de slot`)
   }
 
-  for (const build of mon.builds ?? []) {
-    const total = Object.values(build.evs).reduce((sum, value) => sum + value, 0)
-    if (total > 510) {
-      errors.push(`« ${mon.slug} » / build « ${build.id} » : ${total} EV, au-delà du plafond de 510`)
-    }
-    if (build.moves.length !== 4) {
-      warnings.push(`« ${mon.slug} » / build « ${build.id} » : ${build.moves.length} capacités au lieu de 4`)
-    }
-  }
-
-  if (!mon.incomplete && mon.status === 'active' && !(mon.builds ?? []).length) {
-    errors.push(`« ${mon.slug} » est actif, non marqué incomplete, mais n'a aucun build`)
-  }
+  // Les ids des autres fiches et des phases : les siens ne sont pas des collisions.
+  const otherIds = new Set(
+    [...allTasks].filter(([, entry]) => entry.origin !== `fiche ${mon.slug}`).map(([id]) => id),
+  )
+  const report = validateFiche(mon, { knownTaskIds: otherIds })
+  for (const error of report.errors) errors.push(`fiche « ${mon.slug} » : ${error}`)
+  for (const warning of report.warnings) warnings.push(`fiche « ${mon.slug} » : ${warning}`)
 }
 
+/*
+ * La composition par défaut doit être exactement les six slots 1..6.
+ *
+ * L'unicité seule ne suffisait pas : `1,2,4,5,6` passait, et le trou se voyait
+ * seulement à l'écran sous la forme d'un « #4 » manquant. Un septième membre
+ * passait aussi, alors que toute l'UI parle des six slots de §7.3. La
+ * composition *jouée* peut, elle, s'en écarter — elle vit dans la sauvegarde.
+ */
 const slots = pokemon.filter(mon => mon.status === 'active').map(mon => mon.slot)
-if (new Set(slots).size !== slots.length) errors.push(`slots d'équipe en doublon : ${slots.join(', ')}`)
+const expected = Array.from({ length: TEAM_SIZE }, (_, index) => index + 1)
+if (JSON.stringify([...slots].sort((a, b) => a - b)) !== JSON.stringify(expected)) {
+  errors.push(
+    `la composition par défaut doit occuper les slots ${expected.join(', ')} — trouvé : `
+    + `${slots.length ? [...slots].sort((a, b) => a - b).join(', ') : 'aucun'}`,
+  )
+}
 
 /* --- 6. Compteurs et checklist ----------------------------------------- */
 
@@ -185,12 +205,37 @@ for (const { name, prefix, entries, persisted } of resourceSets) {
  * production. `pnpm sprites` répare.
  */
 for (const mon of pokemon) {
-  if (!mon.sprite) continue
+  /*
+   * `sprite: ''` est falsy : avec un simple `if (!mon.sprite) continue`, une
+   * fiche dont le slug pokemondb n'a jamais été rempli sautait tout le contrôle
+   * et s'affichait sans image, sans que rien ne le dise. Le contrat interdit
+   * désormais la chaîne vide, et on refuse aussi ici.
+   */
+  if (mon.sprite === undefined) continue
+  if (!String(mon.sprite).trim()) {
+    errors.push(`« ${mon.slug} » déclare un sprite vide — retire la clé, ou renseigne le slug pokemondb`)
+    continue
+  }
   for (const variant of ['home', 'pixel']) {
     const file = new URL(`../public/sprites/${variant}/${mon.slug}.png`, import.meta.url)
     const exists = await stat(file).then(() => true).catch(() => false)
     if (!exists) {
       errors.push(`« ${mon.slug} » déclare un sprite mais public/sprites/${variant}/${mon.slug}.png manque — lance pnpm sprites`)
+    }
+  }
+}
+
+/*
+ * Sprites sans fiche : ils restent versionnés, donc invisibles et pesants. C'est
+ * la trace que laissait une suppression faite à la main.
+ */
+for (const variant of ['home', 'pixel']) {
+  const dir = new URL(`../public/sprites/${variant}/`, import.meta.url)
+  for (const file of await readdir(dir)) {
+    if (!file.endsWith('.png')) continue
+    const slug = file.slice(0, -4)
+    if (!slugs.has(slug)) {
+      warnings.push(`public/sprites/${variant}/${file} ne correspond à aucune fiche — supprime-le`)
     }
   }
 }
@@ -210,15 +255,26 @@ const declared = new Set(
   [...configSource.matchAll(/'lucide:([a-z0-9-]+)'/g)].map(match => match[1]),
 )
 
-for (const dir of ['../app/data', '../app/utils']) {
-  const base = new URL(`${dir}/`, import.meta.url)
-  for (const file of await readdir(base)) {
-    if (!file.endsWith('.ts')) continue
-    const source = await readFile(new URL(file, base), 'utf8')
+/*
+ * Parcours récursif : depuis que les fiches vivent dans `app/data/pokemon/`, un
+ * `readdir` à plat ne les voyait plus, et une icône déclarée dans une fiche
+ * serait passée sous le radar.
+ */
+async function* typescriptFiles(dir) {
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = `${dir}${entry.name}`
+    if (entry.isDirectory()) yield * typescriptFiles(`${path}/`)
+    else if (entry.name.endsWith('.ts')) yield path
+  }
+}
+
+for (const dir of [`${root}app/data/`, `${root}app/utils/`]) {
+  for await (const path of typescriptFiles(dir)) {
+    const source = await readFile(path, 'utf8')
     for (const [, name] of source.matchAll(/i-lucide-([a-z0-9-]+)/g)) {
       if (!declared.has(name)) {
         errors.push(
-          `icône « i-lucide-${name} » utilisée dans ${dir.slice(3)}/${file} `
+          `icône « i-lucide-${name} » utilisée dans ${path.replace(root, '')} `
           + 'mais absente de icon.clientBundle.icons dans nuxt.config.ts — elle ne sera pas embarquée',
         )
       }

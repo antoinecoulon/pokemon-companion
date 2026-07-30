@@ -76,6 +76,28 @@ export type PokemonStatus =
   /** Gardé en boîte pour la capture et le farm (§6.7). */
   | 'utility'
 
+/**
+ * Les mêmes valeurs, à l'exécution : `normalize()` doit filtrer le statut lu
+ * dans un JSON importé, et `validate` contrôler celui d'une fiche — un type ne
+ * survit pas à la compilation.
+ */
+export const ROSTER_STATUSES = ['active', 'retired', 'utility'] as const satisfies readonly PokemonStatus[]
+
+/** §7.3 — la composition finale compte exactement six membres. */
+export const TEAM_SIZE = 6
+
+/**
+ * Les 18 types, en français, tels que les fiches les orthographient.
+ *
+ * Liste fermée pour que `validate` refuse « Electrik » ou « Tenebres » : un type
+ * mal accentué s'affiche tel quel dans un badge, sans que rien ne le signale.
+ */
+export const POKEMON_TYPES = [
+  'Normal', 'Feu', 'Eau', 'Électrik', 'Plante', 'Glace',
+  'Combat', 'Poison', 'Sol', 'Vol', 'Psy', 'Insecte',
+  'Roche', 'Spectre', 'Dragon', 'Ténèbres', 'Acier', 'Fée',
+] as const
+
 export interface Ability {
   name: string
   /** Talent caché : nécessite Dream Ball ou Dream Mist, pas une Ability Capsule. */
@@ -117,6 +139,15 @@ export interface PokemonSheet {
    * Pokémon, ils n'ont pas de sprite. Voir `scripts/fetch-sprites.mjs`.
    */
   sprite?: string
+  /**
+   * Jeu pokemondb d'où vient le sprite pixel, quand ce n'est pas `black-white`.
+   *
+   * Un Pokémon postérieur à Noir/Blanc n'y a pas de sprite : sans cette
+   * indication, `pnpm sprites` échoue en 404 sur la variante pixel seulement.
+   * `pnpm import:pokemon` sonde les jeux et renseigne ce champ — il remplace une
+   * table d'exceptions qui vivait en dur dans le script.
+   */
+  spritePixelSet?: string
   /** Slot dans la composition finale (§7.3), pour les actifs uniquement. */
   slot?: number
   status: PokemonStatus
@@ -299,6 +330,22 @@ export const SAVE_VERSION = 1
  */
 export type ResourceKey = `npc:${string}` | `quest:${string}`
 
+/**
+ * Écart entre la composition du guide et celle réellement jouée.
+ *
+ * Le guide fixe une composition (§7.3), mais sa phase 4 consiste précisément à
+ * combler les trous de l'équipe : faire tourner un membre est une opération
+ * courante, pas une correction de contenu. On persiste donc l'écart plutôt que
+ * d'éditer la fiche — le contenu éditorial reste dans le dépôt, versionné.
+ *
+ * Un champ absent retombe sur la valeur de la fiche : une entrée `{}` ne dit
+ * rien et est traitée comme inexistante.
+ */
+export interface RosterOverride {
+  status?: PokemonStatus
+  slot?: number
+}
+
 export interface SaveState {
   version: typeof SAVE_VERSION
   tasks: Record<TaskId, boolean>
@@ -306,6 +353,8 @@ export interface SaveState {
   counters: Record<string, number>
   /** Ressources obtenables une seule fois, cochées comme acquises. */
   resources: Record<string, boolean>
+  /** Composition jouée, par slug, quand elle s'écarte de celle du guide. */
+  roster: Record<string, RosterOverride>
   journal: JournalEntry[]
   updatedAt: string
 }

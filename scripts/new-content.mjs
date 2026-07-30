@@ -5,17 +5,17 @@
  * un objet dans le bon fichier. Ce script évite de retrouver la convention d'id à
  * chaque fois — et un id mal formé est ce qui casse une sauvegarde.
  *
- * Il n'écrit rien : il affiche, on relit, on colle.
+ * Il n'écrit rien : il affiche, on relit, on colle. Seule exception, les fiches
+ * Pokémon : leur squelette est du JSON, que `pnpm import:pokemon` valide et écrit
+ * — elles sont trop grosses pour être collées à la main sans erreur.
  *
  * Usage :
- *   pnpm new:pokemon lucario
+ *   pnpm new:pokemon Lucario
  *   pnpm new:npc "Move Tutor de Dehara"
  *   pnpm new:quest "#042" "Chasse aux Ronflex"
  *   pnpm new:task phase-2          # tâche dans une phase existante
  */
-import { createJiti } from 'jiti'
-
-const jiti = createJiti(import.meta.url, { alias: { '~': new URL('../app', import.meta.url).pathname } })
+import { loadData, loadPokemon } from './lib/data.mjs'
 
 const [kind, ...args] = process.argv.slice(2)
 
@@ -56,31 +56,40 @@ switch (kind) {
     if (!nameArg) fail('usage : pnpm new:pokemon <nom>')
     const slug = slugify(nameArg)
 
-    const { pokemon } = await jiti.import('../app/data/pokemon.ts')
+    const { pokemon } = await loadPokemon()
     if (pokemon.some(mon => mon.slug === slug)) {
       fail(`la fiche « ${slug} » existe déjà`)
     }
-    const nextSlot = Math.max(0, ...pokemon.filter(m => m.status === 'active').map(m => m.slot ?? 0)) + 1
+    const activeCount = pokemon.filter(mon => mon.status === 'active').length
 
-    block(`Fiche Pokémon « ${nameArg} »`, 'app/data/pokemon.ts', `  {
-    slug: '${slug}',
-    name: '${nameArg}',
-    nameEn: '', // nom anglais — sert aussi à retrouver le sprite
-    sprite: '', // slug pokemondb, puis : pnpm sprites
-    slot: ${nextSlot}, // à retirer si le Pokémon n'est pas dans les 6 actifs
-    status: 'active', // 'active' | 'retired' | 'utility'
-    role: '',
-    types: [],
-    // Tant que le guide ne documente pas de build, garder ces deux lignes
-    // plutôt que d'inventer des données compétitives :
-    incomplete: true,
-    incompleteNote: 'Aucune fiche dans le guide source.',
-    tasks: [
-      { id: 'mon-${slug}-1', label: '' },
-      { id: 'mon-${slug}-2', label: '' },
-    ],
-  },`)
-    console.log(`\nRappel : le slot ${nextSlot} suppose que ce Pokémon entre dans la composition finale.`)
+    /*
+     * Un squelette JSON et non TypeScript : une fiche s'intègre désormais par
+     * `pnpm import:pokemon`, qui la valide et l'écrit. Le slot est volontairement
+     * absent — c'est l'import qui prend la première place libre, alors que
+     * l'ancien squelette proposait joyeusement un septième slot.
+     */
+    block(
+      `Fiche Pokémon « ${nameArg} »`,
+      `un fichier .json, puis : pnpm import:pokemon <fichier>`,
+      JSON.stringify({
+        slug,
+        name: nameArg,
+        nameEn: '',
+        status: 'retired',
+        role: '',
+        types: [],
+        incomplete: true,
+        incompleteNote: 'Aucune fiche dans le guide source.',
+        tasks: [
+          { id: `mon-${slug}-1`, label: '' },
+          { id: `mon-${slug}-2`, label: '' },
+        ],
+      }, null, 2),
+    )
+    console.log('\nLe contrat complet — champs, blocs de prose, builds, tâches — est dans')
+    console.log('docs/fiche-pokemon.md, écrit pour être collé dans un prompt.')
+    console.log(`\n« status » est mis à "retired" par défaut : l'équipe compte ${activeCount} membre(s)`)
+    console.log('actif(s), et un échange se fait dans l’app (/equipe → Modifier), pas dans le contenu.')
     break
   }
 
@@ -89,7 +98,7 @@ switch (kind) {
     if (!service) fail('usage : pnpm new:npc "<service>"')
     const id = slugify(service)
 
-    const { npcs } = await jiti.import('../app/data/npcs.ts')
+    const { npcs } = await loadData('npcs.ts')
     if (npcs.some(npc => npc.id === id)) fail(`le PNJ « ${id} » existe déjà`)
 
     block(`PNJ « ${service} »`, 'app/data/npcs.ts', `  {
@@ -108,7 +117,7 @@ switch (kind) {
     if (!code || !name) fail('usage : pnpm new:quest "<#code>" "<nom>"')
     const id = slugify(name)
 
-    const { quests } = await jiti.import('../app/data/quests.ts')
+    const { quests } = await loadData('quests.ts')
     if (quests.some(quest => quest.id === id)) fail(`la quête « ${id} » existe déjà`)
 
     block(`Quête ${code} « ${name} »`, 'app/data/quests.ts', `  {
@@ -127,7 +136,7 @@ switch (kind) {
     const [phaseId] = args
     if (!phaseId) fail('usage : pnpm new:task <phase-id>  (ex. phase-2)')
 
-    const { phases } = await jiti.import('../app/data/phases.ts')
+    const { phases } = await loadData('phases.ts')
     const phase = phases.find(item => item.id === phaseId)
     if (!phase) {
       fail(`phase « ${phaseId} » inconnue. Disponibles : ${phases.map(p => p.id).join(', ')}`)
@@ -159,4 +168,5 @@ switch (kind) {
     process.exit(1)
 }
 
-console.log('\nAprès collage : pnpm check')
+// Une fiche Pokémon ne se colle pas : `import:pokemon` imprime ses propres suites.
+if (kind !== 'pokemon') console.log('\nAprès collage : pnpm check')

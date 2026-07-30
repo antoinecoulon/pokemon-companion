@@ -15,24 +15,22 @@
  * Usage : pnpm sprites
  */
 import { mkdir, stat, writeFile } from 'node:fs/promises'
-import { fileURLToPath } from 'node:url'
-import { createJiti } from 'jiti'
+import { loadPokemon } from './lib/data.mjs'
 
-const jiti = createJiti(import.meta.url, { alias: { '~': fileURLToPath(new URL('../app', import.meta.url)) } })
-const { pokemon } = await jiti.import('../app/data/pokemon.ts')
+const { pokemon } = await loadPokemon()
 
 const force = process.argv.includes('--force')
 const root = new URL('../public/sprites/', import.meta.url)
 
 /*
- * Zeraora est de la génération 7 : il n'a aucun sprite pixel dans les jeux
- * Noir/Blanc. On prend le sien dans Épée/Bouclier, seul set pixel qui le couvre.
+ * Le jeu d'où vient le sprite pixel est déclaré par la fiche (`spritePixelSet`)
+ * plutôt que par une table d'exceptions locale : un Pokémon postérieur à
+ * Noir/Blanc n'y a pas de sprite, et c'est `pnpm import:pokemon` qui sonde les
+ * jeux et inscrit le bon dans la fiche. Voir Zeraora, gen 7.
  */
-const PIXEL_SET_OVERRIDES = { zeraora: 'sword-shield' }
-
 const variants = {
   home: () => 'home',
-  pixel: sprite => PIXEL_SET_OVERRIDES[sprite] ?? 'black-white',
+  pixel: mon => mon.spritePixelSet ?? 'black-white',
 }
 
 const sheets = pokemon.filter(mon => mon.sprite)
@@ -55,7 +53,7 @@ for (const mon of sheets) {
       continue
     }
 
-    const source = `https://img.pokemondb.net/sprites/${resolveSet(mon.sprite)}/normal/${mon.sprite}.png`
+    const source = `https://img.pokemondb.net/sprites/${resolveSet(mon)}/normal/${mon.sprite}.png`
     const response = await fetch(source)
 
     if (!response.ok) {

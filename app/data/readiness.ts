@@ -3,7 +3,7 @@ import type { ReadinessCriterion } from './types'
 /**
  * §13.2 — « Un Pokémon est prêt quand les 7 cases sont cochées ».
  *
- * Trois critères sont déduits du formulaire de la fiche plutôt que cochés à la
+ * Quatre critères sont déduits du formulaire de la fiche plutôt que cochés à la
  * main : c'est ce qui rend la saisie structurée payante au lieu d'être une
  * redite de la checklist.
  */

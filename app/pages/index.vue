@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { counters } from '~/data/counters'
 import { phases } from '~/data/phases'
-import { activePokemon } from '~/data/pokemon'
 
 useHead({ title: 'Accueil · Pokémon Companion' })
 
 const { overall, byPhase, readyRatio } = useProgress()
 const { next, actionable, blocked } = useNextActions()
+const { active } = useRoster()
 
 const currentPhase = computed(() =>
   phases.find(phase => (byPhase.value.get(phase.id)?.percent ?? 100) < 100) ?? phases.at(-1),
 )
 
-const readyCount = computed(() => activePokemon.filter(mon => readyRatio(mon).percent === 100).length)
+const readyCount = computed(() => active.value.filter(entry => readyRatio(entry.sheet).percent === 100).length)
 </script>
 
 <template>
@@ -31,14 +31,14 @@ const readyCount = computed(() => activePokemon.filter(mon => readyRatio(mon).pe
           </h2>
           <p class="text-sm leading-relaxed text-toned">
             {{ overall.done }} tâches sur {{ overall.total }} — la roadmap des 6 phases
-            plus les fiches des {{ activePokemon.length }} membres de l’équipe.
+            plus les fiches des {{ active.length }} membres de l’équipe.
           </p>
           <div class="flex flex-wrap justify-center sm:justify-start gap-2">
             <UBadge v-if="currentPhase" color="primary" variant="subtle">
               Phase {{ currentPhase.number }} · {{ currentPhase.title }}
             </UBadge>
             <UBadge color="neutral" variant="subtle">
-              {{ readyCount }}/{{ activePokemon.length }} Endgame Ready
+              {{ readyCount }}/{{ active.length }} Endgame Ready
             </UBadge>
             <UBadge v-if="blocked.length" color="warning" variant="subtle">
               {{ blocked.length }} tâches bloquées
@@ -126,7 +126,7 @@ const readyCount = computed(() => activePokemon.filter(mon => readyRatio(mon).pe
       </template>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <AppCard
-          v-for="mon in activePokemon"
+          v-for="{ sheet: mon } in active"
           :key="mon.slug"
           :to="`/equipe/${mon.slug}`"
           density="compact"

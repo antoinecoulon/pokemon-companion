@@ -12,13 +12,21 @@ useHead({ title: () => `${mon.value?.name ?? 'Fiche'} · Pokémon Companion` })
 
 const { forPokemon } = useProgress()
 const { blockersFor } = useNextActions()
+const roster = useRoster()
 
-const badgeColor = computed(() =>
-  mon.value?.badge === 'Nouveau' ? 'secondary' : mon.value?.badge?.startsWith('Sorti') ? 'neutral' : 'success',
+/** Statut et slot effectifs : la composition jouée, pas celle de la fiche. */
+const entry = computed(() => (mon.value ? roster.bySlug.value.get(mon.value.slug) : undefined))
+const status = computed(() => entry.value?.status ?? mon.value?.status ?? 'retired')
+
+/**
+ * Un formulaire est proposé dès que le Pokémon est dans l'équipe : niveau, IV,
+ * EV et objet ne dépendent d'aucun build. Sans cette règle, Excadrill et
+ * Motisma-Lavage — les deux fiches `incomplete` de §7.3 — affichaient un anneau
+ * de progression sur /equipe qu'aucune UI ne pouvait faire monter.
+ */
+const trackable = computed(() =>
+  status.value === 'active' || !!mon.value?.builds?.length || !!mon.value?.tasks?.length,
 )
-
-/** Une fiche sans build ni TODO n'a pas de formulaire à proposer. */
-const trackable = computed(() => !!mon.value?.builds?.length || !!mon.value?.tasks?.length)
 </script>
 
 <template>
@@ -47,10 +55,14 @@ const trackable = computed(() => !!mon.value?.builds?.length || !!mon.value?.tas
               {{ mon.name }}
             </h1>
             <span v-if="mon.nameEn" class="text-sm text-dimmed self-center">({{ mon.nameEn }})</span>
-            <UBadge v-if="mon.slot" color="neutral" variant="subtle">
-              slot {{ mon.slot }}
+            <UBadge v-if="entry?.slot" color="neutral" variant="subtle">
+              slot {{ entry.slot }}
             </UBadge>
-            <UBadge v-if="mon.badge" :color="badgeColor" variant="subtle">
+            <UBadge :color="STATUS_BADGE[status].color" variant="subtle">
+              {{ STATUS_BADGE[status].label }}
+            </UBadge>
+            <!-- Prose du guide, masquée dès que la composition jouée s'en écarte. -->
+            <UBadge v-if="mon.badge && status === mon.status" color="neutral" variant="outline">
               {{ mon.badge }}
             </UBadge>
           </div>

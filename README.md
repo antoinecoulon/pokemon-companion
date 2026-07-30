@@ -19,7 +19,7 @@ pnpm dev          # http://localhost:3000
 | --- | --- | --- |
 | **Accueil** | Progression globale, 3–5 prochaines actions, compteurs de ressources | — |
 | **Roadmap** | Les 6 phases, leurs tâches cochables et leurs prérequis | §5 |
-| **Équipe** | Les 6 slots actifs en avant avec leur sprite, le reste dans un bandeau défilant ; par fiche : analyse, builds, formulaire IV/EV, checklist « Endgame Ready » | §6, §7.3, §13.2 |
+| **Équipe** | Les 6 slots actifs en avant avec leur sprite, le reste dans un bandeau défilant, et la composition modifiable (échange, ordre, sortie) ; par fiche : analyse, builds, formulaire IV/EV, checklist « Endgame Ready » | §6, §7.3, §13.2 |
 | **Ressources** | PNJ, objets de combat, consommables, quêtes, farming — PNJ et quêtes cochables, les acquis descendant dans un repli | §8, §9, §11, §12 |
 | **Référence** | Mécaniques IV/EV/natures/talents, Battle Frontier, formules, natures, outils, glossaire | §1–4, §10, §13 |
 | **Journal** | Entrées horodatées à l’échelle de la partie | — |
@@ -33,14 +33,15 @@ mission #053 (§2.3), et au sein d’une fiche l’ordre en 9 étapes de §3.
 
 ### Checklist « Endgame Ready »
 
-Les 7 critères de §13.2, dont **3 déduits automatiquement** du formulaire de la fiche :
+Les 7 critères de §13.2, dont **4 déduits automatiquement** du formulaire de la fiche :
 
+- **Niveau 100** — déduit du niveau saisi
 - **EV exacts** — motif 252/252/4 vérifié, et signalement des EV perdus hors multiples de 4
 - **Nature favorable** — comparaison entre la nature saisie et celle du build choisi
-- **Objet non dupliqué** — contrôle croisé sur les 6 slots actifs (§7.3 signale trois candidats aux Restes)
+- **Objet non dupliqué** — contrôle croisé sur les slots actifs (§7.3 signale trois candidats aux Restes)
 
-Les 4 autres (niveau 100, IV, talent, moveset) se cochent à la main, avec la cible du build affichée à
-côté de la valeur réelle.
+Les 3 autres (IV, talent, moveset) se cochent à la main, avec la cible du build affichée à côté de la
+valeur réelle.
 
 ## Stack
 
@@ -56,13 +57,14 @@ app/
 ├── data/            LE contenu du guide, migré en TypeScript
 │   ├── types.ts     types de contenu + modèle de sauvegarde
 │   ├── phases.ts    §5   — les 6 phases et leurs prérequis
-│   ├── pokemon.ts   §6   — fiches, builds, TODO par Pokémon
+│   ├── pokemon/     §6, §7.3 — une fiche par fichier + index.ts généré
 │   ├── npcs.ts      §8   · items.ts §9 · quests.ts §12 · farming.ts §11
 │   ├── mechanics.ts §1–4, §10, §13.0 · natures.ts §13.1 · glossary.ts §13.3
 │   ├── readiness.ts §13.2 — les 7 critères
 │   └── counters.ts  compteurs de ressources et leurs objectifs
 ├── composables/
 │   ├── useSave.ts        seul point d’accès au localStorage
+│   ├── useRoster.ts      composition jouée : statut et slot effectifs
 │   ├── useProgress.ts    ratios de progression + critères dérivés
 │   └── useNextActions.ts moteur de « prochaine action »
 ├── components/      AppCard, SectionBlock, PokemonSprite, TaskItem, ContentBlocks, …
@@ -81,14 +83,13 @@ référence le contenu **que par id**, cette vérification protège directement 
 
 Le guide n’est pas figé — la conversation d’origine contient plus d’informations qu’il n’en reprend.
 
-Le contenu est du TypeScript, pas un CMS : ajouter une entrée veut dire coller un objet dans le bon
-fichier. Les commandes ci-dessous impriment le squelette avec la bonne convention d’id déjà remplie et
-refusent un id qui existe déjà. Elles **n’écrivent rien** : on relit, on colle.
+Le contenu est du TypeScript, pas un CMS. Pour tout sauf les fiches Pokémon, les commandes ci-dessous
+impriment le squelette avec la bonne convention d’id déjà remplie et refusent un id qui existe déjà.
+Elles **n’écrivent rien** : on relit, on colle.
 
 | Contenu | Commande | Fichier | Convention d’id |
 | --- | --- | --- | --- |
 | Tâche de roadmap | `pnpm new:task phase-2` | `app/data/phases.ts` | `phase-<n>.<m>` |
-| Fiche Pokémon | `pnpm new:pokemon Lucario` | `app/data/pokemon.ts` | slug + `mon-<slug>-<n>` |
 | PNJ | `pnpm new:npc "Move Tutor"` | `app/data/npcs.ts` | kebab-case, persisté en `npc:<id>` |
 | Quête | `pnpm new:quest "#042" "Nom"` | `app/data/quests.ts` | kebab-case, persisté en `quest:<id>` |
 
@@ -98,13 +99,6 @@ entrée voisine : ces contenus ne sont pas persistés, leur id ne sert qu’à l
 **De la prose** (analyse, mécanique, farming) s’écrit en tableau de `Block` : `p`, `list`, `quote`,
 `table`, `code`. Le formatage inline supporte `**gras**`, `*italique*` et `` `code` ``.
 
-**Un sprite** : renseigne `sprite` avec le slug [pokemondb](https://pokemondb.net/sprites) (le nom
-anglais en minuscules, `rotom-wash` pour une forme), puis `pnpm sprites`. Les images sont versionnées
-dans `public/sprites/` — l’app est hors-ligne, une image distante serait invisible réseau coupé.
-
-Les fiches **Excadrill** et **Motisma-Lavage** portent `incomplete: true` : le guide les place dans
-l’équipe (§7.3) sans leur consacrer de fiche en §6. Retire le drapeau quand tu les complètes.
-
 > ⚠️ **Ne renomme jamais un `id` existant.** Un libellé peut changer librement ; changer un id perd la
 > case cochée correspondante dans les sauvegardes déjà écrites. Cela vaut aussi pour les ids de PNJ et
 > de quête depuis qu’ils sont persistés.
@@ -112,12 +106,52 @@ l’équipe (§7.3) sans leur consacrer de fiche en §6. Retire le drapeau quand
 Après toute modification de contenu :
 
 ```bash
-pnpm check    # validation du contenu + typecheck
+pnpm check    # validation du contenu + typecheck + tests unitaires
 ```
 
-`pnpm validate` contrôle : ids uniques (tâches, fiches, PNJ, objets, quêtes, farm), `requires` résolus,
-absence de cycle, liens internes valides, **collisions de clés persistées** entre catégories, existence
-des fichiers de sprite déclarés, et **déclaration des icônes utilisées hors template** (voir plus bas).
+`pnpm validate` contrôle : ids uniques (tâches, fiches, PNJ, objets, quêtes, farm), libellés non vides,
+`requires` résolus, absence de cycle, liens internes valides, **collisions de clés persistées** entre
+catégories, **composition par défaut occupant exactement les slots 1 à 6**, conformité de chaque fiche
+au contrat ci-dessous, existence des fichiers de sprite déclarés, sprites orphelins, et **déclaration
+des icônes utilisées hors template** (voir plus bas).
+
+### Fiches Pokémon
+
+Une fiche par fichier dans `app/data/pokemon/<slug>.ts`, assemblées par un `index.ts` **généré**. On ne
+les écrit pas à la main : elles sont rédigées en JSON — le contrat est dans
+[`docs/fiche-pokemon.md`](docs/fiche-pokemon.md), fait pour être collé dans un prompt — puis intégrées
+par un script qui valide tout avant d’écrire quoi que ce soit.
+
+```bash
+pnpm new:pokemon Lucario                  # imprime un squelette JSON conforme au contrat
+pnpm import:pokemon lucario.json --dry-run # valide et affiche, n’écrit rien
+pnpm import:pokemon lucario.json           # écrit la fiche, régénère le barrel, résout le sprite
+pnpm sprites                               # télécharge les images déclarées
+pnpm check
+```
+
+L’import refuse plutôt que d’écrire à moitié : slug déjà pris, id de tâche en collision, type mal
+orthographié, nature absente de `natures.ts`, `requires` mort, champ inventé, EV au-delà de 510. Il
+attribue lui-même le slot — la première place libre, et jamais un septième membre.
+
+**Le sprite se résout tout seul** depuis `nameEn` : le script interroge
+[pokemondb](https://pokemondb.net/sprites), vérifie le slug et détermine le jeu du sprite pixel (une
+espèce postérieure à Noir/Blanc n’y figure pas). Les images sont versionnées dans `public/sprites/` —
+l’app est hors-ligne, une image distante serait invisible réseau coupé.
+
+Pour retirer une fiche :
+
+```bash
+pnpm rm:pokemon lucario --dry-run   # ce qui serait supprimé
+pnpm rm:pokemon lucario
+```
+
+Il supprime le module et les sprites, renumérote les slots pour ne pas laisser de trou, **refuse** tant
+qu’un `requires`, un lien interne ou un test de fumée référence la fiche (`--force` passe outre), et
+liste les clés de sauvegarde devenues orphelines — à balayer dans l’app via **Sauvegarde → Nettoyer**.
+
+Les fiches **Excadrill** et **Motisma-Lavage** portent `incomplete: true` : le guide les place dans
+l’équipe (§7.3) sans leur consacrer de fiche en §6. `/equipe` les regroupe sous « Fiches à compléter ».
 
 ## Mise en page
 
@@ -138,6 +172,9 @@ Un seul objet JSON dans `localStorage`, sous la clé `pokemon-companion:save` :
 - `tasks` — uniquement les choix explicites de l’utilisateur ; une tâche absente retombe sur le `done`
   du contenu, donc ajouter une tâche plus tard ne casse aucune sauvegarde
 - `pokemon` — par slug : build choisi, niveau, IV, EV, nature, talent, moveset, objet, notes
+- `roster` — l’écart entre la composition du guide (§7.3) et celle réellement jouée, par slug :
+  `status` et `slot`. Vide tant qu’on n’a rien échangé — faire tourner un membre est la phase 4 du
+  guide, pas une correction de contenu, donc ça n’a rien à faire dans `app/data/`
 - `resources` — PNJ débloqués et quêtes faites, sous des clés **préfixées** `npc:<id>` / `quest:<id>` ;
   le préfixe n’est pas décoratif, `objets-pouvoir` existe à la fois comme id de consommable et de quête
 - `counters`, `journal`, `version`, `updatedAt`
@@ -146,17 +183,25 @@ Un seul objet JSON dans `localStorage`, sous la clé `pokemon-companion:save` :
 plus tard se remplit de sa valeur par défaut, sans bump de `SAVE_VERSION`. C’est ainsi que `resources`
 est apparu sans casser les sauvegardes v1.
 
-Le menu **base de données** de l’en-tête permet d’exporter, d’importer et de réinitialiser. C’est aussi
-le moyen de transférer sa progression vers le téléphone : exporter ici, importer là-bas.
+Le menu **base de données** de l’en-tête permet d’exporter, d’importer, de **nettoyer** et de
+réinitialiser. C’est aussi le moyen de transférer sa progression vers le téléphone : exporter ici,
+importer là-bas.
+
+**Nettoyer** retire les clés qui ne correspondent plus à aucun contenu — la trace que laisse une fiche
+supprimée ou une tâche retirée. `normalize()` conserve en effet tout ce qu’il reconnaît par sa forme :
+sans purge, ces clés survivent à chaque chargement et voyagent dans chaque export, invisibles. La purge
+est explicite et jamais automatique : une fiche peut aussi avoir disparu le temps d’une branche git.
 
 ## Vérifier
 
 Sans navigateur, sur le code :
 
 ```bash
-pnpm check          # = validate + test:stats + typecheck
+pnpm check          # = validate + test:stats + test:roster + test:fiche + typecheck
 pnpm validate       # ids uniques, requires résolus, aucun cycle, cohérence des fiches
 pnpm test:stats     # logique EV/IV, y compris les cas limites de §2.2
+pnpm test:roster    # invariants de composition (six slots, pas de trou) et purge de sauvegarde
+pnpm test:fiche     # contrat de fiche : validateur, et aller-retour d’impression sur les 12 fiches
 ```
 
 Avec navigateur — **indispensable** : l’app est un SPA, le build ne prérend rien, donc ni `typecheck`

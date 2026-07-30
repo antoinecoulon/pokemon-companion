@@ -1,6 +1,5 @@
 import type { PokemonSheet, ReadinessKey } from '~/data/types'
 import { phases } from '~/data/phases'
-import { activePokemon } from '~/data/pokemon'
 import { readinessCriteria } from '~/data/readiness'
 
 export interface Ratio {
@@ -16,10 +15,11 @@ function ratio(done: number, total: number): Ratio {
 
 export function useProgress() {
   const { isDone, progressFor, state } = useSave()
+  const { active, activeSlugs } = useRoster()
 
   /** Roadmap + fiches des 6 membres actifs. */
   const overall = computed(() => {
-    const tracked = trackedTaskEntries
+    const tracked = trackedEntriesFor(activeSlugs.value)
     return ratio(tracked.filter(entry => isDone(entry.task.id)).length, tracked.length)
   })
 
@@ -45,25 +45,29 @@ export function useProgress() {
   function duplicateItemHolders(slug: string): string[] {
     const own = state.value.pokemon[slug]?.item?.trim().toLowerCase()
     if (!own) return []
-    return activePokemon
+    return active.value
+      .map(entry => entry.sheet)
       .filter(mon => mon.slug !== slug)
       .filter(mon => state.value.pokemon[mon.slug]?.item?.trim().toLowerCase() === own)
       .map(mon => mon.name)
   }
 
   /**
-   * Les trois critères marqués `derived` dans readiness.ts sont calculés ici ;
-   * les quatre autres sont des cases cochées à la main (ids `ready-<slug>-<key>`).
+   * Les quatre critères marqués `derived` dans readiness.ts sont calculés ici ;
+   * les trois autres sont des cases cochées à la main (ids `ready-<slug>-<key>`).
    */
   function readinessFor(mon: PokemonSheet) {
     const progress = progressFor(mon.slug)
-    const build = mon.builds?.find(candidate => candidate.id === progress.buildId)
-      ?? mon.builds?.find(candidate => candidate.recommended)
-      ?? mon.builds?.[0]
+    const build = buildFor(mon, progress)
 
     const duplicates = duplicateItemHolders(mon.slug)
 
-    const derived: Record<string, { met: boolean, detail?: string }> = {
+    /*
+     * Clé typée sur `ReadinessKey` : en `Record<string, …>`, une faute de frappe
+     * sur un nom de critère rendait simplement `undefined`, donc `met: false` —
+     * un critère durablement non rempli, sans la moindre erreur.
+     */
+    const derived: Partial<Record<ReadinessKey, { met: boolean, detail?: string }>> = {
       level: {
         met: progress.level === 100,
         detail: progress.level ? `Niveau ${progress.level}` : 'Niveau non saisi',

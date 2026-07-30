@@ -241,6 +241,165 @@ for (const key of Object.keys(stored)) {
 }
 
 await resourcesContext.close()
+
+/* --- Composition d'équipe : échanger un membre --------------------------- */
+
+/*
+ * Le roster est le seul état qui change le *périmètre* de la progression
+ * globale : sortir un membre retire ses tâches du total. On vérifie donc les
+ * deux effets ensemble — l'échange à l'écran, et le total qui bouge — puis la
+ * survie au rechargement, puisque l'écart est persisté et non recalculé.
+ */
+const rosterContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } })
+const rosterPage = await rosterContext.newPage()
+rosterPage.on('pageerror', error => failures.push(`roster — exception : ${error.message.split('\n')[0]}`))
+
+/** « 12 tâches sur 88 » → 88. */
+async function trackedTotal() {
+  await rosterPage.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
+  await rosterPage.waitForTimeout(600)
+  const text = await rosterPage.getByText(/tâches sur \d+/).first().innerText()
+  return Number(text.match(/tâches sur (\d+)/)?.[1])
+}
+
+const totalBefore = await trackedTotal()
+
+await rosterPage.goto(`${baseUrl}/equipe`, { waitUntil: 'networkidle' })
+await rosterPage.waitForTimeout(600)
+
+await rosterPage.getByRole('button', { name: 'Modifier' }).click()
+await rosterPage.waitForTimeout(400)
+
+// Les six slots sont pris : « Échanger » doit demander qui sort.
+await rosterPage.getByRole('button', { name: 'Échanger' }).first().click()
+await rosterPage.waitForTimeout(300)
+if (await rosterPage.getByText(/Qui sort de l’équipe/).count() === 0) {
+  failures.push('roster — faire entrer un Pokémon sur une équipe pleine ne demande pas qui sort')
+}
+
+await rosterPage.getByRole('button', { name: 'Remplacer' }).last().click()
+await rosterPage.waitForTimeout(600)
+await rosterPage.keyboard.press('Escape')
+await rosterPage.waitForTimeout(400)
+
+if (await rosterPage.getByText(/Composition modifiée/).count() === 0) {
+  failures.push('roster — l’écart avec la composition du guide n’est pas signalé')
+}
+
+// Scopé aux cartes de la page : le tiroir reste monté et affiche les mêmes slots.
+const slotLabels = await rosterPage.locator('a[href^="/equipe/"] .tabular-nums')
+  .filter({ hasText: /^#\d$/ })
+  .allInnerTexts()
+if (slotLabels.join(' ') !== '#1 #2 #3 #4 #5 #6') {
+  failures.push(`roster — slots affichés « ${slotLabels.join(' ')} », « #1 … #6 » attendus`)
+}
+
+const overrides = await rosterPage.evaluate(() =>
+  JSON.parse(localStorage.getItem('pokemon-companion:save') ?? '{}').roster ?? {})
+if (!Object.keys(overrides).length) {
+  failures.push('roster — l’échange n’est pas persisté')
+}
+
+const totalAfter = await trackedTotal()
+if (!(totalAfter < totalBefore)) {
+  failures.push(`roster — le périmètre de la progression n’a pas changé (${totalBefore} → ${totalAfter})`)
+}
+
+// Retour à la composition du guide : le total doit revenir exactement.
+await rosterPage.goto(`${baseUrl}/equipe`, { waitUntil: 'networkidle' })
+await rosterPage.waitForTimeout(600)
+await rosterPage.getByRole('button', { name: 'Revenir à celle du guide' }).click()
+await rosterPage.waitForTimeout(600)
+
+if (await rosterPage.getByText(/Composition modifiée/).count() !== 0) {
+  failures.push('roster — le bandeau « composition modifiée » persiste après remise à zéro')
+}
+if (await trackedTotal() !== totalBefore) {
+  failures.push('roster — revenir à la composition du guide ne restaure pas le total de tâches')
+}
+
+await rosterContext.close()
+
+/* --- Purge des clés mortes ---------------------------------------------- */
+
+/*
+ * On amorce une sauvegarde mêlant clés valides et clés mortes. Le point qui
+ * compte n'est pas que les mortes disparaissent — c'est que les valides
+ * survivent : une purge trop large effacerait des cases cochées, en silence.
+ */
+const pruneContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } })
+await pruneContext.addInitScript(() => {
+  // `addInitScript` s'exécute à CHAQUE navigation : sans cette garde, le
+  // rechargement réinjecterait les clés mortes qu'on vient de purger.
+  if (localStorage.getItem('pokemon-companion:save')) return
+  localStorage.setItem('pokemon-companion:save', JSON.stringify({
+    version: 1,
+    tasks: {
+      'phase-1.1': true,
+      'ready-tyranitar-ivs': true,
+      'mon-disparu-3': true,
+    },
+    pokemon: {
+      tyranitar: { ivs: { atk: 31 }, evs: {}, moves: ['', '', '', ''] },
+      disparu: { ivs: {}, evs: {}, moves: ['', '', '', ''] },
+    },
+    counters: { money: 4200, ancien: 7 },
+    resources: { 'npc:aboli': true },
+    roster: {},
+    journal: [],
+    updatedAt: new Date().toISOString(),
+  }))
+})
+
+const prunePage = await pruneContext.newPage()
+prunePage.on('pageerror', error => failures.push(`purge — exception : ${error.message.split('\n')[0]}`))
+await prunePage.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
+await prunePage.waitForTimeout(700)
+
+await prunePage.getByRole('button', { name: 'Gérer la sauvegarde' }).click()
+await prunePage.waitForTimeout(300)
+
+// 4 clés mortes : la tâche, la fiche, le compteur, la ressource.
+if (await prunePage.getByRole('menuitem', { name: /Nettoyer la sauvegarde \(4\)/ }).count() === 0) {
+  const label = await prunePage.getByRole('menuitem', { name: /Nettoyer/ }).innerText().catch(() => '(absent)')
+  failures.push(`purge — le menu annonce « ${label} », « Nettoyer la sauvegarde (4) » attendu`)
+}
+
+await prunePage.getByRole('menuitem', { name: /Nettoyer/ }).click()
+await prunePage.waitForTimeout(400)
+await prunePage.getByRole('button', { name: 'Nettoyer', exact: true }).click()
+await prunePage.waitForTimeout(600)
+
+const after = await prunePage.evaluate(() =>
+  JSON.parse(localStorage.getItem('pokemon-companion:save') ?? '{}'))
+
+for (const [label, present] of [
+  ['tâche de roadmap cochée', after.tasks?.['phase-1.1']],
+  ['case « Endgame Ready » cochée', after.tasks?.['ready-tyranitar-ivs']],
+  ['compteur renseigné', after.counters?.money === 4200],
+  ['progression saisie', after.pokemon?.tyranitar?.ivs?.atk === 31],
+]) {
+  if (!present) failures.push(`purge — ${label} : supprimée alors qu'elle est valide`)
+}
+
+for (const [label, gone] of [
+  ['tâche disparue', after.tasks?.['mon-disparu-3'] === undefined],
+  ['fiche disparue', after.pokemon?.disparu === undefined],
+  ['compteur disparu', after.counters?.ancien === undefined],
+  ['ressource disparue', after.resources?.['npc:aboli'] === undefined],
+]) {
+  if (!gone) failures.push(`purge — ${label} : toujours présente après nettoyage`)
+}
+
+await prunePage.reload({ waitUntil: 'networkidle' })
+await prunePage.waitForTimeout(700)
+await prunePage.getByRole('button', { name: 'Gérer la sauvegarde' }).click()
+await prunePage.waitForTimeout(300)
+if (await prunePage.getByRole('menuitem', { name: /Nettoyer la sauvegarde \(\d/ }).count() !== 0) {
+  failures.push('purge — des clés mortes réapparaissent après rechargement')
+}
+
+await pruneContext.close()
 await browser.close()
 
 /* --- Rapport ---------------------------------------------------------- */
@@ -251,4 +410,7 @@ if (failures.length) {
   process.exit(1)
 }
 
-console.log('Critères déduits · doublon d’objet · CRUD du journal · ressources acquises — tout passe.')
+console.log(
+  'Critères déduits · doublon d’objet · CRUD du journal · ressources acquises · '
+  + 'composition d’équipe · purge de sauvegarde — tout passe.',
+)

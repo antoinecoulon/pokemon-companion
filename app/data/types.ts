@@ -111,6 +111,12 @@ export interface PokemonSheet {
   name: string
   /** Nom anglais, utile pour chercher sur RomHackDex / Smogon. */
   nameEn?: string
+  /**
+   * Slug pokemondb, qui nomme les fichiers de `public/sprites/`. Absent sur les
+   * fiches concept (mule à objets, porteur de Synchro) : ce ne sont pas des
+   * Pokémon, ils n'ont pas de sprite. Voir `scripts/fetch-sprites.mjs`.
+   */
+  sprite?: string
   /** Slot dans la composition finale (§7.3), pour les actifs uniquement. */
   slot?: number
   status: PokemonStatus
@@ -284,11 +290,22 @@ export interface JournalEntry {
 
 export const SAVE_VERSION = 1
 
+/**
+ * Clé d'une ressource acquise : `<catégorie>:<id>`.
+ *
+ * Le préfixe n'est pas décoratif — `objets-pouvoir` existe à la fois comme id de
+ * consommable (§9) et de quête (§12). Sans namespace, cocher l'un cocherait
+ * l'autre.
+ */
+export type ResourceKey = `npc:${string}` | `quest:${string}`
+
 export interface SaveState {
   version: typeof SAVE_VERSION
   tasks: Record<TaskId, boolean>
   pokemon: Record<string, PokemonProgress>
   counters: Record<string, number>
+  /** Ressources obtenables une seule fois, cochées comme acquises. */
+  resources: Record<string, boolean>
   journal: JournalEntry[]
   updatedAt: string
 }

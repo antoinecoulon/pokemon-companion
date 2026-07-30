@@ -6,6 +6,29 @@
   --ui-container: 72rem;
 }
 
+/*
+ * Échelle d'espacement — une seule définition, à respecter partout.
+ *
+ * Avant, chaque composant recopiait à la main `p-3 rounded-[var(--ui-radius)]
+ * border border-default bg-elevated/30` avec un padding différent (p-2 à p-5,
+ * space-y-1 à space-y-4). Résultat : de l'information tassée, et aucune
+ * hiérarchie entre un bloc de lecture et une carte cliquable.
+ *
+ *   entre sections d'une page   space-y-10   (SectionBlock s'en charge)
+ *   titre de section → contenu  space-y-4
+ *   padding de carte            p-5 confortable · p-4 compact  (AppCard)
+ *   contenu interne d'une carte space-y-3
+ *   grille de cartes            gap-4
+ *   corps de texte              text-sm leading-relaxed
+ *
+ * Passer par AppCard et SectionBlock plutôt que de recopier ces classes.
+ */
+
+/* Les sprites pixel font 96 px : sans ça, le navigateur les lisse en bouillie. */
+@utility image-render-pixel {
+  image-rendering: pixelated;
+}
+
 /* Zone sûre pour la bottom-nav sur iOS (encoche / barre gestuelle). */
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);

@@ -19,11 +19,12 @@ const formatter = new Intl.NumberFormat('fr-FR')
 </script>
 
 <template>
-  <div class="p-3 rounded-[var(--ui-radius)] border border-default bg-elevated/30 space-y-2">
+  <!-- `data-counter` sert au smoke test à vérifier que l'icône est bien rendue. -->
+  <AppCard :data-counter="counter.id" density="compact" tone="raised" class="space-y-3">
     <div class="flex items-center justify-between gap-2">
-      <div class="flex items-center gap-1.5 min-w-0">
+      <div class="flex items-center gap-2 min-w-0">
         <UIcon :name="counter.icon" class="size-4 shrink-0 text-muted" />
-        <span class="text-xs font-medium text-toned truncate">{{ counter.label }}</span>
+        <span class="text-[0.8125rem] font-medium text-toned truncate">{{ counter.label }}</span>
       </div>
       <UTooltip v-if="counter.hint" :text="counter.hint" :delay-duration="150">
         <UIcon name="i-lucide-info" class="size-3.5 text-dimmed shrink-0" />
@@ -39,11 +40,11 @@ const formatter = new Intl.NumberFormat('fr-FR')
       class="w-full"
     />
 
-    <div v-if="counter.goal" class="space-y-1">
+    <div v-if="counter.goal" class="space-y-1.5">
       <UProgress :model-value="percent" size="xs" :color="percent === 100 ? 'success' : 'primary'" />
-      <p class="text-[0.65rem] text-dimmed tabular-nums">
+      <p class="text-[0.7rem] text-dimmed tabular-nums">
         objectif {{ formatter.format(counter.goal) }}
       </p>
     </div>
-  </div>
+  </AppCard>
 </template>

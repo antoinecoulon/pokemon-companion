@@ -17,6 +17,8 @@ export const pokemon: PokemonSheet[] = [
    * ----------------------------------------------------------------------- */
   {
     slug: 'tyranitar',
+    nameEn: 'Tyranitar',
+    sprite: 'tyranitar',
     name: 'Tyranitar',
     slot: 1,
     status: 'active',
@@ -172,6 +174,8 @@ export const pokemon: PokemonSheet[] = [
    * ----------------------------------------------------------------------- */
   {
     slug: 'excadrill',
+    nameEn: 'Excadrill',
+    sprite: 'excadrill',
     name: 'Excadrill',
     slot: 2,
     status: 'active',
@@ -205,6 +209,8 @@ export const pokemon: PokemonSheet[] = [
    * ----------------------------------------------------------------------- */
   {
     slug: 'togekiss',
+    nameEn: 'Togekiss',
+    sprite: 'togekiss',
     name: 'Togekiss',
     slot: 3,
     status: 'active',
@@ -328,6 +334,7 @@ export const pokemon: PokemonSheet[] = [
     slug: 'motisma-lavage',
     name: 'Motisma-Lavage',
     nameEn: 'Rotom-Wash',
+    sprite: 'rotom-wash',
     slot: 4,
     status: 'active',
     badge: 'Nouveau',
@@ -362,6 +369,7 @@ export const pokemon: PokemonSheet[] = [
     slug: 'flagadoss',
     name: 'Flagadoss',
     nameEn: 'Slowbro',
+    sprite: 'slowbro',
     slot: 5,
     status: 'active',
     badge: 'Nouveau',
@@ -572,6 +580,7 @@ export const pokemon: PokemonSheet[] = [
     slug: 'scorvol',
     name: 'Scorvol',
     nameEn: 'Gliscor',
+    sprite: 'gliscor',
     slot: 6,
     status: 'active',
     badge: 'Nouveau',
@@ -742,6 +751,8 @@ export const pokemon: PokemonSheet[] = [
    * ----------------------------------------------------------------------- */
   {
     slug: 'dusknoir',
+    nameEn: 'Dusknoir',
+    sprite: 'dusknoir',
     name: 'Dusknoir',
     status: 'retired',
     badge: 'Sorti de l’équipe',
@@ -881,6 +892,8 @@ export const pokemon: PokemonSheet[] = [
 
   {
     slug: 'zeraora',
+    nameEn: 'Zeraora',
+    sprite: 'zeraora',
     name: 'Zeraora',
     status: 'retired',
     badge: 'Sorti de l’équipe',
@@ -1015,6 +1028,8 @@ export const pokemon: PokemonSheet[] = [
 
   {
     slug: 'sceptile',
+    nameEn: 'Sceptile',
+    sprite: 'sceptile',
     name: 'Sceptile',
     status: 'retired',
     badge: 'Sorti de l’équipe',
@@ -1043,6 +1058,7 @@ export const pokemon: PokemonSheet[] = [
     slug: 'queulorior',
     name: 'Queulorior',
     nameEn: 'Smeargle',
+    sprite: 'smeargle',
     status: 'utility',
     role: 'Le couteau suisse de la capture',
     types: ['Normal'],

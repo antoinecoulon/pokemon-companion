@@ -16,48 +16,48 @@ const readyCount = computed(() => activePokemon.filter(mon => readyRatio(mon).pe
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-10">
     <!-- Vue d'ensemble -->
-    <section
-      class="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-[var(--ui-radius)] border border-default bg-elevated/30"
-    >
-      <ProgressRing
-        :percent="overall.percent"
-        :size="112"
-        :sublabel="`${overall.done}/${overall.total}`"
-      />
-      <div class="flex-1 space-y-2 text-center sm:text-left">
-        <h2 class="text-lg font-semibold text-highlighted">
-          Progression globale
-        </h2>
-        <p class="text-sm text-toned">
-          {{ overall.done }} tâches sur {{ overall.total }} — la roadmap des 6 phases
-          plus les fiches des {{ activePokemon.length }} membres de l’équipe.
-        </p>
-        <div class="flex flex-wrap justify-center sm:justify-start gap-2 pt-1">
-          <UBadge v-if="currentPhase" color="primary" variant="subtle">
-            Phase {{ currentPhase.number }} · {{ currentPhase.title }}
-          </UBadge>
-          <UBadge color="neutral" variant="subtle">
-            {{ readyCount }}/{{ activePokemon.length }} Endgame Ready
-          </UBadge>
-          <UBadge v-if="blocked.length" color="warning" variant="subtle">
-            {{ blocked.length }} tâches bloquées
-          </UBadge>
+    <AppCard tone="raised">
+      <div class="flex flex-col sm:flex-row items-center gap-6">
+        <ProgressRing
+          :percent="overall.percent"
+          :size="112"
+          :sublabel="`${overall.done}/${overall.total}`"
+        />
+        <div class="flex-1 space-y-3 text-center sm:text-left">
+          <h2 class="text-lg font-semibold tracking-tight text-highlighted">
+            Progression globale
+          </h2>
+          <p class="text-sm leading-relaxed text-toned">
+            {{ overall.done }} tâches sur {{ overall.total }} — la roadmap des 6 phases
+            plus les fiches des {{ activePokemon.length }} membres de l’équipe.
+          </p>
+          <div class="flex flex-wrap justify-center sm:justify-start gap-2">
+            <UBadge v-if="currentPhase" color="primary" variant="subtle">
+              Phase {{ currentPhase.number }} · {{ currentPhase.title }}
+            </UBadge>
+            <UBadge color="neutral" variant="subtle">
+              {{ readyCount }}/{{ activePokemon.length }} Endgame Ready
+            </UBadge>
+            <UBadge v-if="blocked.length" color="warning" variant="subtle">
+              {{ blocked.length }} tâches bloquées
+            </UBadge>
+          </div>
         </div>
       </div>
-    </section>
+    </AppCard>
 
     <!-- Prochaines actions -->
-    <section class="space-y-3">
-      <div class="flex items-baseline justify-between gap-3">
-        <h2 class="text-base font-semibold text-highlighted">
-          Prochaines actions
-        </h2>
-        <span class="text-xs text-dimmed">
+    <SectionBlock
+      title="Prochaines actions"
+      description="Une tâche n’apparaît ici que si tous ses prérequis sont cochés — pas d’EV avant le Macho Brace amélioré, pas de Bottle Caps avant d’avoir lu les IV."
+    >
+      <template #action>
+        <span class="text-xs text-dimmed whitespace-nowrap">
           {{ actionable.length }} actionnable{{ actionable.length > 1 ? 's' : '' }}
         </span>
-      </div>
+      </template>
 
       <div
         v-if="next.length"
@@ -82,80 +82,68 @@ const readyCount = computed(() => activePokemon.filter(mon => readyRatio(mon).pe
           ? `Il reste ${blocked.length} tâches, mais toutes attendent un prérequis. Regarde la Roadmap pour voir ce qui les bloque.`
           : 'Tout est coché. Direction le Battle Frontier.'"
       />
-
-      <p class="text-xs text-dimmed">
-        Une tâche n’apparaît ici que si tous ses prérequis sont cochés — pas d’EV avant le Macho Brace
-        amélioré, pas de Bottle Caps avant d’avoir lu les IV.
-      </p>
-    </section>
+    </SectionBlock>
 
     <!-- Compteurs -->
-    <section class="space-y-3">
-      <h2 class="text-base font-semibold text-highlighted">
-        Ressources
-      </h2>
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <SectionBlock title="Ressources">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <CounterCard v-for="counter in counters" :key="counter.id" :counter="counter" />
       </div>
-    </section>
+    </SectionBlock>
 
     <!-- Progression par phase -->
-    <section class="space-y-3">
-      <div class="flex items-baseline justify-between gap-3">
-        <h2 class="text-base font-semibold text-highlighted">
-          Par phase
-        </h2>
-        <NuxtLink to="/roadmap" class="text-xs text-primary hover:underline">
+    <SectionBlock title="Par phase">
+      <template #action>
+        <NuxtLink to="/roadmap" class="text-xs text-primary hover:underline whitespace-nowrap">
           Voir la roadmap
         </NuxtLink>
-      </div>
-      <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+      </template>
+      <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
         <NuxtLink
           v-for="phase in phases"
           :key="phase.id"
           :to="`/roadmap#${phase.id}`"
-          class="flex flex-col items-center gap-1 p-2 rounded-[var(--ui-radius)] border border-default hover:bg-elevated/60 transition-colors"
+          class="flex flex-col items-center gap-2 p-3 rounded-[var(--ui-radius)] border border-default hover:border-inverted/20 hover:bg-elevated/60 transition-colors"
         >
           <ProgressRing
             :percent="byPhase.get(phase.id)?.percent ?? 0"
             :size="52"
             :thickness="5"
           />
-          <span class="text-[0.65rem] text-muted text-center leading-tight">
+          <span class="text-[0.7rem] text-muted text-center leading-tight">
             {{ phase.number }} · {{ phase.title }}
           </span>
         </NuxtLink>
       </div>
-    </section>
+    </SectionBlock>
 
     <!-- Équipe -->
-    <section class="space-y-3">
-      <div class="flex items-baseline justify-between gap-3">
-        <h2 class="text-base font-semibold text-highlighted">
-          Équipe
-        </h2>
-        <NuxtLink to="/equipe" class="text-xs text-primary hover:underline">
+    <SectionBlock title="Équipe">
+      <template #action>
+        <NuxtLink to="/equipe" class="text-xs text-primary hover:underline whitespace-nowrap">
           Voir l’équipe
         </NuxtLink>
-      </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <NuxtLink
+      </template>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <AppCard
           v-for="mon in activePokemon"
           :key="mon.slug"
           :to="`/equipe/${mon.slug}`"
-          class="flex items-center gap-3 p-3 rounded-[var(--ui-radius)] border border-default hover:bg-elevated/60 transition-colors"
+          density="compact"
         >
-          <ProgressRing :percent="readyRatio(mon).percent" :size="44" :thickness="4" />
-          <div class="min-w-0">
-            <p class="text-sm font-medium text-highlighted truncate">
-              {{ mon.name }}
-            </p>
-            <p class="text-[0.65rem] text-dimmed tabular-nums">
-              {{ readyRatio(mon).done }}/{{ readyRatio(mon).total }} critères
-            </p>
+          <div class="flex items-center gap-3">
+            <ProgressRing :percent="readyRatio(mon).percent" :size="44" :thickness="4" />
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-highlighted truncate">
+                {{ mon.name }}
+              </p>
+              <p class="text-[0.7rem] text-dimmed tabular-nums">
+                {{ readyRatio(mon).done }}/{{ readyRatio(mon).total }} critères
+              </p>
+            </div>
           </div>
-        </NuxtLink>
+        </AppCard>
       </div>
-    </section>
+    </SectionBlock>
   </div>
 </template>

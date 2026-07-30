@@ -110,7 +110,8 @@ export const npcs: Npc[] = [
     priority: 4
   },
   {
-    id: 'ameliorateur-œuf-chance',
+    // Id en ASCII : il sert de clé de sauvegarde (`npc:…`) depuis la v2.
+    id: 'ameliorateur-oeuf-chance',
     service: 'Améliorateur Œuf Chance',
     location: '**Fallshore City** — Mission HQ (après mission #020)',
     cost: 'Grosses Perles',

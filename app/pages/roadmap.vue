@@ -18,18 +18,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-5">
-    <div class="flex items-center gap-4 p-4 rounded-[var(--ui-radius)] border border-default bg-elevated/30">
-      <ProgressRing :percent="overall.percent" :size="64" :thickness="6" />
-      <div>
-        <h2 class="font-semibold text-highlighted">
-          {{ overall.done }} / {{ overall.total }} tâches
-        </h2>
-        <p class="text-sm text-muted">
-          Les 6 phases du guide, de l’état des lieux au Battle Frontier.
-        </p>
+  <div class="space-y-10">
+    <AppCard tone="raised" density="compact">
+      <div class="flex items-center gap-4">
+        <ProgressRing :percent="overall.percent" :size="64" :thickness="6" />
+        <div>
+          <h2 class="font-semibold text-highlighted">
+            {{ overall.done }} / {{ overall.total }} tâches
+          </h2>
+          <p class="text-sm text-muted">
+            Les 6 phases du guide, de l’état des lieux au Battle Frontier.
+          </p>
+        </div>
       </div>
-    </div>
+    </AppCard>
 
     <UAccordion
       v-model="open"

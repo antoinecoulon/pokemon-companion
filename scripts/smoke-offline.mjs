@@ -69,8 +69,59 @@ for (const route of routes) {
     const text = (await page.locator('body').innerText()).trim()
     if (text.length < 100) problems.push(`${route} — rendu quasi vide (${text.length} caractères)`)
 
-    const icons = await page.locator('nav >> visible=true').locator('svg').count()
-    if (icons < 5) problems.push(`${route} — ${icons} icônes dans la nav au lieu de 5`)
+    /*
+     * Compter les <svg> ne suffit pas : quand une icône n'est pas dans le bundle
+     * client, @nuxt/icon rend quand même un <svg> — mais vide. L'ancienne
+     * assertion « au moins 5 svg » passait donc alors que les 5 icônes de la
+     * bottom-nav étaient invisibles. On vérifie le contenu de chaque icône.
+     */
+    const navIcons = await page.evaluate(() => {
+      const links = [...document.querySelectorAll('nav a')]
+        .filter(link => link.getBoundingClientRect().width > 0)
+      return links.map((link) => {
+        const svg = link.querySelector('svg')
+        return { label: link.textContent.trim() || link.getAttribute('href'), filled: Boolean(svg?.innerHTML.trim()) }
+      })
+    })
+    if (!navIcons.length) problems.push(`${route} — aucun lien de nav visible`)
+    for (const { label, filled } of navIcons) {
+      if (!filled) problems.push(`${route} — l'icône de nav « ${label} » est vide (absente du bundle client ?)`)
+    }
+
+    /*
+     * Les sprites sont des fichiers de `public/`, donc soumis au précache et au
+     * préfixe de baseURL. `naturalWidth` à 0 veut dire image non chargée : c'est
+     * le seul contrôle qui distingue une image absente d'une balise présente.
+     */
+    if (route === '/equipe') {
+      const sprites = await page.evaluate(() =>
+        [...document.querySelectorAll('img[alt^="Sprite de"]')]
+          // Les variantes masquées par CSS ne sont jamais chargées : elles sont
+          // en `loading="lazy"` et n'entrent jamais dans le viewport. C'est
+          // voulu — les compter donnerait un faux échec.
+          .filter(img => img.offsetParent !== null)
+          .map(img => ({
+            src: img.getAttribute('src'),
+            loaded: img.complete && img.naturalWidth > 0,
+          })))
+      if (!sprites.length) problems.push('/equipe — aucun sprite dans le document')
+      for (const { src, loaded } of sprites) {
+        if (!loaded) problems.push(`/equipe — sprite non chargé hors-ligne : ${src}`)
+      }
+    }
+
+    // Les icônes des compteurs viennent aussi d'un .ts : même piège que la nav.
+    if (route === '/') {
+      const counterIcons = await page.evaluate(() =>
+        [...document.querySelectorAll('[data-counter]')].map(card => ({
+          id: card.dataset.counter,
+          filled: Boolean(card.querySelector('svg')?.innerHTML.trim()),
+        })))
+      if (!counterIcons.length) problems.push('aucune carte de compteur sur l’accueil')
+      for (const { id, filled } of counterIcons) {
+        if (!filled) problems.push(`accueil — l'icône du compteur « ${id} » est vide`)
+      }
+    }
 
     const overflow = await page.evaluate(() =>
       document.documentElement.scrollWidth - document.documentElement.clientWidth)

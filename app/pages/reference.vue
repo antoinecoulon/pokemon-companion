@@ -33,18 +33,12 @@ const filteredNatures = computed(() => {
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-10">
     <!-- Mécaniques -->
-    <section class="space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-highlighted">
-          Mécaniques
-        </h2>
-        <p class="text-sm text-muted">
-          §1–4, §10, §13.0 — les fondamentaux du endgame : IV, EV, natures, talents, rôles, Battle Frontier.
-        </p>
-      </div>
-
+    <SectionBlock
+      title="Mécaniques"
+      description="§1–4, §10, §13.0 — les fondamentaux du endgame : IV, EV, natures, talents, rôles, Battle Frontier."
+    >
       <!-- Sommaire -->
       <nav class="flex flex-wrap gap-1.5">
         <button
@@ -114,19 +108,13 @@ const filteredNatures = computed(() => {
           </div>
         </template>
       </UAccordion>
-    </section>
+    </SectionBlock>
 
     <!-- Table des natures -->
-    <section class="space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-highlighted">
-          Table des natures
-        </h2>
-        <p class="text-sm text-muted">
-          §13.1 — seules 8 natures ont un usage recommandé, les 12 autres sont des natures « miroir » peu utilisées.
-        </p>
-      </div>
-
+    <SectionBlock
+      title="Table des natures"
+      description="§13.1 — seules 8 natures ont un usage recommandé, les 12 autres sont des natures « miroir » peu utilisées."
+    >
       <UInput
         v-model="natureSearch"
         icon="i-lucide-search"
@@ -174,54 +162,44 @@ const filteredNatures = computed(() => {
       <p v-if="!filteredNatures.length" class="text-sm text-dimmed">
         Aucune nature ne correspond à cette recherche.
       </p>
-    </section>
+    </SectionBlock>
 
     <!-- Outils -->
-    <section class="space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-highlighted">
-          Outils
-        </h2>
-        <p class="text-sm text-muted">
-          §13.0 — à garder ouverts dans un onglet pendant l’optimisation.
-        </p>
-      </div>
-
+    <SectionBlock
+      title="Outils"
+      description="§13.0 — à garder ouverts dans un onglet pendant l’optimisation."
+    >
       <div class="space-y-2">
-        <div
+        <AppCard
           v-for="tool in tools"
           :key="tool.name"
-          class="p-3 rounded-[var(--ui-radius)] border border-default space-y-1"
+          density="compact"
         >
-          <div class="flex items-center justify-between gap-2 flex-wrap">
-            <h3 class="text-sm font-medium text-highlighted">
-              {{ tool.name }}
-            </h3>
-            <a
-              :href="`https://${tool.url}`"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-xs text-primary hover:underline break-all"
-            >
-              {{ tool.url }}
-            </a>
+          <div class="space-y-1">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <h3 class="text-sm font-medium text-highlighted">
+                {{ tool.name }}
+              </h3>
+              <a
+                :href="`https://${tool.url}`"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-xs text-primary hover:underline break-all"
+              >
+                {{ tool.url }}
+              </a>
+            </div>
+            <p class="text-xs text-toned" v-html="formatInline(tool.usage)" />
           </div>
-          <p class="text-xs text-toned" v-html="formatInline(tool.usage)" />
-        </div>
+        </AppCard>
       </div>
-    </section>
+    </SectionBlock>
 
     <!-- Glossaire -->
-    <section class="space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-highlighted">
-          Glossaire
-        </h2>
-        <p class="text-sm text-muted">
-          §13.3 — le vocabulaire compétitif utilisé partout ailleurs dans ce companion.
-        </p>
-      </div>
-
+    <SectionBlock
+      title="Glossaire"
+      description="§13.3 — le vocabulaire compétitif utilisé partout ailleurs dans ce companion."
+    >
       <dl class="rounded-[var(--ui-radius)] border border-default divide-y divide-default">
         <div
           v-for="entry in glossary"
@@ -234,6 +212,6 @@ const filteredNatures = computed(() => {
           <dd class="text-sm text-toned" v-html="formatInline(entry.definition)" />
         </div>
       </dl>
-    </section>
+    </SectionBlock>
   </div>
 </template>

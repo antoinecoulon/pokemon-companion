@@ -20,7 +20,7 @@ const target = computed(() => props.route ?? props.task.link)
 
 <template>
   <div
-    class="flex gap-3 px-3 py-2.5 rounded-[var(--ui-radius)] transition-colors"
+    class="flex gap-3.5 px-4 py-4 rounded-[var(--ui-radius)] transition-colors"
     :class="[
       done ? 'bg-elevated/40' : 'hover:bg-elevated/60',
       blocked && 'opacity-70',
@@ -33,7 +33,7 @@ const target = computed(() => props.route ?? props.task.link)
       @update:model-value="toggleDone(task.id)"
     />
 
-    <div class="min-w-0 flex-1 space-y-1.5">
+    <div class="min-w-0 flex-1 space-y-2.5">
       <div class="flex items-start gap-2">
         <p
           class="text-sm/relaxed flex-1"
@@ -48,11 +48,11 @@ const target = computed(() => props.route ?? props.task.link)
         />
       </div>
 
-      <ul v-if="task.details?.length" class="pl-4 space-y-1 list-disc marker:text-dimmed">
+      <ul v-if="task.details?.length" class="pl-4 space-y-1.5 list-disc marker:text-dimmed">
         <li
           v-for="(detail, index) in task.details"
           :key="index"
-          class="text-xs/relaxed"
+          class="text-[0.8125rem]/relaxed"
           :class="done ? 'text-dimmed' : 'text-muted'"
           v-html="formatInline(detail)"
         />

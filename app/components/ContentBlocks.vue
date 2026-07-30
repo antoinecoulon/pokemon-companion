@@ -18,7 +18,7 @@ function tone(block: Extract<Block, { kind: 'quote' }>) {
   return QUOTE_TONES[block.tone ?? 'info']
 }
 
-const gap = computed(() => (props.compact ? 'space-y-3' : 'space-y-4'))
+const gap = computed(() => (props.compact ? 'space-y-4' : 'space-y-5'))
 </script>
 
 <template>
@@ -63,7 +63,7 @@ const gap = computed(() => (props.compact ? 'space-y-3' : 'space-y-4'))
                 <th
                   v-for="(cell, cellIndex) in block.head"
                   :key="cellIndex"
-                  class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap"
+                  class="px-4 py-2.5 text-left font-medium text-highlighted whitespace-nowrap"
                   v-html="formatInline(cell)"
                 />
               </tr>
@@ -77,7 +77,7 @@ const gap = computed(() => (props.compact ? 'space-y-3' : 'space-y-4'))
                 <td
                   v-for="(cell, cellIndex) in row"
                   :key="cellIndex"
-                  class="px-3 py-2 text-toned"
+                  class="px-4 py-2.5 text-toned"
                   v-html="formatInline(cell)"
                 />
               </tr>
@@ -91,7 +91,7 @@ const gap = computed(() => (props.compact ? 'space-y-3' : 'space-y-4'))
 
       <pre
         v-else-if="block.kind === 'code'"
-        class="table-scroll p-3 rounded-[var(--ui-radius)] bg-muted border border-default text-xs/relaxed font-mono text-toned"
+        class="table-scroll p-4 rounded-[var(--ui-radius)] bg-muted border border-default text-xs/relaxed font-mono text-toned"
       >{{ block.text }}</pre>
     </template>
   </div>

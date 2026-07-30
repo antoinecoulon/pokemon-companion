@@ -11,7 +11,11 @@
 const baseURL = process.env.NUXT_APP_BASE_URL || '/'
 const withBase = (path: string) => `${baseURL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
 
+// `nuxt dev` pose NODE_ENV=development ; `build` et `generate` posent production.
+const isDev = process.env.NODE_ENV === 'development'
+
 export default defineNuxtConfig({
+  compatibilityDate: '2026-07-30',
   modules: ['@nuxt/ui', '@vite-pwa/nuxt'],
 
   // App mono-utilisateur dont tout l'état vit dans le localStorage : le rendu
@@ -40,9 +44,15 @@ export default defineNuxtConfig({
       link: [
         { rel: 'icon', href: withBase('favicon.svg'), type: 'image/svg+xml' },
         { rel: 'apple-touch-icon', href: withBase('apple-touch-icon.png'), sizes: '180x180' },
-        // Déclaré explicitement : le module PWA ne l'injecte pas, et sans ce lien
-        // le navigateur ne propose jamais d'installer l'app.
-        { rel: 'manifest', href: withBase('manifest.webmanifest') },
+        /*
+         * Déclaré explicitement : le module PWA ne l'injecte pas, et sans ce lien
+         * le navigateur ne propose jamais d'installer l'app.
+         *
+         * Absent en dev à dessein : le module y est désactivé, donc le manifest
+         * n'est pas généré et la requête retombe sur le shell HTML du SPA — que
+         * le navigateur signale en erreur de syntaxe JSON dans la console.
+         */
+        ...(isDev ? [] : [{ rel: 'manifest', href: withBase('manifest.webmanifest') }]),
       ],
     },
   },
@@ -65,6 +75,28 @@ export default defineNuxtConfig({
     clientBundle: {
       scan: true,
       includeCustomCollections: true,
+      /*
+       * `scan` ne lit que les templates : il voit `icon="i-lucide-star"` écrit en
+       * dur dans un .vue, mais pas `:name="item.icon"` alimenté depuis un tableau
+       * TypeScript. Ces icônes-là, déclarées dans app/utils/navigation.ts et
+       * app/data/counters.ts, doivent donc être listées à la main — sinon elles
+       * sont absentes du bundle et, avec `provider: 'none'`, ne s'affichent
+       * nulle part. `scripts/validate-content.mjs` échoue si la liste dérive.
+       */
+      icons: [
+        // app/utils/navigation.ts
+        'lucide:house',
+        'lucide:list-checks',
+        'lucide:users',
+        'lucide:package',
+        'lucide:book-open',
+        'lucide:notebook-pen',
+        // app/data/counters.ts
+        'lucide:banknote',
+        'lucide:ticket',
+        'lucide:heart',
+        'lucide:circle-dot',
+      ],
     },
     provider: 'none',
     /*

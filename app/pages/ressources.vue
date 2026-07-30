@@ -3,8 +3,20 @@ import { npcs } from '~/data/npcs'
 import { battleItems, battleItemsTip, consumables } from '~/data/items'
 import { quests, questsDisclaimer } from '~/data/quests'
 import { farmingTopics } from '~/data/farming'
+import type { ResourceKey } from '~/data/types'
 
 useHead({ title: 'Ressources · Pokémon Companion' })
+
+const { isAcquired, setAcquired } = useSave()
+
+/*
+ * Seuls les PNJ et les quêtes sont marquables : on les débloque une fois pour
+ * toutes. Les objets de combat et les consommables, eux, se rachètent — une case
+ * « acquis » n'y voudrait rien dire.
+ */
+function toggle(key: ResourceKey, value: unknown) {
+  setAcquired(key, Boolean(value))
+}
 
 /* PNJ indispensables (§8) */
 const npcSearch = ref('')
@@ -28,24 +40,25 @@ const filteredNpcs = computed(() => {
   })
 })
 
+const pendingNpcs = computed(() => filteredNpcs.value.filter(npc => !isAcquired(`npc:${npc.id}`)))
+const acquiredNpcs = computed(() => filteredNpcs.value.filter(npc => isAcquired(`npc:${npc.id}`)))
+
+/* Quêtes postgame (§12) */
+const pendingQuests = computed(() => quests.filter(quest => !isAcquired(`quest:${quest.id}`)))
+const acquiredQuests = computed(() => quests.filter(quest => isAcquired(`quest:${quest.id}`)))
+
 /* Farming (§11) */
 const openFarming = ref<string[]>([])
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-10">
     <!-- PNJ indispensables -->
-    <section class="space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-highlighted">
-          PNJ indispensables
-        </h2>
-        <p class="text-sm text-muted">
-          §8 — les priorités ★5 sont à faire en tout premier, le reste peut attendre.
-        </p>
-      </div>
-
-      <div class="flex flex-col sm:flex-row gap-2">
+    <SectionBlock
+      title="PNJ indispensables"
+      description="§8 — les priorités ★5 sont à faire en tout premier, le reste peut attendre. Coche un PNJ une fois débloqué : il descend au bas de la section."
+    >
+      <div class="flex flex-col sm:flex-row gap-3">
         <UInput
           v-model="npcSearch"
           icon="i-lucide-search"
@@ -64,77 +77,102 @@ const openFarming = ref<string[]>([])
         Aucun PNJ ne correspond à ce filtre.
       </p>
 
-      <div class="grid sm:grid-cols-2 gap-3">
-        <div
-          v-for="npc in filteredNpcs"
+      <div v-if="pendingNpcs.length" class="grid sm:grid-cols-2 gap-4">
+        <AppCard
+          v-for="npc in pendingNpcs"
           :key="npc.id"
-          class="p-3 rounded-[var(--ui-radius)] border space-y-1.5"
-          :class="npc.priority === 5 ? 'border-primary bg-primary/5' : 'border-default'"
+          density="compact"
+          class="space-y-2"
+          :class="npc.priority === 5 ? 'border-primary bg-primary/5' : ''"
         >
-          <div class="flex items-start justify-between gap-2">
-            <h3 class="text-sm font-medium text-highlighted" v-html="formatInline(npc.service)" />
-            <span class="flex shrink-0 gap-0.5 pt-0.5">
+          <div class="flex items-start gap-3">
+            <UCheckbox
+              :model-value="isAcquired(`npc:${npc.id}`)"
+              :aria-label="`Marquer comme acquis : ${npc.service.replace(/\*/g, '')}`"
+              class="mt-0.5 shrink-0"
+              @update:model-value="toggle(`npc:${npc.id}`, $event)"
+            />
+            <h3 class="text-sm font-medium text-highlighted flex-1" v-html="formatInline(npc.service)" />
+            <span
+              class="flex shrink-0 gap-0.5 pt-0.5"
+              role="img"
+              :aria-label="`Priorité ${npc.priority} sur 5`"
+            >
               <UIcon
                 v-for="star in 5"
                 :key="star"
                 name="i-lucide-star"
-                class="size-3.5"
+                class="size-4"
                 :class="star <= npc.priority ? 'text-primary fill-current' : 'text-dimmed'"
               />
             </span>
           </div>
-          <p class="text-xs text-toned" v-html="formatInline(npc.location)" />
-          <p class="text-xs text-dimmed">
-            {{ npc.cost }}
-          </p>
-          <p v-if="npc.note" class="text-xs text-primary italic">
-            {{ npc.note }}
-          </p>
-        </div>
+          <div class="pl-7 space-y-1.5">
+            <p class="text-[0.8125rem] leading-relaxed text-toned" v-html="formatInline(npc.location)" />
+            <p class="text-xs text-dimmed">
+              {{ npc.cost }}
+            </p>
+            <p v-if="npc.note" class="text-xs text-primary italic">
+              {{ npc.note }}
+            </p>
+          </div>
+        </AppCard>
       </div>
-    </section>
+
+      <ResourceArchive
+        v-if="acquiredNpcs.length"
+        :label="`PNJ déjà débloqués (${acquiredNpcs.length})`"
+      >
+        <li v-for="npc in acquiredNpcs" :key="npc.id" class="flex items-start gap-3">
+          <UCheckbox
+            :model-value="isAcquired(`npc:${npc.id}`)"
+            :aria-label="`Marquer comme non acquis : ${npc.service.replace(/\*/g, '')}`"
+            class="mt-0.5 shrink-0"
+            @update:model-value="toggle(`npc:${npc.id}`, $event)"
+          />
+          <div class="min-w-0">
+            <p class="text-[0.8125rem] text-muted line-through decoration-1" v-html="formatInline(npc.service)" />
+            <p class="text-xs text-dimmed" v-html="formatInline(npc.location)" />
+          </div>
+        </li>
+      </ResourceArchive>
+    </SectionBlock>
 
     <!-- Objets de combat -->
-    <section class="space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-highlighted">
-          Objets de combat
-        </h2>
-        <p class="text-sm text-muted">
-          §9.1 — prix au Battle Tower, et alternative pour économiser tes BP.
-        </p>
-      </div>
-
+    <SectionBlock
+      title="Objets de combat"
+      description="§9.1 — prix au Battle Tower, et alternative pour économiser tes BP."
+    >
       <div class="table-scroll rounded-[var(--ui-radius)] border border-default">
         <table class="w-full text-sm border-collapse">
           <thead class="bg-muted">
             <tr>
-              <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">
+              <th class="px-4 py-2.5 text-left font-medium text-highlighted whitespace-nowrap">
                 Objet
               </th>
-              <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">
+              <th class="px-4 py-2.5 text-left font-medium text-highlighted whitespace-nowrap">
                 Effet
               </th>
-              <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">
+              <th class="px-4 py-2.5 text-left font-medium text-highlighted whitespace-nowrap">
                 BP
               </th>
-              <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">
+              <th class="px-4 py-2.5 text-left font-medium text-highlighted whitespace-nowrap">
                 Alternative
               </th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in battleItems" :key="item.id" class="border-t border-default align-top">
-              <td class="px-3 py-2 text-highlighted font-medium whitespace-nowrap">
+              <td class="px-4 py-2.5 text-highlighted font-medium whitespace-nowrap">
                 {{ item.name }}
               </td>
-              <td class="px-3 py-2 text-toned">
+              <td class="px-4 py-2.5 text-toned">
                 {{ item.effect }}
               </td>
-              <td class="px-3 py-2 text-toned tabular-nums whitespace-nowrap">
+              <td class="px-4 py-2.5 text-toned tabular-nums whitespace-nowrap">
                 {{ item.bp }}
               </td>
-              <td class="px-3 py-2 text-toned" v-html="formatInline(item.alternative ?? '—')" />
+              <td class="px-4 py-2.5 text-toned" v-html="formatInline(item.alternative ?? '—')" />
             </tr>
           </tbody>
         </table>
@@ -149,92 +187,113 @@ const openFarming = ref<string[]>([])
           <span class="text-sm/relaxed" v-html="formatInline(battleItemsTip)" />
         </template>
       </UAlert>
-    </section>
+    </SectionBlock>
 
     <!-- Consommables d'optimisation -->
-    <section class="space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-highlighted">
-          Consommables d’optimisation
-        </h2>
-        <p class="text-sm text-muted">
-          §9.2 — ce qui alimente les IV, les talents et l’EV training.
-        </p>
-      </div>
-
+    <SectionBlock
+      title="Consommables d’optimisation"
+      description="§9.2 — ce qui alimente les IV, les talents et l’EV training."
+    >
       <div class="table-scroll rounded-[var(--ui-radius)] border border-default">
         <table class="w-full text-sm border-collapse">
           <thead class="bg-muted">
             <tr>
-              <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">
+              <th class="px-4 py-2.5 text-left font-medium text-highlighted whitespace-nowrap">
                 Consommable
               </th>
-              <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">
+              <th class="px-4 py-2.5 text-left font-medium text-highlighted whitespace-nowrap">
                 Rôle
               </th>
-              <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">
+              <th class="px-4 py-2.5 text-left font-medium text-highlighted whitespace-nowrap">
                 Source
               </th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in consumables" :key="item.id" class="border-t border-default align-top">
-              <td class="px-3 py-2 text-highlighted font-medium whitespace-nowrap">
+              <td class="px-4 py-2.5 text-highlighted font-medium whitespace-nowrap">
                 {{ item.name }}
               </td>
-              <td class="px-3 py-2 text-toned">
+              <td class="px-4 py-2.5 text-toned">
                 {{ item.role }}
               </td>
-              <td class="px-3 py-2 text-toned" v-html="formatInline(item.source)" />
+              <td class="px-4 py-2.5 text-toned" v-html="formatInline(item.source)" />
             </tr>
           </tbody>
         </table>
       </div>
-    </section>
+    </SectionBlock>
 
     <!-- Quêtes postgame -->
-    <section class="space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-highlighted">
-          Quêtes postgame
-        </h2>
-        <p class="text-sm text-muted">
-          §12 — celles qui débloquent un service ou un objet, pas une simple récompense d’argent.
-        </p>
-      </div>
-
-      <div class="grid sm:grid-cols-2 gap-3">
-        <div
-          v-for="quest in quests"
+    <SectionBlock
+      title="Quêtes postgame"
+      description="§12 — celles qui débloquent un service ou un objet, pas une simple récompense d’argent."
+    >
+      <div v-if="pendingQuests.length" class="grid sm:grid-cols-2 gap-4">
+        <AppCard
+          v-for="quest in pendingQuests"
           :key="quest.id"
-          class="p-3 rounded-[var(--ui-radius)] border border-default space-y-1.5"
+          density="compact"
+          class="space-y-2"
         >
-          <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
+          <div class="flex items-start gap-3">
+            <UCheckbox
+              :model-value="isAcquired(`quest:${quest.id}`)"
+              :aria-label="`Marquer comme terminée : ${quest.name}`"
+              class="mt-0.5 shrink-0"
+              @update:model-value="toggle(`quest:${quest.id}`, $event)"
+            />
+            <div class="min-w-0 flex-1">
               <span class="text-xs text-dimmed tabular-nums">{{ quest.code }}</span>
               <h3 class="text-sm font-medium text-highlighted">
                 {{ quest.name }}
               </h3>
             </div>
-            <span class="flex shrink-0 gap-0.5 pt-0.5">
+            <span
+              class="flex shrink-0 gap-0.5 pt-0.5"
+              role="img"
+              :aria-label="`Intérêt ${quest.interest} sur 5`"
+            >
               <UIcon
                 v-for="star in 5"
                 :key="star"
                 name="i-lucide-star"
-                class="size-3.5"
+                class="size-4"
                 :class="star <= quest.interest ? 'text-primary fill-current' : 'text-dimmed'"
               />
             </span>
           </div>
-          <p class="text-xs text-toned">
-            {{ quest.location }}
-          </p>
-          <p class="text-xs text-toned" v-html="formatInline(quest.reward)" />
-          <p v-if="quest.note" class="text-xs text-primary italic">
-            {{ quest.note }}
-          </p>
-        </div>
+          <div class="pl-7 space-y-1.5">
+            <p class="text-xs text-toned">
+              {{ quest.location }}
+            </p>
+            <p class="text-[0.8125rem] leading-relaxed text-toned" v-html="formatInline(quest.reward)" />
+            <p v-if="quest.note" class="text-xs text-primary italic">
+              {{ quest.note }}
+            </p>
+          </div>
+        </AppCard>
       </div>
+
+      <ResourceArchive
+        v-if="acquiredQuests.length"
+        :label="`Quêtes déjà faites (${acquiredQuests.length})`"
+      >
+        <li v-for="quest in acquiredQuests" :key="quest.id" class="flex items-start gap-3">
+          <UCheckbox
+            :model-value="isAcquired(`quest:${quest.id}`)"
+            :aria-label="`Marquer comme non terminée : ${quest.name}`"
+            class="mt-0.5 shrink-0"
+            @update:model-value="toggle(`quest:${quest.id}`, $event)"
+          />
+          <div class="min-w-0">
+            <p class="text-[0.8125rem] text-muted line-through decoration-1">
+              {{ quest.code }} · {{ quest.name }}
+            </p>
+            <p class="text-xs text-dimmed" v-html="formatInline(quest.reward)" />
+          </div>
+        </li>
+      </ResourceArchive>
 
       <UAlert
         color="info"
@@ -242,19 +301,13 @@ const openFarming = ref<string[]>([])
         icon="i-lucide-info"
         :description="questsDisclaimer"
       />
-    </section>
+    </SectionBlock>
 
     <!-- Farming endgame -->
-    <section class="space-y-3">
-      <div>
-        <h2 class="text-base font-semibold text-highlighted">
-          Farming endgame
-        </h2>
-        <p class="text-sm text-muted">
-          §11 — à consulter au coup par coup selon ce qu’il te manque.
-        </p>
-      </div>
-
+    <SectionBlock
+      title="Farming endgame"
+      description="§11 — à consulter au coup par coup selon ce qu’il te manque."
+    >
       <UAccordion
         v-model="openFarming"
         type="multiple"
@@ -270,6 +323,6 @@ const openFarming = ref<string[]>([])
           </div>
         </template>
       </UAccordion>
-    </section>
+    </SectionBlock>
   </div>
 </template>

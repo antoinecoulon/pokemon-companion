@@ -1,4 +1,4 @@
-import type { JournalEntry, PokemonProgress, SaveState, TaskId } from '~/data/types'
+import type { JournalEntry, PokemonProgress, ResourceKey, SaveState, TaskId } from '~/data/types'
 import { phases } from '~/data/phases'
 import { pokemon } from '~/data/pokemon'
 import { SAVE_VERSION } from '~/data/types'
@@ -23,6 +23,7 @@ export function createEmptySave(): SaveState {
     tasks: {},
     pokemon: {},
     counters: {},
+    resources: {},
     journal: [],
     updatedAt: new Date().toISOString(),
   }
@@ -68,6 +69,17 @@ function normalize(raw: unknown): SaveState | null {
   if (input.counters && typeof input.counters === 'object') {
     for (const [id, value] of Object.entries(input.counters)) {
       if (typeof value === 'number' && Number.isFinite(value)) save.counters[id] = value
+    }
+  }
+
+  /*
+   * Champ apparu après la v1 : une sauvegarde plus ancienne ne le contient pas et
+   * repart simplement du `{}` de `createEmptySave()`. C'est pour cela qu'ajouter
+   * un champ ne demande pas de bump de SAVE_VERSION.
+   */
+  if (input.resources && typeof input.resources === 'object') {
+    for (const [key, value] of Object.entries(input.resources)) {
+      if (typeof value === 'boolean') save.resources[key] = value
     }
   }
 
@@ -175,6 +187,26 @@ export function useSave() {
     state.value.counters[id] = Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0
   }
 
+  /* --- Ressources acquises --------------------------------------------- */
+
+  /*
+   * Volontairement séparé de `tasks` : une ressource n'a ni prérequis, ni poids,
+   * ni route, et ne doit pas peser sur la progression ni sur les prochaines
+   * actions. La clé est préfixée (`npc:`, `quest:`) pour éviter les collisions
+   * d'id entre catégories de contenu.
+   */
+  function isAcquired(key: ResourceKey): boolean {
+    return state.value.resources[key] ?? false
+  }
+
+  function setAcquired(key: ResourceKey, value: boolean) {
+    state.value.resources[key] = value
+  }
+
+  function toggleAcquired(key: ResourceKey) {
+    setAcquired(key, !isAcquired(key))
+  }
+
   /* --- Journal de bord ------------------------------------------------- */
 
   const journal = computed(() =>
@@ -237,6 +269,9 @@ export function useSave() {
     progressFor,
     counterValue,
     setCounter,
+    isAcquired,
+    setAcquired,
+    toggleAcquired,
     journal,
     addJournalEntry,
     updateJournalEntry,

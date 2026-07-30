@@ -4,7 +4,7 @@
  * `smoke.mjs` couvre les routes et la persistance. Ici on vérifie ce qui fait
  * l'intérêt de l'app par rapport au markdown : les critères « Endgame Ready »
  * déduits du formulaire, la détection d'objet en double entre membres de
- * l'équipe, et le CRUD du journal.
+ * l'équipe, le CRUD du journal, et le marquage des ressources acquises.
  *
  * Usage : pnpm smoke:features
  */
@@ -189,6 +189,58 @@ if (await seededPage.getByText(/2 EV perdus/).count() === 0) {
 }
 
 await seeded.close()
+
+/* --- Ressources acquises : le PNJ descend, et il y reste ---------------- */
+
+/*
+ * Deux choses à prouver ici. D'abord que cocher retire l'entrée de la liste
+ * active et la fait apparaître dans le repli. Ensuite que les namespaces `npc:`
+ * et `quest:` ne se télescopent pas : sans préfixe, `objets-pouvoir` existe
+ * comme id de consommable ET de quête.
+ */
+const resourcesContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } })
+const resourcesPage = await resourcesContext.newPage()
+resourcesPage.on('pageerror', error => failures.push(`ressources — exception : ${error.message.split('\n')[0]}`))
+
+const CHECKBOX = 'button[role="checkbox"]'
+await resourcesPage.goto(`${baseUrl}/ressources`, { waitUntil: 'networkidle' })
+await resourcesPage.waitForTimeout(600)
+
+const activeBefore = await resourcesPage.locator(`${CHECKBOX}[aria-label^="Marquer comme acquis"]`).count()
+await resourcesPage.locator(`${CHECKBOX}[aria-label*="Advanced Stat Scanner"]`).first().click()
+await resourcesPage.waitForTimeout(600)
+
+const activeAfter = await resourcesPage.locator(`${CHECKBOX}[aria-label^="Marquer comme acquis"]`).count()
+if (activeAfter !== activeBefore - 1) {
+  failures.push(`ressources — ${activeAfter} PNJ actifs après coche, ${activeBefore - 1} attendus`)
+}
+if (await resourcesPage.getByText(/PNJ déjà débloqués \(1\)/).count() === 0) {
+  failures.push('ressources — le repli « PNJ déjà débloqués (1) » n’apparaît pas')
+}
+
+// Une quête, pour vérifier que les deux namespaces sont indépendants.
+await resourcesPage.locator(`${CHECKBOX}[aria-label^="Marquer comme terminée"]`).first().click()
+await resourcesPage.waitForTimeout(600)
+if (await resourcesPage.getByText(/Quêtes déjà faites \(1\)/).count() === 0) {
+  failures.push('ressources — le repli des quêtes n’apparaît pas')
+}
+if (await resourcesPage.getByText(/PNJ déjà débloqués \(1\)/).count() === 0) {
+  failures.push('ressources — cocher une quête a perturbé le repli des PNJ (collision de clés ?)')
+}
+
+await resourcesPage.reload({ waitUntil: 'networkidle' })
+await resourcesPage.waitForTimeout(900)
+if (await resourcesPage.getByText(/PNJ déjà débloqués \(1\)/).count() === 0) {
+  failures.push('ressources — l’état acquis ne survit pas au rechargement')
+}
+
+const stored = await resourcesPage.evaluate(() =>
+  JSON.parse(localStorage.getItem('pokemon-companion:save') ?? '{}').resources ?? {})
+for (const key of Object.keys(stored)) {
+  if (!/^(npc|quest):/.test(key)) failures.push(`ressources — clé persistée sans namespace : « ${key} »`)
+}
+
+await resourcesContext.close()
 await browser.close()
 
 /* --- Rapport ---------------------------------------------------------- */
@@ -199,4 +251,4 @@ if (failures.length) {
   process.exit(1)
 }
 
-console.log('Critères déduits · doublon d’objet · CRUD du journal — tout passe.')
+console.log('Critères déduits · doublon d’objet · CRUD du journal · ressources acquises — tout passe.')

@@ -19,8 +19,8 @@ pnpm dev          # http://localhost:3000
 | --- | --- | --- |
 | **Accueil** | Progression globale, 3–5 prochaines actions, compteurs de ressources | — |
 | **Roadmap** | Les 6 phases, leurs tâches cochables et leurs prérequis | §5 |
-| **Équipe** | 6 slots actifs + sortis + utilitaires ; par fiche : analyse, builds, formulaire IV/EV, checklist « Endgame Ready » | §6, §7.3, §13.2 |
-| **Ressources** | PNJ, objets de combat, consommables, quêtes, farming | §8, §9, §11, §12 |
+| **Équipe** | Les 6 slots actifs en avant avec leur sprite, le reste dans un bandeau défilant ; par fiche : analyse, builds, formulaire IV/EV, checklist « Endgame Ready » | §6, §7.3, §13.2 |
+| **Ressources** | PNJ, objets de combat, consommables, quêtes, farming — PNJ et quêtes cochables, les acquis descendant dans un repli | §8, §9, §11, §12 |
 | **Référence** | Mécaniques IV/EV/natures/talents, Battle Frontier, formules, natures, outils, glossaire | §1–4, §10, §13 |
 | **Journal** | Entrées horodatées à l’échelle de la partie | — |
 
@@ -65,10 +65,11 @@ app/
 │   ├── useSave.ts        seul point d’accès au localStorage
 │   ├── useProgress.ts    ratios de progression + critères dérivés
 │   └── useNextActions.ts moteur de « prochaine action »
-├── components/      ContentBlocks, TaskItem, ProgressRing, StatInputs, …
+├── components/      AppCard, SectionBlock, PokemonSprite, TaskItem, ContentBlocks, …
 └── pages/
 docs/                le guide markdown d’origine, archivé
-scripts/             validation du contenu, tests de fumée, icônes
+public/sprites/      sprites versionnés : home/ (fiches) et pixel/ (vignettes)
+scripts/             validation, tests de fumée, icônes, sprites, squelettes de contenu
 ```
 
 ### Contenu en TypeScript, pas en YAML
@@ -80,22 +81,55 @@ référence le contenu **que par id**, cette vérification protège directement 
 
 Le guide n’est pas figé — la conversation d’origine contient plus d’informations qu’il n’en reprend.
 
-1. **Une tâche de roadmap** → `app/data/phases.ts`. Id au format `phase-<n>.<m>`, `requires` pour les
-   prérequis, `done: true` si c’est déjà fait dans ta partie.
-2. **Une fiche Pokémon** → `app/data/pokemon.ts`. Tâches en `mon-<slug>-<n>`. Les fiches
-   **Excadrill** et **Motisma-Lavage** portent `incomplete: true` : le guide les place dans l’équipe
-   (§7.3) sans leur consacrer de fiche en §6. Retire le drapeau quand tu les complètes.
-3. **De la prose** (analyse, mécanique, farming) → un tableau de `Block` : `p`, `list`, `quote`,
-   `table`, `code`. Le formatage inline supporte `**gras**`, `*italique*` et `` `code` ``.
+Le contenu est du TypeScript, pas un CMS : ajouter une entrée veut dire coller un objet dans le bon
+fichier. Les commandes ci-dessous impriment le squelette avec la bonne convention d’id déjà remplie et
+refusent un id qui existe déjà. Elles **n’écrivent rien** : on relit, on colle.
+
+| Contenu | Commande | Fichier | Convention d’id |
+| --- | --- | --- | --- |
+| Tâche de roadmap | `pnpm new:task phase-2` | `app/data/phases.ts` | `phase-<n>.<m>` |
+| Fiche Pokémon | `pnpm new:pokemon Lucario` | `app/data/pokemon.ts` | slug + `mon-<slug>-<n>` |
+| PNJ | `pnpm new:npc "Move Tutor"` | `app/data/npcs.ts` | kebab-case, persisté en `npc:<id>` |
+| Quête | `pnpm new:quest "#042" "Nom"` | `app/data/quests.ts` | kebab-case, persisté en `quest:<id>` |
+
+Pour le reste (objets, consommables, rubriques de farm, mécaniques, natures, glossaire), copie une
+entrée voisine : ces contenus ne sont pas persistés, leur id ne sert qu’à la clé de rendu.
+
+**De la prose** (analyse, mécanique, farming) s’écrit en tableau de `Block` : `p`, `list`, `quote`,
+`table`, `code`. Le formatage inline supporte `**gras**`, `*italique*` et `` `code` ``.
+
+**Un sprite** : renseigne `sprite` avec le slug [pokemondb](https://pokemondb.net/sprites) (le nom
+anglais en minuscules, `rotom-wash` pour une forme), puis `pnpm sprites`. Les images sont versionnées
+dans `public/sprites/` — l’app est hors-ligne, une image distante serait invisible réseau coupé.
+
+Les fiches **Excadrill** et **Motisma-Lavage** portent `incomplete: true` : le guide les place dans
+l’équipe (§7.3) sans leur consacrer de fiche en §6. Retire le drapeau quand tu les complètes.
 
 > ⚠️ **Ne renomme jamais un `id` existant.** Un libellé peut changer librement ; changer un id perd la
-> case cochée correspondante dans les sauvegardes déjà écrites.
+> case cochée correspondante dans les sauvegardes déjà écrites. Cela vaut aussi pour les ids de PNJ et
+> de quête depuis qu’ils sont persistés.
 
 Après toute modification de contenu :
 
 ```bash
 pnpm check    # validation du contenu + typecheck
 ```
+
+`pnpm validate` contrôle : ids uniques (tâches, fiches, PNJ, objets, quêtes, farm), `requires` résolus,
+absence de cycle, liens internes valides, **collisions de clés persistées** entre catégories, existence
+des fichiers de sprite déclarés, et **déclaration des icônes utilisées hors template** (voir plus bas).
+
+## Mise en page
+
+Trois composants portent toute la mise en page ; l’échelle d’espacement est documentée en tête de
+`app/assets/css/main.css` et ne doit pas être recopiée à la main.
+
+- **`SectionBlock`** — une section : titre, description, slot `action` à droite. Une page n’a jamais de
+  `<h1>` : le titre est rendu par la barre du layout.
+- **`AppCard`** — la boîte : `density` (`comfortable` / `compact`), `tone` (`plain` / `raised`),
+  `interactive`, et `to` pour en faire un lien.
+- **`PokemonSprite`** — sprite d’une fiche, `variant` `home` ou `pixel`, avec repli si la fiche n’a pas
+  de sprite.
 
 ## Sauvegarde
 
@@ -104,7 +138,13 @@ Un seul objet JSON dans `localStorage`, sous la clé `pokemon-companion:save` :
 - `tasks` — uniquement les choix explicites de l’utilisateur ; une tâche absente retombe sur le `done`
   du contenu, donc ajouter une tâche plus tard ne casse aucune sauvegarde
 - `pokemon` — par slug : build choisi, niveau, IV, EV, nature, talent, moveset, objet, notes
+- `resources` — PNJ débloqués et quêtes faites, sous des clés **préfixées** `npc:<id>` / `quest:<id>` ;
+  le préfixe n’est pas décoratif, `objets-pouvoir` existe à la fois comme id de consommable et de quête
 - `counters`, `journal`, `version`, `updatedAt`
+
+`normalize()` reconstruit la sauvegarde champ par champ depuis `createEmptySave()` : un champ ajouté
+plus tard se remplit de sa valeur par défaut, sans bump de `SAVE_VERSION`. C’est ainsi que `resources`
+est apparu sans casser les sauvegardes v1.
 
 Le menu **base de données** de l’en-tête permet d’exporter, d’importer et de réinitialiser. C’est aussi
 le moyen de transférer sa progression vers le téléphone : exporter ici, importer là-bas.
@@ -151,7 +191,13 @@ pnpm serve:pages /pokemon-companion
 pnpm smoke:offline http://localhost:3200/pokemon-companion
 ```
 
-`smoke:offline` existe parce que trois régressions y sont passées :
+`smoke:offline` existe parce que quatre régressions y sont passées :
+
+- **les icônes déclarées dans un `.ts` n’étaient pas embarquées** : `clientBundle.scan` ne lit que les
+  templates, donc les 5 icônes de la nav et les 4 des compteurs étaient absentes du bundle — et
+  `@nuxt/icon` rend alors un `<svg>` **vide**, sans erreur. L’ancienne assertion « au moins 5 `<svg>`
+  dans la nav » passait donc au travers ; elle vérifie désormais le *contenu* de chaque icône, et
+  `pnpm validate` échoue si une icône n’est pas listée dans `icon.clientBundle.icons` ;
 
 - les icônes étaient téléchargées depuis `api.iconify.design` à chaque chargement, donc invisibles
   hors-ligne → `icon.clientBundle.scan` ;

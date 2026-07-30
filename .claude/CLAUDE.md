@@ -37,7 +37,17 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
 
 - **Ne jamais renommer un `id` de tâche existant** (`phase-<n>.<m>`, `mon-<slug>-<n>`,
   `ready-<slug>-<key>`). Les libellés peuvent changer librement ; les ids sont le contrat avec les
-  sauvegardes déjà écrites.
+  sauvegardes déjà écrites. **Depuis la v2, cela vaut aussi pour les ids de PNJ et de quête**, persistés
+  sous les clés préfixées `npc:<id>` et `quest:<id>` — le préfixe évite une collision réelle
+  (`objets-pouvoir` est à la fois un consommable et une quête).
+- **Passer par `pnpm new:pokemon` / `new:npc` / `new:quest` / `new:task`** pour ajouter du contenu : les
+  scripts impriment le squelette avec la bonne convention d'id et refusent un id déjà pris.
+- **Mise en page : `SectionBlock`, `AppCard`, `PokemonSprite`.** L'échelle d'espacement est documentée
+  en tête de `app/assets/css/main.css` ; ne pas recopier les classes de boîte à la main. Une page n'a
+  jamais de `<h1>` — la barre du layout rend le titre.
+- **Un sprite se déclare puis se télécharge** (`sprite` dans la fiche, puis `pnpm sprites`). Les images
+  vivent dans `public/sprites/`, versionnées : l'app est hors-ligne, une image distante serait invisible
+  réseau coupé. `pnpm validate` échoue si un sprite déclaré manque sur le disque.
 - **Ne pas inventer de données Pokémon.** Le guide est la seule source. Là où il est muet, la fiche
   porte `incomplete: true` et l'UI affiche « fiche à compléter » — voir Excadrill et Motisma-Lavage.
 - **Vérifier avec `pnpm check`, puis `pnpm smoke` et `pnpm smoke:features`** (serveur de dev lancé), et
@@ -73,5 +83,12 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   hors-ligne, sans aucune erreur visible. D'où `workbox.globIgnores`.
 - Le plugin d'enregistrement de `@vite-pwa/nuxt` n'enregistre rien derrière un sous-chemin : c'est
   `app/plugins/pwa.client.ts` qui s'en charge.
-- `<link rel="manifest">` n'est pas injecté par le module — il est déclaré à la main dans `app.head.link`.
+- `<link rel="manifest">` n'est pas injecté par le module — il est déclaré à la main dans `app.head.link`,
+  et **uniquement hors dev** : le module PWA étant désactivé en dev, la requête retombe sur le shell HTML
+  du SPA, que le navigateur signale en « Manifest: Line 1, column 1, Syntax error ».
 - Tout chemin vers `public/` doit être préfixé par `app.baseURL` (voir `logo` dans le layout).
+- **`icon.clientBundle.scan` ne scanne que les templates.** Une icône déclarée dans un `.ts`
+  (`navigation.ts`, `counters.ts`) n'est jamais embarquée, et `@nuxt/icon` rend alors un `<svg>` **vide** —
+  aucune erreur, rien à l'écran. Toute icône hors template doit être listée dans
+  `icon.clientBundle.icons` ; `pnpm validate` échoue sinon. Ne jamais tester une icône en comptant les
+  balises `<svg>` : vérifier leur contenu.

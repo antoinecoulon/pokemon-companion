@@ -62,13 +62,20 @@ function isActive(to: string) {
         </h1>
       </div>
       <div class="flex items-center gap-1 shrink-0">
+        <!--
+          Les entrées hors bottom-nav sont ici, avec leur libellé : une icône
+          seule ne dit pas où elle mène, et si elle ne se charge pas — cas des
+          icônes non embarquées en v1 — l'accès disparaît sans trace.
+        -->
         <UButton
-          to="/journal"
-          icon="i-lucide-notebook-pen"
+          v-for="item in secondaryNavItems"
+          :key="item.to"
+          :to="item.to"
+          :icon="item.icon"
+          :label="item.label"
           color="neutral"
           variant="ghost"
-          size="sm"
-          aria-label="Journal de bord"
+          size="xs"
         />
         <SaveMenu />
         <UColorModeButton size="sm" />

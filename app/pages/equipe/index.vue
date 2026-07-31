@@ -8,7 +8,7 @@ const editing = ref(false)
 
 /*
  * Les fiches que le guide laisse en plan (§6 ne couvre ni Excadrill ni
- * Motisma-Lavage, que §7.3 place pourtant dans l'équipe). Les réunir ici en fait
+ * Rotom-Wash, que §7.3 place pourtant dans l'équipe). Les réunir ici en fait
  * une liste de travail — c'est exactement ce que `pnpm import:pokemon` sert à
  * combler, une fois la fiche rédigée à partir du guide.
  */

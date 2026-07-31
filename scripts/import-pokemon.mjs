@@ -22,6 +22,7 @@ import { resolveSprite } from './lib/sprites.mjs'
 
 const args = process.argv.slice(2)
 const dryRun = args.includes('--dry-run')
+const replace = args.includes('--replace')
 const [file] = args.filter(argument => !argument.startsWith('--'))
 
 function fail(message, details = []) {
@@ -30,7 +31,7 @@ function fail(message, details = []) {
   process.exit(1)
 }
 
-if (!file) fail('usage : pnpm import:pokemon <fiche.json> [--dry-run]')
+if (!file) fail('usage : pnpm import:pokemon <fiche.json> [--dry-run] [--replace]')
 
 /* --- 1. Lecture ---------------------------------------------------------- */
 
@@ -56,11 +57,33 @@ if (fiche && typeof fiche === 'object' && !Array.isArray(fiche) && !fiche.slug) 
 const { pokemon } = await loadPokemon()
 const { phases } = await loadData('phases.ts')
 
+/*
+ * En mode `--replace`, la fiche remplacée est retirée des ensembles de collision :
+ * sinon elle se heurterait à son propre slug et à ses propres ids de tâche.
+ */
+const previous = pokemon.find(mon => mon.slug === fiche?.slug)
+
+if (replace && !previous) {
+  fail(
+    `--replace demandé mais aucune fiche « ${fiche?.slug} » n'existe`,
+    ['Retire le drapeau pour créer la fiche.'],
+  )
+}
+
+const others = pokemon.filter(mon => mon.slug !== (replace ? fiche.slug : null))
+
 const knownTaskIds = new Set([
   ...phases.flatMap(phase => phase.tasks.map(task => task.id)),
-  ...pokemon.flatMap(mon => (mon.tasks ?? []).map(task => task.id)),
+  ...others.flatMap(mon => (mon.tasks ?? []).map(task => task.id)),
 ])
-const knownSlugs = new Set(pokemon.map(mon => mon.slug))
+const knownSlugs = new Set(others.map(mon => mon.slug))
+
+if (previous && !replace) {
+  fail(
+    `la fiche « ${fiche.slug} » existe déjà`,
+    ['Relance avec --replace pour la remplacer (le contenu actuel sera écrasé).'],
+  )
+}
 
 const report = validateFiche(fiche, { knownTaskIds, knownSlugs })
 
@@ -79,9 +102,14 @@ if (report.errors.length) {
  * proposant `slot: 7`.
  */
 if (fiche.status === 'active') {
-  const taken = new Set(pokemon.filter(mon => mon.status === 'active').map(mon => mon.slot))
+  // En remplacement, le slot que la fiche occupait déjà n'est pas « pris ».
+  const taken = new Set(others.filter(mon => mon.status === 'active').map(mon => mon.slot))
   if (fiche.slot !== undefined && taken.has(fiche.slot)) {
-    fail(`le slot ${fiche.slot} est déjà occupé par « ${pokemon.find(mon => mon.slot === fiche.slot)?.slug} »`)
+    fail(`le slot ${fiche.slot} est déjà occupé par « ${others.find(mon => mon.slot === fiche.slot)?.slug} »`)
+  }
+  if (fiche.slot === undefined && previous?.slot !== undefined) {
+    fiche.slot = previous.slot
+    console.log(`Slot conservé : ${previous.slot}.`)
   }
   if (fiche.slot === undefined) {
     const free = Array.from({ length: TEAM_SIZE }, (_, index) => index + 1).find(slot => !taken.has(slot))
@@ -101,8 +129,10 @@ if (fiche.status === 'active') {
 
 /* --- 4. Sprite ----------------------------------------------------------- */
 
-if (fiche.sprite === undefined && fiche.nameEn) {
-  const guess = fiche.nameEn.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+// `name` est en VO depuis le passage des noms propres à l'anglais : c'est lui
+// qui donne le slug pokemondb, `nameEn` n'a plus de raison d'être.
+if (fiche.sprite === undefined && fiche.name) {
+  const guess = fiche.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   console.log(`Sprite non déclaré — recherche de « ${guess} » sur pokemondb…`)
   const resolved = await resolveSprite(guess)
   if (resolved) {
@@ -126,6 +156,36 @@ else if (fiche.sprite) {
 }
 
 /* --- 5. Écriture --------------------------------------------------------- */
+
+/*
+ * En remplacement, on annonce ce qui change avant d'écrire : une fiche
+ * régénérée par IA perd volontiers un champ au passage, et l'écrasement est
+ * silencieux sans ça.
+ */
+if (previous) {
+  const before = Object.keys(previous)
+  const after = Object.keys(fiche)
+  const added = after.filter(key => !before.includes(key))
+  const removed = before.filter(key => !after.includes(key))
+
+  console.log(`\nRemplacement de « ${fiche.slug} » :`)
+  if (added.length) console.log(`  champs ajoutés  : ${added.join(', ')}`)
+  if (removed.length) console.log(`  champs retirés  : ${removed.join(', ')}`)
+  if (!added.length && !removed.length) console.log('  mêmes champs, contenu mis à jour')
+  console.log(`  tâches          : ${previous.tasks?.length ?? 0} → ${fiche.tasks?.length ?? 0}`)
+
+  /*
+   * Une tâche disparue emporte sa case cochée : l'id n'existe plus, donc
+   * `pruneOrphans` la donnera pour morte. Ça se dit avant, pas après.
+   */
+  const lostTasks = (previous.tasks ?? [])
+    .map(task => task.id)
+    .filter(id => !(fiche.tasks ?? []).some(task => task.id === id))
+  if (lostTasks.length) {
+    console.warn(`  ⚠ ids de tâche perdus : ${lostTasks.join(', ')}`)
+    console.warn('    Leur case cochée deviendra orpheline dans la sauvegarde.')
+  }
+}
 
 const module = printFiche(fiche)
 const target = `${POKEMON_DIR}${fiche.slug}.ts`

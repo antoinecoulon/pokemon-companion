@@ -21,7 +21,7 @@ const status = computed(() => entry.value?.status ?? mon.value?.status ?? 'retir
 /**
  * Un formulaire est proposé dès que le Pokémon est dans l'équipe : niveau, IV,
  * EV et objet ne dépendent d'aucun build. Sans cette règle, Excadrill et
- * Motisma-Lavage — les deux fiches `incomplete` de §7.3 — affichaient un anneau
+ * Rotom-Wash — les deux fiches `incomplete` de §7.3 — affichaient un anneau
  * de progression sur /equipe qu'aucune UI ne pouvait faire monter.
  */
 const trackable = computed(() =>
@@ -54,7 +54,6 @@ const trackable = computed(() =>
             <h1 class="text-xl font-semibold tracking-tight text-highlighted">
               {{ mon.name }}
             </h1>
-            <span v-if="mon.nameEn" class="text-sm text-dimmed self-center">({{ mon.nameEn }})</span>
             <UBadge v-if="entry?.slot" color="neutral" variant="subtle">
               slot {{ entry.slot }}
             </UBadge>
@@ -114,10 +113,10 @@ const trackable = computed(() =>
         </UBadge>
       </div>
 
-      <!-- Méga -->
+      <!-- Mega -->
       <AppCard v-if="mon.mega" density="compact" tone="raised" class="space-y-3">
         <p class="text-xs font-medium text-toned">
-          Méga-Évolution · {{ mon.mega.stone }}
+          Mega Evolution · {{ mon.mega.stone }}
         </p>
         <div class="grid grid-cols-6 gap-1.5">
           <div

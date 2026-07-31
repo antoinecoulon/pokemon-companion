@@ -70,7 +70,7 @@ const result = computed(() => readinessFor(props.mon))
       variant="subtle"
       icon="i-lucide-copy"
       title="Objet en double dans l’équipe"
-      :description="`${mon.name} porte le même objet que ${result.duplicates.join(', ')}. Certains formats de la Battle Frontier interdisent les objets doublons — §7.3 signale trois candidats aux Restes.`"
+      :description="`${mon.name} porte le même objet que ${result.duplicates.join(', ')}. Certains formats de la Battle Frontier interdisent les objets doublons — §7.3 signale trois candidats aux Leftovers.`"
     />
   </div>
 </template>

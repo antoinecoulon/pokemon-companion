@@ -56,14 +56,31 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
 - **Mise en page : `SectionBlock`, `AppCard`, `PokemonSprite`.** L'échelle d'espacement est documentée
   en tête de `app/assets/css/main.css` ; ne pas recopier les classes de boîte à la main. Une page n'a
   jamais de `<h1>` — la barre du layout rend le titre.
-- **Un sprite se résout puis se télécharge.** `pnpm import:pokemon` interroge pokemondb depuis `nameEn`,
+- **Un sprite se résout puis se télécharge.** `pnpm import:pokemon` interroge pokemondb depuis `name`,
   vérifie le slug et inscrit le jeu du sprite pixel (`spritePixelSet`) quand l'espèce est postérieure à
   Noir/Blanc — ne plus coder d'exception en dur dans `fetch-sprites.mjs`. Les images vivent dans
   `public/sprites/`, versionnées : l'app est hors-ligne, une image distante serait invisible réseau
   coupé. `pnpm validate` échoue si un sprite déclaré manque sur le disque, refuse un `sprite: ''` (falsy,
   il sautait tout contrôle) et signale les images sans fiche.
-- **Ne pas inventer de données Pokémon.** Le guide est la seule source. Là où il est muet, la fiche
-  porte `incomplete: true` et l'UI affiche « fiche à compléter » — voir Excadrill et Motisma-Lavage.
+- **Prose en français, noms propres du jeu en VO.** La partie se joue en anglais : **tout ce que
+  l'écran affiche** s'écrit comme l'écran l'affiche — types, natures, talents, capacités, objets,
+  noms d'espèces, lieux, PNJ, quêtes, et jusqu'aux **libellés de statistiques** (`HP`, `Atk`, `Def`,
+  `SpA`, `SpD`, `Spe` en court ; `Attack`, `Sp. Atk`… en long, voir `STAT_LABELS` dans
+  `app/utils/stats.ts`) et aux abréviations (`TM`, `HM`, jamais `CT`/`CS`). Les phrases, elles,
+  restent en français : on traduit le nom, pas la prose autour. Un libellé descriptif qui n'existe
+  pas en jeu suit le motif **descripteur français + nom VO** — « Améliorateur Lucky Egg »,
+  « Marché de baies (purge EV) », « Hard Stones → Gems ». Les `slug` et les `id` antérieurs à cette
+  bascule ne se renomment jamais — `motisma-lavage` reste l'id de Rotom-Wash, `orbe-vie` celui de la
+  Life Orb ; l'écart id/libellé est assumé. `POKEMON_TYPES` et la colonne `en` de `natures.ts` sont
+  les seules listes fermées qui le font respecter, et elles ne couvrent que les fiches Pokémon : pour
+  le reste du contenu, la règle tient à la relecture, il n'y a pas de contrôle automatique. La
+  colonne `fr` de `natures.ts` reste néanmoins nécessaire — `toNatureEn()` et `matchesNature()` s'en
+  servent pour relire les natures saisies en français dans les sauvegardes antérieures.
+- **Ne pas deviner de données Pokémon.** Le guide est la source de référence. Là où il est muet, les
+  données factuelles (stats, types, talents, learnset, obtention) se prennent sur
+  **romhackdex.net/unbound** ou **unboundwiki.com**, et les décisions de build s'en déduisent
+  explicitement. Ce qui reste invérifiable garde `incomplete: true` et l'UI affiche « fiche à
+  compléter » — voir Sceptile. On ne comble pas un trou par une supposition.
 - **Ne jamais référencer un composant par son nom dans `:is`.** `:is="'NuxtLink'"` ne résout pas : Vue
   rend un élément littéral `<nuxtlink>`, donc aucun `<a>` et aucune navigation — sans la moindre erreur.
   Importer le composant depuis `#components` (voir `AppCard.vue`). `pnpm smoke` échoue désormais sur
@@ -87,8 +104,11 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
 
 `/equipe` les regroupe sous « Fiches à compléter » ; c'est ce que `pnpm import:pokemon` sert à combler.
 
-- **§6 n'a pas de fiche pour Excadrill ni Motisma-Lavage**, alors que §7.3 les place aux slots 2 et 4.
-  Il en garde en revanche des fiches complètes pour Dusknoir et Zeraora, tous deux sortis de l'équipe.
+- **§6 n'avait de fiche ni pour Excadrill ni pour Rotom-Wash**, alors que §7.3 les place aux slots 2
+  et 4. Les deux ont été complétées depuis les données Unbound ; le guide, lui, garde des fiches
+  complètes pour Dusknoir et Zeraora, tous deux sortis de l'équipe.
+- **§7.3 assigne à Excadrill le Choice Band *et* Rapid Spin**, or l'objet verrouille sur la première
+  capacité utilisée. La fiche assume la tension dans son build A et l'évite dans son build B.
 - **§5 phase 3 saute de 3.1 à 3.3** (pas de 3.2), et ne couvre que Togekiss et Tyranitar sur les six
   membres de la composition finale.
 - Sceptile est cité comme sortant sans avoir de fiche.

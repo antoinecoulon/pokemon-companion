@@ -17,7 +17,7 @@ export const counters: CounterDef[] = [
     label: 'BP',
     icon: 'i-lucide-ticket',
     goal: 200,
-    hint: 'À garder pour les objets Choix (48 BP pièce) — la purge d’EV passe par les baies de Fallshore, 0 BP.',
+    hint: 'À garder pour les Choice items (48 BP pièce) — la purge d’EV passe par les baies de Fallshore, 0 BP.',
   },
   {
     id: 'bottleCaps',
@@ -27,8 +27,8 @@ export const counters: CounterDef[] = [
   },
   {
     id: 'heartScales',
-    label: 'Écailles Cœur',
+    label: 'Heart Scales',
     icon: 'i-lucide-heart',
-    hint: 'Pêche aux Luvdisc à la Méga Canne avec Fouille + Larcin. Monnaie du Move Relearner de Crater Town.',
+    hint: 'Pêche aux Luvdisc au Super Rod avec Frisk + Thief. Monnaie du Move Relearner de Crater Town.',
   },
 ] satisfies CounterDef[]

@@ -9,16 +9,24 @@ chose. `pnpm test:fiche` vérifie que le contrat accepte les 13 fiches existante
 
 ## Règles non négociables
 
-1. **N'invente aucune donnée Pokémon.** Le guide (`docs/guide_endgame_pokemon_unbound_v2 *.md`) est la
-   seule source. Là où il est muet, mets `"incomplete": true` et une `incompleteNote` qui dit ce qui
-   manque — surtout pas un build plausible. Excadrill et Motisma-Lavage sont dans ce cas.
+1. **Ne devine aucune donnée Pokémon.** Le guide (`docs/guide_endgame_pokemon_unbound_v2 *.md`) est la
+   source de référence. Là où il est muet, les données factuelles — stats, types, talents, learnset,
+   obtention — se prennent sur **romhackdex.net/unbound** ou **unboundwiki.com**, et les décisions de
+   build s'en déduisent explicitement. Ce qui reste invérifiable garde `"incomplete": true` et une
+   `incompleteNote` qui dit ce qui manque : on ne comble pas un trou par une supposition. Sceptile est
+   dans ce cas.
 2. **Les stats sont celles d'Unbound** (romhackdex.net/unbound), pas celles des jeux officiels.
 3. **Un id ne se renomme jamais.** `slug` et les ids de tâche sont le contrat avec les sauvegardes
    déjà écrites : changer un id perd la case cochée correspondante. Les libellés, eux, sont libres.
 4. **Aucun champ hors de cette liste.** Un champ inventé (`weaknesses`, `evYield`, `locations`…) est
    refusé à l'import : il ne serait affiché nulle part.
-5. **Français partout**, y compris pour les types, les natures, les capacités et les objets. Les noms
-   anglais vont dans `nameEn` et entre parenthèses dans les libellés : `"Sable Volant (Sand Stream)"`.
+5. **Prose en français, noms propres du jeu en VO.** La partie se joue en anglais : types, natures,
+   talents, capacités, objets, lieux, PNJ et noms d'espèces s'écrivent comme l'écran les affiche —
+   `"Sand Stream"`, `"Adamant"`, `"Choice Band"`, `"Stealth Rock"`. Cela vaut aussi pour les
+   **statistiques** citées dans la prose (`HP`, `Atk`, `Def`, `SpA`, `SpD`, `Spe` ; `Attack`,
+   `Sp. Atk`… en forme longue) et pour les abréviations (`TM`, `HM`). Les phrases, elles, restent en
+   français : « le **Stealth Rock** détruit Togekiss à 25 % par entrée », « ses 45 **HP** plafonnent
+   la survivabilité ».
 
 ## Squelette
 
@@ -26,14 +34,13 @@ chose. `pnpm test:fiche` vérifie que le contrat accepte les 13 fiches existante
 {
   "slug": "lucario",
   "name": "Lucario",
-  "nameEn": "Lucario",
   "status": "active",
   "role": "Sweeper mixte",
-  "types": ["Combat", "Acier"],
+  "types": ["Fighting", "Steel"],
   "baseStats": { "hp": 70, "atk": 110, "def": 70, "spa": 115, "spd": 70, "spe": 90 },
   "bst": 525,
-  "abilities": [{ "name": "Full Métal (Steadfast)" }, { "name": "Cran (Justified)", "hidden": true }],
-  "targetAbility": "Cran (Justified)",
+  "abilities": [{ "name": "Steadfast" }, { "name": "Justified", "hidden": true }],
+  "targetAbility": "Justified",
   "analysis": [{ "kind": "p", "text": "…" }],
   "builds": [{ "…": "voir plus bas" }],
   "ivGuidance": { "focus": ["atk", "spe"], "ignore": ["spa"] },
@@ -47,10 +54,9 @@ chose. `pnpm test:fiche` vérifie que le contrat accepte les 13 fiches existante
 
 | Champ | Requis | Contenu |
 | --- | --- | --- |
-| `slug` | ✅ | kebab-case ASCII, en français. Nomme le fichier, les sprites et les clés de sauvegarde. `motisma-lavage`, pas `rotom-wash`. |
-| `name` | ✅ | Nom français affiché. |
-| `nameEn` | — | Nom anglais. Sert à retrouver le sprite automatiquement — mets-le. |
-| `sprite` | — | Slug [pokemondb](https://pokemondb.net/sprites). **Omets-le** : l'import le devine depuis `nameEn` et le vérifie. À renseigner à la main seulement pour une forme (`rotom-wash`). Omets aussi la clé pour une fiche concept (la mule à objets n'est pas un Pokémon). Jamais `""`. |
+| `slug` | ✅ | kebab-case ASCII. Nomme le fichier, les sprites et les clés de sauvegarde. **Ne se renomme jamais** : les slugs écrits avant le passage en VO restent français (`motisma-lavage` pour Rotom-Wash), et cet écart entre l'URL et le libellé est assumé. |
+| `name` | ✅ | Nom de l'espèce **en VO** : `"Rotom-Wash"`, pas `"Motisma-Lavage"`. Exception : une fiche concept, qui n'est pas une espèce (`"Mule à objets"`). |
+| `sprite` | — | Slug [pokemondb](https://pokemondb.net/sprites). **Omets-le** : l'import le devine depuis `name` et le vérifie. Omets aussi la clé pour une fiche concept (la mule à objets n'est pas un Pokémon). Jamais `""`. |
 | `spritePixelSet` | — | Ne le mets pas : l'import sonde pokemondb et le renseigne si l'espèce est postérieure à Noir/Blanc. |
 | `slot` | — | **Ne le mets pas.** L'import prend la première place libre de 1 à 6 et refuse un septième membre. |
 | `status` | ✅ | `"active"` (composition finale, §7.3), `"retired"` (sorti, §6.4-6.5) ou `"utility"` (gardé en boîte, §6.7). En cas de doute : `"retired"`, l'échange se fait ensuite dans l'app. |
@@ -75,8 +81,8 @@ chose. `pnpm test:fiche` vérifie que le contrat accepte les 13 fiches existante
 ### Types (orthographe exacte)
 
 ```
-Normal  Feu  Eau  Électrik  Plante  Glace  Combat  Poison  Sol
-Vol  Psy  Insecte  Roche  Spectre  Dragon  Ténèbres  Acier  Fée
+Normal  Fire  Water  Electric  Grass  Ice  Fighting  Poison  Ground
+Flying  Psychic  Bug  Rock  Ghost  Dragon  Dark  Steel  Fairy
 ```
 
 ### Blocs de prose
@@ -103,22 +109,22 @@ d'autre — pas de liens, pas de titres.
 ```json
 {
   "id": "a",
-  "name": "Wallbreaker Bandeau Choix",
+  "name": "Wallbreaker Choice Band",
   "tagline": "le plus simple, le plus fiable",
-  "nature": "Rigide (Adamant)",
-  "natureFr": "Rigide",
+  "nature": "Adamant",
   "evs": { "hp": 252, "atk": 252, "spd": 4 },
-  "item": "Bandeau Choix",
-  "moves": ["Lame de Roc", "Mâchouille", "Séisme", "Poing Glace"],
+  "item": "Choice Band",
+  "moves": ["Rock Slide", "Crunch", "Earthquake", "Ice Punch"],
   "notes": ["Objet : 48 BP au Battle Tower."],
   "recommended": true
 }
 ```
 
 - `id` : court et stable (`"a"`, `"b"`, `"c"`), unique dans la fiche.
-- `nature` : forme complète. `natureFr` : le nom français **seul**, et il doit exister dans
-  `app/data/natures.ts` — la checklist compare cette chaîne à la nature saisie, une faute la casse
-  en silence. `nature` doit commencer par `natureFr`.
+- `nature` : le nom **anglais seul**, et il doit figurer dans la colonne `en` de
+  `app/data/natures.ts` — la checklist compare la nature saisie à cette chaîne, une faute la casse
+  en silence. (Une nature saisie en français dans une sauvegarde antérieure reste reconnue :
+  `matchesNature()` résout les deux orthographes.)
 - `evs` : 510 EV au maximum, 252 par stat. Le motif visé est `252 / 252 / 4` (§2.2 : 4 EV = 1 point,
   donc `250/250/10` gaspille 6 EV).
 - `moves` : **exactement 4**.

@@ -87,15 +87,19 @@ export const ROSTER_STATUSES = ['active', 'retired', 'utility'] as const satisfi
 export const TEAM_SIZE = 6
 
 /**
- * Les 18 types, en français, tels que les fiches les orthographient.
+ * Les 18 types, en anglais.
  *
- * Liste fermée pour que `validate` refuse « Electrik » ou « Tenebres » : un type
- * mal accentué s'affiche tel quel dans un badge, sans que rien ne le signale.
+ * Tous les noms propres du jeu sont en VO — la partie se joue en anglais, et
+ * lire « Piège de Roc » quand l'écran affiche *Stealth Rock* oblige à traduire
+ * à chaque coup d'œil. La prose, elle, reste en français.
+ *
+ * Liste fermée pour que `validate` refuse « Electric » mal orthographié : un
+ * type erroné s'affiche tel quel dans un badge, sans que rien ne le signale.
  */
 export const POKEMON_TYPES = [
-  'Normal', 'Feu', 'Eau', 'Électrik', 'Plante', 'Glace',
-  'Combat', 'Poison', 'Sol', 'Vol', 'Psy', 'Insecte',
-  'Roche', 'Spectre', 'Dragon', 'Ténèbres', 'Acier', 'Fée',
+  'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice',
+  'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug',
+  'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy',
 ] as const
 
 export interface Ability {
@@ -108,10 +112,14 @@ export interface Build {
   id: string
   name: string
   tagline?: string
-  /** Nature cible, forme complète : 'Rigide (Adamant)'. */
+  /**
+   * Nature cible, nom anglais seul : 'Adamant'.
+   *
+   * Un seul champ depuis le passage en VO : la forme bilingue
+   * `'Rigide (Adamant)'` cohabitait avec un `natureFr` servant à la comparaison,
+   * deux champs à tenir d'accord pour une seule information.
+   */
   nature: string
-  /** Nom français seul, pour comparer à la nature saisie : 'Rigide'. */
-  natureFr: string
   evs: PartialStats
   item: string
   moves: string[]
@@ -130,9 +138,15 @@ export interface IvGuidance {
 
 export interface PokemonSheet {
   slug: string
+  /**
+   * Nom du Pokémon, en VO.
+   *
+   * Le `slug` reste celui d'origine, français pour les fiches écrites avant le
+   * passage en VO (`motisma-lavage`, `scorvol`) : c'est un id, donc le contrat
+   * avec les sauvegardes déjà écrites. L'URL et le libellé divergent, et c'est
+   * assumé.
+   */
   name: string
-  /** Nom anglais, utile pour chercher sur RomHackDex / Smogon. */
-  nameEn?: string
   /**
    * Slug pokemondb, qui nomme les fichiers de `public/sprites/`. Absent sur les
    * fiches concept (mule à objets, porteur de Synchro) : ce ne sont pas des
@@ -260,7 +274,13 @@ export interface ReferenceSection {
 }
 
 export interface Nature {
+  /**
+   * Nom français. Plus affiché en tête depuis la bascule VO, mais conservé :
+   * `toNatureEn()` et `matchesNature()` s'en servent pour relire une nature
+   * saisie en français dans une sauvegarde antérieure.
+   */
   fr: string
+  /** Nom VO, celui que l'écran du jeu affiche. C'est la référence des builds. */
   en: string
   up: StatKey
   down: StatKey
@@ -302,7 +322,7 @@ export interface PokemonProgress {
   level?: number
   ivs: PartialStats
   evs: PartialStats
-  /** Nature actuelle, nom français. */
+  /** Nature actuelle. Écrite en VO ; `matchesNature()` relit aussi le nom français des sauvegardes antérieures. */
   nature?: string
   ability?: string
   /** Toujours 4 entrées, chaînes vides incluses. */

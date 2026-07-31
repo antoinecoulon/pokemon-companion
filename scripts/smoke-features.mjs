@@ -56,7 +56,7 @@ if (await criterionMet('EV exacts : 252 / 252 / 4')) {
   failures.push('fiche — « EV exacts » est rempli alors qu’aucun EV n’est saisi')
 }
 
-// Le build A de Tyranitar vise 252 PV / 252 Atk / 4 Déf.Spé, nature Rigide.
+// Le build A de Tyranitar vise 252 HP / 252 Atk / 4 SpD, nature Adamant.
 await page.getByRole('button', { name: /Pré-remplir depuis/ }).click()
 await page.waitForTimeout(300)
 
@@ -71,7 +71,7 @@ if (!await criterionMet('Objet équipé et non dupliqué')) {
 }
 
 // Casser volontairement la répartition : 252/252/252 dépasse le plafond.
-await setStat('EV Défense Spéciale', 252)
+await setStat('EV Sp. Def', 252)
 await page.waitForTimeout(300)
 if (await criterionMet('EV exacts : 252 / 252 / 4')) {
   failures.push('fiche — une répartition au-delà de 510 EV est acceptée comme optimale')
@@ -80,7 +80,7 @@ if (await page.getByText(/au-delà du plafond/).count() === 0) {
   failures.push('fiche — le dépassement du plafond de 510 EV n’est pas signalé')
 }
 
-await setStat('EV Défense Spéciale', 4)
+await setStat('EV Sp. Def', 4)
 await setField('Niveau', 100)
 await page.waitForTimeout(300)
 if (!await criterionMet('Niveau 100')) {
@@ -89,12 +89,12 @@ if (!await criterionMet('Niveau 100')) {
 
 /* --- 2. Objet en double entre deux membres actifs ---------------------- */
 
-// Tyranitar porte désormais le Bandeau Choix (build A). On le donne aussi à
+// Tyranitar porte désormais le Choice Band (build A). On le donne aussi à
 // Togekiss : §7.3 avertit que certains formats interdisent les objets doublons.
 await page.goto(`${baseUrl}/equipe/togekiss`, { waitUntil: 'networkidle' })
 
 const itemField = page.getByLabel('Objet tenu')
-await itemField.fill('Bandeau Choix')
+await itemField.fill('Choice Band')
 await itemField.blur()
 await page.waitForTimeout(400)
 
@@ -107,7 +107,7 @@ if (await criterionMet('Objet équipé et non dupliqué')) {
 }
 
 // On nettoie pour ne pas laisser un faux positif derrière soi.
-await itemField.fill('Bottes Épaisses')
+await itemField.fill('Heavy-Duty Boots')
 await itemField.blur()
 await page.waitForTimeout(400)
 if (await page.getByText(/Objet en double dans l’équipe/).count() !== 0) {
@@ -120,7 +120,7 @@ await page.goto(`${baseUrl}/journal`, { waitUntil: 'networkidle' })
 
 await page.getByRole('button', { name: 'Nouvelle entrée' }).click()
 await page.getByLabel('Titre').fill('Run Battle Tower — 21 victoires')
-await page.getByLabel('Notes').fill('Mort sur un attaquant Glace au match 22.')
+await page.getByLabel('Notes').fill('Mort sur un attaquant Ice au match 22.')
 await page.getByRole('button', { name: 'Ajouter' }).click()
 await page.waitForTimeout(400)
 

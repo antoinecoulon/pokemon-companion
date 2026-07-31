@@ -1,4 +1,5 @@
 import type { PokemonSheet, ReadinessKey } from '~/data/types'
+import { matchesNature } from '~/data/natures'
 import { phases } from '~/data/phases'
 import { readinessCriteria } from '~/data/readiness'
 
@@ -39,7 +40,7 @@ export function useProgress() {
 
   /**
    * Objets portés par les autres membres actifs, pour détecter les doublons.
-   * §7.3 signale trois candidats aux Restes ; certains formats de la Frontier
+   * §7.3 signale trois candidats aux Leftovers ; certains formats de la Frontier
    * interdisent les objets en double.
    */
   function duplicateItemHolders(slug: string): string[] {
@@ -83,13 +84,12 @@ export function useProgress() {
         })(),
       },
       nature: {
-        met: !!build && !!progress.nature
-          && progress.nature.trim().toLowerCase() === build.natureFr.toLowerCase(),
+        met: !!build && matchesNature(progress.nature, build.nature),
         detail: !build
           ? 'Aucun build de référence'
           : progress.nature
-            ? `${progress.nature} — cible : ${build.natureFr}`
-            : `Nature non saisie — cible : ${build.natureFr}`,
+            ? `${progress.nature} — cible : ${build.nature}`
+            : `Nature non saisie — cible : ${build.nature}`,
       },
       item: {
         met: !!progress.item?.trim() && duplicates.length === 0,

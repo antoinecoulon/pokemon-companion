@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Build, PokemonSheet } from '~/data/types'
-import { natures } from '~/data/natures'
+import { natures, toNatureEn } from '~/data/natures'
 
 const props = defineProps<{ mon: PokemonSheet }>()
 
@@ -11,9 +11,20 @@ const progress = computed(() => progressFor(props.mon.slug))
 const build = computed<Build | undefined>(() => buildFor(props.mon, progress.value))
 
 const natureItems = natures.map(nature => ({
-  label: `${nature.fr} (${nature.en})`,
-  value: nature.fr,
+  label: `${nature.en} (${nature.fr})`,
+  value: nature.en,
 }))
+
+/**
+ * Le select stocke désormais le nom anglais. Une sauvegarde antérieure au
+ * passage en VO contient « Rigide » : sans cette résolution à la lecture, elle
+ * ne correspondrait à aucune option et le champ s'afficherait vide alors que la
+ * checklist, elle, la reconnaît toujours.
+ */
+const natureModel = computed({
+  get: () => toNatureEn(progress.value.nature) ?? progress.value.nature,
+  set: (value: string) => { progress.value.nature = value },
+})
 
 const abilityItems = computed(() =>
   (props.mon.abilities ?? []).map(ability => ({
@@ -27,7 +38,7 @@ function fillFromBuild() {
   const target = build.value
   if (!target) return
   progress.value.evs = { ...target.evs }
-  progress.value.nature = target.natureFr
+  progress.value.nature = target.nature
   progress.value.item = target.item
   progress.value.moves = [0, 1, 2, 3].map(index => target.moves[index] ?? '')
   if (target.ability) progress.value.ability = target.ability
@@ -127,14 +138,14 @@ function fillFromBuild() {
 
       <UFormField label="Nature actuelle" size="sm">
         <USelectMenu
-          v-model="progress.nature"
+          v-model="natureModel"
           :items="natureItems"
           value-key="value"
           placeholder="Choisir…"
           class="w-full"
         />
         <template #hint>
-          <span v-if="build" class="text-xs text-dimmed">cible {{ build.natureFr }}</span>
+          <span v-if="build" class="text-xs text-dimmed">cible {{ build.nature }}</span>
         </template>
       </UFormField>
 

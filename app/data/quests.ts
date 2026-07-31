@@ -24,7 +24,7 @@ export const quests: Quest[] = [
     id: 'all-the-right-moves',
     code: '#006',
     name: 'All the Right Moves',
-    location: 'Polder Town (est de la ville, au-dessus de la Zone Safari)',
+    location: 'Polder Town (est de la ville, au-dessus de la Safari Zone)',
     reward: '**Gold Bottle Cap** (les 120 CT à trouver)',
     interest: 4
   },
@@ -33,7 +33,7 @@ export const quests: Quest[] = [
     code: '#010',
     name: 'As Hard as They Come',
     location: 'Gurun Town',
-    reward: 'Débloque l’échange 20 Pierres Dures → 1 Gemme',
+    reward: 'Débloque l’échange 20 Hard Stones → 1 Gem',
     interest: 4,
     note: 'indispensable pour la Sceptilite'
   },
@@ -42,15 +42,15 @@ export const quests: Quest[] = [
     code: '#020',
     name: 'Exp. Millionaire',
     location: 'Fallshore City, Mission HQ',
-    reward: 'Débloque l’amélioration de l’Œuf Chance',
+    reward: 'Débloque l’amélioration du Lucky Egg',
     interest: 3
   },
   {
     id: 'objets-pouvoir',
     code: '#003 / #005 / #033 / #052 / #071',
-    name: 'Objets Pouvoir',
+    name: 'Power items',
     location: 'Diverses',
-    reward: 'Objets Pouvoir (Brassard, Ceinture, Anneau, Bandeau, Poids)',
+    reward: 'Power items (Power Bracer, Power Belt, Power Anklet, Power Band, Power Weight)',
     interest: 4
   }
 ] satisfies Quest[]

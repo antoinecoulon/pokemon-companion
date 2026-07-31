@@ -74,7 +74,6 @@ switch (kind) {
       JSON.stringify({
         slug,
         name: nameArg,
-        nameEn: '',
         status: 'retired',
         role: '',
         types: [],

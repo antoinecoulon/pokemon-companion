@@ -106,7 +106,7 @@ const base = {
   name: 'Lucario',
   status: 'retired',
   role: 'Sweeper mixte',
-  types: ['Combat', 'Acier'],
+  types: ['Fighting', 'Steel'],
 }
 
 const errorsOf = patch => validateFiche({ ...base, ...patch }).errors
@@ -117,8 +117,9 @@ check('slug non kebab-case', errorsOf({ slug: 'Lucario' }).length, 1)
 check('slug avec accent', errorsOf({ slug: 'motismà' }).length, 1)
 check('statut inconnu', errorsOf({ status: 'box' }).length, 1)
 check('type mal orthographié', errorsOf({ types: ['Electrik'] }).length, 1)
-check('trois types', errorsOf({ types: ['Feu', 'Eau', 'Sol'] }).length, 1)
-check('champ inventé', errorsOf({ weaknesses: ['Feu'] }).length, 1)
+check('type resté en français', errorsOf({ types: ['Électrik'] }).length, 1)
+check('trois types', errorsOf({ types: ['Fire', 'Water', 'Ground'] }).length, 1)
+check('champ inventé', errorsOf({ weaknesses: ['Fire'] }).length, 1)
 check('rôle manquant', errorsOf({ role: '' }).length, 1)
 
 check('slot sur un non-actif', errorsOf({ slot: 2 }).length, 1)
@@ -136,14 +137,14 @@ check(
   errorsOf({ baseStats: { hp: 70, atk: 110, def: 70, spa: 115, spd: 70 } }).length,
   1, // l'absence de « bst » n'est qu'un avertissement
 )
-check('talent visé absent des talents', errorsOf({ abilities: [{ name: 'Acharné' }], targetAbility: 'Bluff' }).length, 1)
+check('talent visé absent des talents', errorsOf({ abilities: [{ name: 'Steadfast' }], targetAbility: 'Justified' }).length, 1)
 
 /* Builds */
-const withBuild = build => errorsOf({ builds: [{ id: 'a', name: 'Test', item: 'Orbe Vie', nature: 'Rigide (Adamant)', natureFr: 'Rigide', evs: { atk: 252, spe: 252, hp: 4 }, moves: ['a', 'b', 'c', 'd'], ...build } ] })
+const withBuild = build => errorsOf({ builds: [{ id: 'a', name: 'Test', item: 'Life Orb', nature: 'Adamant', evs: { atk: 252, spe: 252, hp: 4 }, moves: ['a', 'b', 'c', 'd'], ...build } ] })
 
 check('build valide', withBuild({}), [])
-check('nature française inconnue', withBuild({ natureFr: 'Rigolo' }).length, 1)
-check('nature longue incohérente', withBuild({ nature: 'Jovial (Jolly)' }).length, 1)
+check('nature inconnue', withBuild({ nature: 'Rigolo' }).length, 1)
+check('nature en français', withBuild({ nature: 'Rigide' }).length, 1)
 check('trois capacités', withBuild({ moves: ['a', 'b', 'c'] }).length, 1)
 check('EV au-delà de 510', withBuild({ evs: { hp: 252, atk: 252, def: 252 } }).length, 1)
 check('EV au-delà de 252 sur une stat', withBuild({ evs: { hp: 300 } }).length, 1)

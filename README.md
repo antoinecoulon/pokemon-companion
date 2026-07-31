@@ -38,7 +38,7 @@ Les 7 critères de §13.2, dont **4 déduits automatiquement** du formulaire de 
 - **Niveau 100** — déduit du niveau saisi
 - **EV exacts** — motif 252/252/4 vérifié, et signalement des EV perdus hors multiples de 4
 - **Nature favorable** — comparaison entre la nature saisie et celle du build choisi
-- **Objet non dupliqué** — contrôle croisé sur les slots actifs (§7.3 signale trois candidats aux Restes)
+- **Objet non dupliqué** — contrôle croisé sur les slots actifs (§7.3 signale trois candidats aux Leftovers)
 
 Les 3 autres (IV, talent, moveset) se cochent à la main, avec la cible du build affichée à côté de la
 valeur réelle.
@@ -134,7 +134,7 @@ L’import refuse plutôt que d’écrire à moitié : slug déjà pris, id de t
 orthographié, nature absente de `natures.ts`, `requires` mort, champ inventé, EV au-delà de 510. Il
 attribue lui-même le slot — la première place libre, et jamais un septième membre.
 
-**Le sprite se résout tout seul** depuis `nameEn` : le script interroge
+**Le sprite se résout tout seul** depuis `name` (en VO) : le script interroge
 [pokemondb](https://pokemondb.net/sprites), vérifie le slug et détermine le jeu du sprite pixel (une
 espèce postérieure à Noir/Blanc n’y figure pas). Les images sont versionnées dans `public/sprites/` —
 l’app est hors-ligne, une image distante serait invisible réseau coupé.
@@ -150,7 +150,7 @@ Il supprime le module et les sprites, renumérote les slots pour ne pas laisser 
 qu’un `requires`, un lien interne ou un test de fumée référence la fiche (`--force` passe outre), et
 liste les clés de sauvegarde devenues orphelines — à balayer dans l’app via **Sauvegarde → Nettoyer**.
 
-Les fiches **Excadrill** et **Motisma-Lavage** portent `incomplete: true` : le guide les place dans
+Les fiches **Excadrill** et **Rotom-Wash** portent `incomplete: true` : le guide les place dans
 l’équipe (§7.3) sans leur consacrer de fiche en §6. `/equipe` les regroupe sous « Fiches à compléter ».
 
 ## Mise en page

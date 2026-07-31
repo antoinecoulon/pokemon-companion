@@ -23,7 +23,7 @@ export { TEAM_SIZE }
 const STAT_KEYS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe']
 const BLOCK_KINDS = ['p', 'list', 'quote', 'table', 'code']
 const QUOTE_TONES = ['info', 'warning', 'tip', 'success']
-const NATURES_FR = new Set(natures.map(nature => nature.fr))
+const NATURES_EN = new Set(natures.map(nature => nature.en))
 
 /**
  * Ordre canonique des champs.
@@ -33,13 +33,13 @@ const NATURES_FR = new Set(natures.map(nature => nature.fr))
  * pareil.
  */
 export const SHEET_FIELDS = [
-  'slug', 'name', 'nameEn', 'sprite', 'spritePixelSet', 'slot', 'status', 'badge',
+  'slug', 'name', 'sprite', 'spritePixelSet', 'slot', 'status', 'badge',
   'role', 'types', 'baseStats', 'bst', 'abilities', 'targetAbility', 'mega',
   'obtention', 'incomplete', 'incompleteNote', 'preamble', 'analysis', 'builds',
   'ivGuidance', 'extra', 'tasks',
 ]
 
-const BUILD_FIELDS = ['id', 'name', 'tagline', 'nature', 'natureFr', 'evs', 'item', 'moves', 'ability', 'notes', 'recommended']
+const BUILD_FIELDS = ['id', 'name', 'tagline', 'nature', 'evs', 'item', 'moves', 'ability', 'notes', 'recommended']
 const TASK_FIELDS = ['id', 'label', 'details', 'requires', 'priority', 'done', 'ref', 'link', 'key']
 const ABILITY_FIELDS = ['name', 'hidden']
 const MEGA_FIELDS = ['stone', 'stats', 'bst', 'note']
@@ -189,9 +189,6 @@ export function validateFiche(fiche, { knownTaskIds = new Set(), knownSlugs = ne
   if (!isNonEmptyString(fiche.name)) report.error('fiche : « name » requis')
   if (!isNonEmptyString(fiche.role)) report.error('fiche : « role » requis (§7.3 — le rôle tenu dans l’équipe)')
 
-  if (fiche.nameEn !== undefined && !isNonEmptyString(fiche.nameEn)) {
-    report.error('fiche : « nameEn » présent mais vide')
-  }
   if (fiche.sprite !== undefined && !isNonEmptyString(fiche.sprite)) {
     report.error('fiche : « sprite » présent mais vide — retire la clé pour une fiche concept, sinon le contrôle de présence de l’image est sauté')
   }
@@ -216,7 +213,7 @@ export function validateFiche(fiche, { knownTaskIds = new Set(), knownSlugs = ne
     if (fiche.types.length > 2) report.error(`fiche : ${fiche.types.length} types — deux au maximum`)
     for (const type of fiche.types) {
       if (!POKEMON_TYPES.includes(type)) {
-        report.error(`fiche : type « ${type} » inconnu — orthographe française exacte attendue`)
+        report.error(`fiche : type « ${type} » inconnu — orthographe anglaise exacte attendue`)
       }
     }
   }
@@ -295,13 +292,8 @@ export function validateFiche(fiche, { knownTaskIds = new Set(), knownSlugs = ne
 
         if (!isNonEmptyString(build.name)) report.error(`${at} : « name » requis`)
         if (!isNonEmptyString(build.item)) report.error(`${at} : « item » requis`)
-        if (!isNonEmptyString(build.nature)) report.error(`${at} : « nature » requis, forme complète « Rigide (Adamant) »`)
-
-        if (!NATURES_FR.has(build.natureFr)) {
-          report.error(`${at} : natureFr « ${build.natureFr} » absente de natures.ts — la checklist compare cette chaîne`)
-        }
-        else if (isNonEmptyString(build.nature) && !build.nature.startsWith(build.natureFr)) {
-          report.error(`${at} : « ${build.nature} » ne commence pas par natureFr « ${build.natureFr} »`)
+        if (!NATURES_EN.has(build.nature)) {
+          report.error(`${at} : nature « ${build.nature} » absente de natures.ts — nom anglais seul attendu, ex. « Adamant »`)
         }
 
         if (!Array.isArray(build.moves) || build.moves.length !== 4) {

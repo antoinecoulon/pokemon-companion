@@ -9,8 +9,8 @@ export const farmingTopics: FarmingTopic[] = [
       {
         kind: 'list',
         items: [
-          '**Trainer House de Dresco Town** en boucle, avec **Amulet Coin** (ou Encens Veine) améliorée sur le Pokémon de tête.',
-          'L’Amulet Coin s’obtient par l’échange en jeu de Blizzard City (Onix contre Électrode), puis s’améliore chez le PNJ au centre de Tehl Town contre des Grosses Pépites.',
+          '**Trainer House de Dresco Town** en boucle, avec **Amulet Coin** (ou Luck Incense) améliorée sur le Pokémon de tête.',
+          'L’Amulet Coin s’obtient par l’échange en jeu de Blizzard City (Onix contre Electrode), puis s’améliore chez le PNJ au centre de Tehl Town contre des Big Nuggets.',
         ],
       },
     ],
@@ -22,7 +22,7 @@ export const farmingTopics: FarmingTopic[] = [
       {
         kind: 'list',
         items: [
-          '**Trainer House de Dresco Town**, dresseur XP au maximum, avec **Œuf Chance** amélioré (PNJ du Mission HQ de Fallshore City, après la mission #020) contre des Grosses Perles.',
+          '**Trainer House de Dresco Town**, dresseur XP au maximum, avec **Lucky Egg** amélioré (PNJ du Mission HQ de Fallshore City, après la mission #020) contre des Big Pearls.',
         ],
       },
     ],
@@ -34,8 +34,8 @@ export const farmingTopics: FarmingTopic[] = [
       {
         kind: 'list',
         items: [
-          '**Trainer House de Dresco Town** (coin sud-est) — dresseurs spécialisés par stat, identifiables via leur dialogue d’avant-combat. Avant Blizzard City : PV/XP, Attaque, Att.Spé, Vitesse. Après Blizzard City : Défense et Déf.Spé aussi.',
-          '**Macho Brace amélioré (jusqu’à ×10)** + **objet Pouvoir** correspondant + **Pokérus** → une stat se maxe en une poignée de combats. Détail complet en §2.2.',
+          '**Trainer House de Dresco Town** (coin sud-est) — dresseurs spécialisés par stat, identifiables via leur dialogue d’avant-combat. Avant Blizzard City : HP/XP, Attack, Sp. Atk, Speed. Après Blizzard City : Defense et Sp. Def aussi.',
+          '**Macho Brace amélioré (jusqu’à ×10)** + **Power item** correspondant + **Pokérus** → une stat se maxe en une poignée de combats. Détail complet en §2.2.',
           'En *Vanilla*, monte temporairement la difficulté en *Difficile* : les dresseurs utilisent des Pokémon évolués de plus haut niveau, qui donnent plus d’EV.',
           '**Baies réductrices** en cas d’erreur : marché en plein air de **Fallshore City**.',
         ],
@@ -58,12 +58,12 @@ export const farmingTopics: FarmingTopic[] = [
   },
   {
     id: 'ecailles-coeur',
-    title: 'Écailles Cœur',
+    title: 'Heart Scales',
     blocks: [
       {
         kind: 'list',
         items: [
-          'Pêche aux **Luvdisc** à la Méga Canne, avec un Pokémon en tête ayant **Fouille (Frisk)** pour révéler l’objet, et **Larcin (Thief)** pour le voler.',
+          'Pêche aux **Luvdisc** au Super Rod, avec un Pokémon en tête ayant **Frisk** pour révéler l’objet, et **Thief** pour le voler.',
           'Également disponibles au minage.',
         ],
       },

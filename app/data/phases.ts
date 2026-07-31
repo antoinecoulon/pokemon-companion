@@ -58,13 +58,13 @@ export const phases: Phase[] = [
       },
       {
         id: 'phase-0.5',
-        label: '**Trancher le conflit de Méga.** Tu ne peux Méga-évoluer qu’**un** Pokémon par combat : Tyranitar **ou** Sceptile, pas les deux.',
+        label: '**Trancher le conflit de Mega.** Tu ne peux Mega-évoluer qu’**un** Pokémon par combat : Tyranitar **ou** Sceptile, pas les deux.',
         ref: '§6.2',
         done: true,
       },
       {
         id: 'phase-0.6',
-        label: 'Vérifier que tu as bien battu **Successor Maxima au Tarmigan Mansion** (prérequis obligatoire pour Méga-évoluer).',
+        label: 'Vérifier que tu as bien battu **Successor Maxima au Tarmigan Mansion** (prérequis obligatoire pour Mega-évoluer).',
         done: true,
       },
     ],
@@ -77,7 +77,7 @@ export const phases: Phase[] = [
     tasks: [
       {
         id: 'phase-1.1',
-        label: 'Terminer la mission **Seasonal Research (#053)** — scientifique dans la maison au sud-ouest du Centre Pokémon de **Tehl Town**. Débloque le Nature Changer à 50 000 $ (au lieu de 50 BP).',
+        label: 'Terminer la mission **Seasonal Research (#053)** — scientifique dans la maison au sud-ouest du Pokémon Center de **Tehl Town**. Débloque le Nature Changer à 50 000 $ (au lieu de 50 BP).',
         priority: 3,
         done: true,
       },
@@ -88,15 +88,15 @@ export const phases: Phase[] = [
       },
       {
         id: 'phase-1.3',
-        label: 'Récupérer la **Rune Purif. / Amulet Coin** : échange en jeu à Blizzard City (Onix contre Électrode). L’améliorer chez le PNJ au centre de **Tehl Town** contre des Gros Pépites (nécessite de lui montrer Regigigas).',
+        label: 'Récupérer l’**Amulet Coin** : échange en jeu à Blizzard City (Onix contre Electrode). L’améliorer chez le PNJ au centre de **Tehl Town** contre des Big Nuggets (nécessite de lui montrer Regigigas).',
         done: true,
       },
       {
         id: 'phase-1.4',
         label: '**Récupérer et améliorer le Macho Brace au maximum (×10 EV).** C’est le plus gros gain de temps de toute la Phase 3.',
         details: [
-          'Le récupérer : Maître de Karaté à l’ouest de Fallshore City / Route 10, bord sud de la carte, Surf requis (ou bord est de Crater Town en Expert/Insane, où tu l’as déjà dans le sac).',
-          '**Farmer des Pierres Stase (Everstones)** au minage dans le **KBT Expressway au nord de Crater Town**, puis les échanger au même PNJ pour monter le multiplicateur.',
+          'Le récupérer : Black Belt à l’ouest de Fallshore City / Route 10, bord sud de la carte, Surf requis (ou bord est de Crater Town en Expert/Insane, où tu l’as déjà dans le sac).',
+          '**Farmer des Everstones** au minage dans le **KBT Expressway au nord de Crater Town**, puis les échanger au même PNJ pour monter le multiplicateur.',
         ],
         key: true,
         priority: 4,
@@ -104,9 +104,9 @@ export const phases: Phase[] = [
       },
       {
         id: 'phase-1.5',
-        label: 'Récupérer les **objets Pouvoir** manquants via leurs missions : Brassard (#003), Ceinture (#005), Anneau (#033), Bandeau (#052), Poids (#071), Lentille (Vivill Warehouse B5F).',
+        label: 'Récupérer les **Power items** manquants via leurs missions : Power Bracer (#003), Power Belt (#005), Power Anklet (#033), Power Band (#052), Power Weight (#071), Power Lens (Vivill Warehouse B5F).',
         details: [
-          'Les améliorer chez le second Maître de Karaté près d’Antisis City, contre des **Morceaux d’Étoile** (à voler aux Minior de la Route 1 avec Sabotage).',
+          'Les améliorer chez le second Black Belt près d’Antisis City, contre des **Star Pieces** (à voler aux Minior de la Route 1 avec Knock Off).',
         ],
         done: false,
       },
@@ -117,7 +117,7 @@ export const phases: Phase[] = [
       },
       {
         id: 'phase-1.7',
-        label: '*(optionnel mais rentable)* Faire les quêtes de la **Breeder’s School de Seaport City** pour obtenir un **Métamorph aux IV parfaits**, + un **Nœud Destin** au Casino. Ça remplace définitivement les Bottle Caps pour tout Pokémon élevable.',
+        label: '*(optionnel mais rentable)* Faire les quêtes de la **Breeder’s School de Seaport City** pour obtenir un **Ditto aux IV parfaits**, + un **Destiny Knot** au Casino. Ça remplace définitivement les Bottle Caps pour tout Pokémon élevable.',
         done: true,
       },
     ],
@@ -144,8 +144,8 @@ export const phases: Phase[] = [
         label: '**BP — objectif ~200 BP.** Battle Tower en Singles.',
         details: [
           'purge EV : **0 BP** si tu passes par les baies de Fallshore',
-          'objets Choix : 48 BP pièce (non disponibles au Game Corner)',
-          'Bottes Épaisses : 48 BP (ou exemplaire unique à Cootes Bog)',
+          'Choice items : 48 BP pièce (non disponibles au Game Corner)',
+          'Heavy-Duty Boots : 48 BP (ou exemplaire unique à Cootes Bog)',
           'tuteurs et Egg Move Tutor : variable',
         ],
         requires: ['phase-0.1'],
@@ -153,23 +153,23 @@ export const phases: Phase[] = [
       },
       {
         id: 'phase-2.4',
-        label: '**Bottle Caps.** Minage avec l’**ADM Gear** (KBT Expressway, Crystal Peak) + raids 5–6★. **Priorité : Zeraora d’abord** (seul non-élevable et non-DexNavvable de ton équipe). Pour les autres, compare le coût en caps avec un ré-élevage via Métamorph parfait.',
+        label: '**Bottle Caps.** Minage avec l’**ADM Gear** (KBT Expressway, Crystal Peak) + raids 5–6★. **Priorité : Zeraora d’abord** (seul non-élevable et non-DexNavvable de ton équipe). Pour les autres, compare le coût en caps avec un ré-élevage via Ditto parfait.',
         requires: ['phase-0.2'],
         done: false,
       },
       {
         id: 'phase-2.5',
-        label: '**Écailles Cœur.** Pêche aux Luvdisc à la Méga Canne, avec un Pokémon en tête ayant **Fouille (Frisk)** + **Larcin (Thief)**. Ton **Dusknoir peut avoir Fouille comme talent caché** — pratique, mais ça lui coûte Pression, à ne faire que sur un second exemplaire.',
+        label: '**Heart Scales.** Pêche aux Luvdisc au Super Rod, avec un Pokémon en tête ayant **Frisk** + **Thief**. Ton **Dusknoir peut avoir Frisk comme talent caché** — pratique, mais ça lui coûte Pressure, à ne faire que sur un second exemplaire.',
         done: false,
       },
       {
         id: 'phase-2.6',
-        label: '**Jetons du Game Corner** (Dehara) si tu vises Orbe Vie (7 500 jetons) ou Restes (5 000 jetons) sans dépenser de BP.',
+        label: '**Jetons du Game Corner** (Dehara) si tu vises la Life Orb (7 500 jetons) ou les Leftovers (5 000 jetons) sans dépenser de BP.',
         done: false,
       },
       {
         id: 'phase-2.7',
-        label: '*(optionnel)* **Gold Bottle Cap** — mission **#006**, collecter les 120 CT. Long, mais ça règle un Pokémon entier d’un coup.',
+        label: '*(optionnel)* **Gold Bottle Cap** — mission **#006**, collecter les 120 TM. Long, mais ça règle un Pokémon entier d’un coup.',
         done: false,
       },
     ],
@@ -217,18 +217,18 @@ export const phases: Phase[] = [
     tasks: [
       {
         id: 'phase-4.1',
-        label: 'Ajouter un **6ᵉ Pokémon** — ton équipe n’a **aucun retrait de hazards** (ni Anti-Brume ni Tour Rapide). Sur la durée du Battle Tower, le Piège de Roc à lui seul détruit ton Togekiss (25 % par entrée).',
+        label: 'Ajouter un **6ᵉ Pokémon** — ton équipe n’a **aucun retrait de hazards** (ni Defog ni Rapid Spin). Sur la durée du Battle Tower, Stealth Rock à lui seul détruit ton Togekiss (25 % par entrée).',
         details: [
-          '**Excadrill** — Tour Rapide + Baigne Sable, synergie parfaite avec Tyranitar',
-          '**Corviknight** — Anti-Brume + résistance Acier, couvre les faiblesses Glace/Fée',
-          '**Landorus-Thérien** — Intimidation + Demi-Tour + Piège de Roc',
+          '**Excadrill** — Rapid Spin + Sand Rush, synergie parfaite avec Tyranitar',
+          '**Corviknight** — Defog + résistance Steel, couvre les faiblesses Ice/Fairy',
+          '**Landorus-Therian** — Intimidate + U-turn + Stealth Rock',
         ],
         ref: '§7.3',
         done: true,
       },
       {
         id: 'phase-4.2',
-        label: 'Décider qui pose le **Piège de Roc**. Tyranitar est le candidat naturel.',
+        label: 'Décider qui pose **Stealth Rock**. Tyranitar est le candidat naturel.',
         done: true,
       },
     ],
@@ -247,7 +247,7 @@ export const phases: Phase[] = [
       },
       {
         id: 'phase-5.2',
-        label: '**Vérifier les règles du format avant de construire ton équipe** : selon le bâtiment et le tier, les objets doublons et certains talents/capacités (Moody, Chlorophyle, Relais, Toile Gluante…) sont interdits. Ne planifie pas 3 Restes.',
+        label: '**Vérifier les règles du format avant de construire ton équipe** : selon le bâtiment et le tier, les objets doublons et certains talents/capacités (Moody, Chlorophyll, Baton Pass, Sticky Web…) sont interdits. Ne planifie pas 3 Leftovers.',
         done: false,
       },
       {

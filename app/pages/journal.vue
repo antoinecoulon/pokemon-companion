@@ -109,7 +109,7 @@ function formatDate(iso: string) {
               v-model="draft.body"
               :rows="5"
               autoresize
-              placeholder="Mort sur un attaquant Glace au match 22. Scorvol est trop exposé — prévoir le switch Flagadoss plus tôt."
+              placeholder="Mort sur un attaquant Ice au match 22. Gliscor est trop exposé — prévoir le switch Slowbro plus tôt."
               class="w-full"
             />
           </UFormField>

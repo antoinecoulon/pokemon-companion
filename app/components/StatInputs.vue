@@ -7,7 +7,7 @@ const props = defineProps<{
   target?: PartialStats
   /** Stats à prioriser (§6, section IV de chaque fiche). */
   focus?: StatKey[]
-  /** Stats à ne pas toucher — une Attaque basse est parfois voulue. */
+  /** Stats à ne pas toucher — une Attack basse est parfois voulue. */
   ignore?: StatKey[]
 }>()
 

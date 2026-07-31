@@ -8,24 +8,27 @@ export type StatKey = (typeof STAT_KEYS)[number]
 
 export type StatSpread = Record<StatKey, number>
 
-/** Libellés courts, pour les grilles et les tableaux. */
+/**
+ * Libellés courts, pour les grilles et les tableaux.
+ * En VO, comme l'écran du jeu : la partie se joue en anglais.
+ */
 export const STAT_LABELS: Record<StatKey, string> = {
-  hp: 'PV',
+  hp: 'HP',
   atk: 'Atk',
-  def: 'Déf',
-  spa: 'Att.Spé',
-  spd: 'Déf.Spé',
-  spe: 'Vit',
+  def: 'Def',
+  spa: 'SpA',
+  spd: 'SpD',
+  spe: 'Spe',
 }
 
 /** Libellés longs, pour les formulaires et les infobulles. */
 export const STAT_LABELS_LONG: Record<StatKey, string> = {
-  hp: 'Points de Vie',
-  atk: 'Attaque',
-  def: 'Défense',
-  spa: 'Attaque Spéciale',
-  spd: 'Défense Spéciale',
-  spe: 'Vitesse',
+  hp: 'HP',
+  atk: 'Attack',
+  def: 'Defense',
+  spa: 'Sp. Atk',
+  spd: 'Sp. Def',
+  spe: 'Speed',
 }
 
 export const IV_MAX = 31

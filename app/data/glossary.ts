@@ -24,11 +24,11 @@ export const glossary: GlossaryEntry[] = [
   },
   {
     term: 'Setup',
-    definition: 'se booster avant d’attaquer (Danse Draco, Machination, Gonflette)',
+    definition: 'se booster avant d’attaquer (Dragon Dance, Nasty Plot, Bulk Up)',
   },
   {
     term: 'Pivot',
-    definition: 'encaisse un coup puis repart avec Demi-Tour / Change Éclair',
+    definition: 'encaisse un coup puis repart avec U-turn / Volt Switch',
   },
   {
     term: 'Sweeper',
@@ -40,15 +40,15 @@ export const glossary: GlossaryEntry[] = [
   },
   {
     term: 'Hazard',
-    definition: 'piège de terrain (Piège de Roc, Picots, Pics Toxik)',
+    definition: 'piège de terrain (Stealth Rock, Spikes, Toxic Spikes)',
   },
   {
     term: 'Defog / Rapid Spin',
-    definition: 'Anti-Brume / Tour Rapide, nettoient les hazards',
+    definition: 'nettoient les hazards',
   },
   {
     term: 'Spinblocker',
-    definition: 'Pokémon Spectre qui bloque Tour Rapide (mais pas Anti-Brume)',
+    definition: 'Pokémon Ghost qui bloque Rapid Spin (mais pas Defog)',
   },
   {
     term: 'Para-flinch',

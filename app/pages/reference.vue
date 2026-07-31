@@ -28,7 +28,7 @@ const natureSearch = ref('')
 const filteredNatures = computed(() => {
   const query = natureSearch.value.trim().toLowerCase()
   if (!query) return natures
-  return natures.filter(nature => `${nature.fr} ${nature.en}`.toLowerCase().includes(query))
+  return natures.filter(nature => `${nature.en} ${nature.fr}`.toLowerCase().includes(query))
 })
 </script>
 
@@ -118,7 +118,7 @@ const filteredNatures = computed(() => {
       <UInput
         v-model="natureSearch"
         icon="i-lucide-search"
-        placeholder="Chercher une nature (fr ou en)…"
+        placeholder="Chercher une nature (VO ou français)…"
       />
 
       <div class="table-scroll rounded-[var(--ui-radius)] border border-default">
@@ -140,9 +140,9 @@ const filteredNatures = computed(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="nature in filteredNatures" :key="nature.fr" class="border-t border-default align-top">
+            <tr v-for="nature in filteredNatures" :key="nature.en" class="border-t border-default align-top">
               <td class="px-3 py-2 text-highlighted font-medium whitespace-nowrap">
-                {{ nature.fr }} <span class="text-dimmed font-normal">({{ nature.en }})</span>
+                {{ nature.en }} <span class="text-dimmed font-normal">({{ nature.fr }})</span>
               </td>
               <td class="px-3 py-2 whitespace-nowrap">
                 <span class="text-success font-medium">+{{ STAT_LABELS[nature.up] }}</span>

@@ -13,7 +13,7 @@ export const npcs: Npc[] = [
   },
   {
     id: 'marche-de-baies-reduction-ev',
-    service: 'Marché de baies (réduction EV)',
+    service: 'Marché de baies (purge EV)',
     location: '**Fallshore City** — marché en plein air',
     cost: 'Argent (10 EV retirés/baie)',
     priority: 5
@@ -21,7 +21,7 @@ export const npcs: Npc[] = [
   {
     id: 'iv-changer-hyper-training',
     service: 'IV Changer (Hyper Training)',
-    location: '**Seaport City** — est du Centre Pokémon, escaliers près de l’entrée KBT, puis plein sud, devant l’entrepôt',
+    location: '**Seaport City** — est du Pokémon Center, escaliers près de l’entrée KBT, puis plein sud, devant l’entrepôt',
     cost: '1 Bottle Cap (1 stat) / 1 Gold Bottle Cap (6 stats)',
     priority: 5
   },
@@ -35,7 +35,7 @@ export const npcs: Npc[] = [
   {
     id: 'nature-changer-1',
     service: 'Nature Changer #1',
-    location: '**Tehl Town** — maison au sud-ouest du Centre Pokémon (après mission #053)',
+    location: '**Tehl Town** — maison au sud-ouest du Pokémon Center (après mission #053)',
     cost: '1er gratuit, puis 50 000 $',
     priority: 5
   },
@@ -49,14 +49,14 @@ export const npcs: Npc[] = [
   {
     id: 'move-relearner',
     service: 'Move Relearner',
-    location: '**Crater Town** — maison au sud du Centre Pokémon',
-    cost: 'Écailles Cœur',
+    location: '**Crater Town** — maison au sud du Pokémon Center',
+    cost: 'Heart Scales',
     priority: 5
   },
   {
     id: 'move-deleter',
     service: 'Move Deleter',
-    location: '**Epidimy Town** — maison au nord-ouest du Centre Pokémon',
+    location: '**Epidimy Town** — maison au nord-ouest du Pokémon Center',
     cost: 'Gratuit',
     priority: 3
   },
@@ -70,7 +70,7 @@ export const npcs: Npc[] = [
   {
     id: 'egg-move-transfer-tutor',
     service: 'Egg Move Transfer Tutor',
-    location: '**Garderie (Day Care Center)**',
+    location: '**Day Care**',
     cost: '—',
     priority: 3
   },
@@ -90,21 +90,21 @@ export const npcs: Npc[] = [
   },
   {
     id: 'ameliorateur-objets-pouvoir',
-    service: 'Améliorateur objets Pouvoir',
-    location: 'Maître de Karaté près d’**Antisis City**, côté Thundercap Mountain',
-    cost: 'Morceaux d’Étoile',
+    service: 'Améliorateur Power items',
+    location: 'Black Belt près d’**Antisis City**, côté Thundercap Mountain',
+    cost: 'Star Pieces',
     priority: 4
   },
   {
     id: 'macho-brace-ameliorations-10-ev',
     service: 'Macho Brace + améliorations (×10 EV)',
-    location: 'Maître de Karaté, **ouest de Fallshore / Route 10**, bord sud de la carte, **Surf requis**. En Expert/Insane : **bord est de Crater Town** (l’objet est déjà dans ton sac au départ)',
-    cost: 'Pierres Stase (minage KBT Expressway)',
+    location: 'Black Belt, **ouest de Fallshore / Route 10**, bord sud de la carte, **Surf requis**. En Expert/Insane : **bord est de Crater Town** (l’objet est déjà dans ton sac au départ)',
+    cost: 'Everstones (minage KBT Expressway)',
     priority: 5
   },
   {
     id: 'breeders-school-metamorph-iv-max',
-    service: 'Breeder’s School (Métamorph IV max)',
+    service: 'Breeder’s School (Ditto IV max)',
     location: '**Seaport City** — après ses quêtes',
     cost: '—',
     priority: 4
@@ -112,30 +112,30 @@ export const npcs: Npc[] = [
   {
     // Id en ASCII : il sert de clé de sauvegarde (`npc:…`) depuis la v2.
     id: 'ameliorateur-oeuf-chance',
-    service: 'Améliorateur Œuf Chance',
+    service: 'Améliorateur Lucky Egg',
     location: '**Fallshore City** — Mission HQ (après mission #020)',
-    cost: 'Grosses Perles',
+    cost: 'Big Pearls',
     priority: 4
   },
   {
     id: 'ameliorateur-amulet-coin',
     service: 'Améliorateur Amulet Coin',
     location: 'Centre de **Tehl Town** (montrer Regigigas)',
-    cost: 'Grosses Pépites',
+    cost: 'Big Nuggets',
     priority: 4
   },
   {
     id: 'mega-stone-maker',
     service: 'Mega Stone Maker',
     location: '**Cube Corp.**',
-    cost: '5 Gemmes du type',
+    cost: '5 Gems du type',
     priority: 4
   },
   {
     id: 'pierres-dures-gemmes',
-    service: 'Pierres Dures → Gemmes',
-    location: '**Gurun Town** — maison derrière le Centre Pokémon (après mission #010)',
-    cost: '20 Pierres Dures = 1 Gemme',
+    service: 'Hard Stones → Gems',
+    location: '**Gurun Town** — maison derrière le Pokémon Center (après mission #010)',
+    cost: '20 Hard Stones = 1 Gem',
     priority: 4
   },
   {

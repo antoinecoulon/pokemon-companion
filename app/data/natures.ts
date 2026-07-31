@@ -131,3 +131,29 @@ export const natures: Nature[] = [
     down: 'spd',
   },
 ] satisfies Nature[]
+
+const normalize = (value: string) => value.trim().toLowerCase()
+
+/**
+ * Ramène une nature saisie à son nom anglais, quelle que soit la langue écrite.
+ *
+ * Le contenu est passé en VO, mais `progress.nature` est une chaîne libre déjà
+ * écrite dans les sauvegardes — en français pour tout ce qui a été saisi avant
+ * la bascule. Sans cette résolution, une nature valide saisie il y a six mois
+ * cesserait d'être reconnue en silence, ce qui est exactement le genre de
+ * régression que les sauvegardes ne signalent jamais.
+ *
+ * Renvoie `undefined` si l'entrée ne correspond à aucune nature connue.
+ */
+export function toNatureEn(input: string | undefined): string | undefined {
+  if (!input?.trim()) return undefined
+  return natures.find(
+    nature => normalize(nature.fr) === normalize(input) || normalize(nature.en) === normalize(input),
+  )?.en
+}
+
+/** Vrai si la nature saisie est bien `target` (nom anglais), écrite dans l'une ou l'autre langue. */
+export function matchesNature(input: string | undefined, target: string): boolean {
+  const resolved = toNatureEn(input)
+  return !!resolved && normalize(resolved) === normalize(target)
+}

@@ -12,13 +12,13 @@ export const readinessCriteria: ReadinessCriterion[] = [
     key: 'level',
     label: 'Niveau 100',
     derived: true,
-    hint: 'Déduit du niveau saisi. Trainer House de Dresco + Œuf Chance amélioré.',
+    hint: 'Déduit du niveau saisi. Trainer House de Dresco + Lucky Egg amélioré.',
   },
   {
     key: 'ivs',
     label: 'IV à 31 sur les stats utiles',
     derived: false,
-    hint: 'L’Attaque d’un attaquant spécial doit rester basse — à valider à l’œil, pas automatiquement.',
+    hint: 'L’Attack d’un attaquant spécial doit rester basse — à valider à l’œil, pas automatiquement.',
   },
   {
     key: 'evs',
@@ -42,7 +42,7 @@ export const readinessCriteria: ReadinessCriterion[] = [
     key: 'moves',
     label: 'Moveset : STAB + couverture + utilitaire',
     derived: false,
-    hint: 'Les 4 capacités du build, apprises via CT, Move Relearner ou tuteurs.',
+    hint: 'Les 4 capacités du build, apprises via TM, Move Relearner ou tuteurs.',
   },
   {
     key: 'item',

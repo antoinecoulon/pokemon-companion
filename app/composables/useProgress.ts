@@ -1,4 +1,5 @@
 import type { PokemonSheet, ReadinessKey } from '~/data/types'
+import { completionSections } from '~/data/completion'
 import { matchesNature } from '~/data/natures'
 import { phases } from '~/data/phases'
 import { readinessCriteria } from '~/data/readiness'
@@ -15,7 +16,7 @@ function ratio(done: number, total: number): Ratio {
 }
 
 export function useProgress() {
-  const { isDone, progressFor, state } = useSave()
+  const { isAcquired, isDone, progressFor, state } = useSave()
   const { active, activeSlugs } = useRoster()
 
   /** Roadmap + fiches des 6 membres actifs. */
@@ -23,6 +24,24 @@ export function useProgress() {
     const tracked = trackedEntriesFor(activeSlugs.value)
     return ratio(tracked.filter(entry => isDone(entry.task.id)).length, tracked.length)
   })
+
+  /*
+   * Complétion post-game, comptée à part et jamais fondue dans `overall` : la
+   * roadmap mesure l'avancement vers une équipe prête pour la Frontier, la
+   * complétion mesure ce qu'il reste à voir du jeu. Les mélanger ferait chuter
+   * d'un coup le pourcentage d'une partie déjà bien avancée.
+   */
+  const completion = computed(() => {
+    const goals = completionSections.flatMap(section => section.goals)
+    return ratio(goals.filter(goal => isAcquired(`goal:${goal.id}`)).length, goals.length)
+  })
+
+  const byCompletionSection = computed(() =>
+    new Map(completionSections.map(section => [
+      section.id,
+      ratio(section.goals.filter(goal => isAcquired(`goal:${goal.id}`)).length, section.goals.length),
+    ])),
+  )
 
   const byPhase = computed(() =>
     new Map(phases.map(phase => [
@@ -124,7 +143,7 @@ export function useProgress() {
     return readinessFor(mon).ratio
   }
 
-  return { overall, byPhase, forPokemon, readinessFor, readyRatio, duplicateItemHolders }
+  return { overall, completion, byCompletionSection, byPhase, forPokemon, readinessFor, readyRatio, duplicateItemHolders }
 }
 
 export type ReadinessRow = ReturnType<ReturnType<typeof useProgress>['readinessFor']>['rows'][number]

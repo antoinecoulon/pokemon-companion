@@ -10,6 +10,7 @@ import type { PartialStats, StatKey, StatSpread } from '~/utils/stats'
  *   phase-<n>.<m>        tâche de la roadmap générale (§5)   ex. 'phase-1.4'
  *   mon-<slug>-<n>       tâche d'une fiche Pokémon (§6)      ex. 'mon-tyranitar-4'
  *   ready-<slug>-<key>   case « Endgame Ready » (§13.2)      ex. 'ready-togekiss-level'
+ *   goal:<id>            objectif de complétion post-game    ex. 'goal:dream-research-lab'
  * ------------------------------------------------------------------------- */
 
 export type TaskId = string
@@ -261,6 +262,42 @@ export interface FarmingTopic {
 }
 
 /* ------------------------------------------------------------------------- *
+ * Complétion post-game
+ *
+ * Le guide est un plan d'optimisation d'équipe pour la Frontier ; il n'inventorie
+ * pas le post-game d'Unbound. Ces objectifs couvrent les deux angles morts : ce
+ * que le guide mentionne sans le rendre cochable, et ce qui se fait après la
+ * Ligue sans relever de l'optimisation.
+ *
+ * Ce sont des *ressources*, pas des tâches : pas de `requires`, pas de poids,
+ * elles n'entrent ni dans la progression de la roadmap ni dans les prochaines
+ * actions. Voir le commentaire d'`isAcquired` dans useSave.ts.
+ * ------------------------------------------------------------------------- */
+
+export interface CompletionGoal {
+  /** Persisté sous `goal:<id>`. Ne se renomme jamais. */
+  id: string
+  label: string
+  details?: string[]
+  location?: string
+  reward?: string
+  /**
+   * Provenance de l'information : une section du guide (`'§9.1'`) ou l'URL
+   * consultée. Requis, et c'est délibéré — « ne pas deviner de données Pokémon »
+   * n'est vérifiable que si chaque entrée dit d'où elle vient.
+   */
+  source: string
+  optional?: boolean
+}
+
+export interface CompletionSection {
+  id: string
+  title: string
+  description?: string
+  goals: CompletionGoal[]
+}
+
+/* ------------------------------------------------------------------------- *
  * Référence (§1–4, §10, §13)
  * ------------------------------------------------------------------------- */
 
@@ -348,7 +385,7 @@ export const SAVE_VERSION = 1
  * consommable (§9) et de quête (§12). Sans namespace, cocher l'un cocherait
  * l'autre.
  */
-export type ResourceKey = `npc:${string}` | `quest:${string}`
+export type ResourceKey = `npc:${string}` | `quest:${string}` | `goal:${string}`
 
 /**
  * Écart entre la composition du guide et celle réellement jouée.

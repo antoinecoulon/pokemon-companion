@@ -39,9 +39,21 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
 - **Ne jamais renommer un `id` de tâche existant** (`phase-<n>.<m>`, `mon-<slug>-<n>`,
   `ready-<slug>-<key>`). Les libellés peuvent changer librement ; les ids sont le contrat avec les
   sauvegardes déjà écrites. **Depuis la v2, cela vaut aussi pour les ids de PNJ et de quête**, persistés
-  sous les clés préfixées `npc:<id>` et `quest:<id>` — le préfixe évite une collision réelle
-  (`objets-pouvoir` est à la fois un consommable et une quête).
-- **Passer par `pnpm new:npc` / `new:quest` / `new:task`** pour ajouter du contenu : les scripts
+  sous les clés préfixées `npc:<id>`, `quest:<id>` et `goal:<id>` — le préfixe évite une collision réelle
+  (`objets-pouvoir` est à la fois un consommable et une quête ; `portal-purge` est à la fois une quête
+  et le nom d'une section de complétion).
+- **La complétion post-game vit à part de la roadmap, et ça n'est pas négociable.**
+  `app/data/completion.ts` couvre ce que le guide n'inventorie pas (Black Trainer Card, Prints des
+  quatre bâtiments, légendaires des portails, Mega Stones, Game Corner) et ce qu'il mentionne sans le
+  rendre cochable (§9.1 les ramassages gratuits, §2.4 les talents cachés, §0.1 et §6.7-C les deux
+  tests). Ce sont des **ressources**, comme les PNJ et les quêtes : pas de `requires`, pas de poids,
+  jamais dans « prochaines actions », et comptées par `useProgress().completion` — **jamais** par
+  `overall`. Les fondre dans la roadmap ferait chuter d'un coup l'avancement d'une partie en cours.
+  Le champ `source` de chaque objectif est **obligatoire** et `pnpm validate` le vérifie : hors du
+  guide, rien ne s'y écrit qui n'ait été lu sur romhackdex ou unboundwiki. Ne jamais y recopier une
+  tâche qui existe déjà ailleurs — l'accès à la Frontier est `phase-5.4`, l'échange Hard Stones → Gems
+  est `quest:as-hard-as-they-come`, le farm est `phase-2.1` à `2.7`.
+- **Passer par `pnpm new:npc` / `new:quest` / `new:task` / `new:goal`** pour ajouter du contenu : les scripts
   impriment le squelette avec la bonne convention d'id et refusent un id déjà pris.
 - **Une fiche Pokémon ne s'écrit pas à la main.** Une fiche par fichier dans `app/data/pokemon/<slug>.ts`,
   assemblées par un `index.ts` **généré** — ne pas éditer la liste du barrel, la régénérer. Le cycle est :
@@ -86,6 +98,10 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   rend un élément littéral `<nuxtlink>`, donc aucun `<a>` et aucune navigation — sans la moindre erreur.
   Importer le composant depuis `#components` (voir `AppCard.vue`). `pnpm smoke` échoue désormais sur
   toute balise de composant non résolue dans le DOM.
+- **Même famille de piège : `UBadge` ignore `:to`.** Il rend un `<span>`, donc un badge d'apparence
+  cliquable qui ne navigue nulle part, sans erreur. Envelopper dans un `NuxtLink` (voir le badge
+  « Complétion » du dashboard). Vérifier une navigation en cherchant un `<a href>` dans le DOM, jamais
+  en se fiant à l'apparence.
 - **`pnpm typecheck` peut passer sur des types périmés.** `pnpm check` lance donc `nuxt prepare` d'abord :
   une erreur de `nuxt.config.ts` est restée invisible jusqu'à une régénération.
 - **La sauvegarde se synchronise entre appareils via un gist privé.** Le `localStorage` reste la
@@ -106,7 +122,9 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
 - **Une clé de sauvegarde qui perd son contenu ne disparaît pas toute seule.** `normalize()` conserve
   tout ce qu'il reconnaît par sa forme. Après toute suppression de contenu, la purge se fait dans l'app
   (Sauvegarde → Nettoyer) ; l'ensemble des clés légitimes est `knownContent` dans `useSave.ts` — y
-  penser en ajoutant une catégorie persistée, sinon la purge effacerait des cases valides.
+  penser en ajoutant une catégorie persistée, sinon la purge effacerait des cases valides. Le test de
+  purge travaille sur un ensemble synthétique et ne peut pas voir cet oubli : c'est `pnpm validate` qui
+  relit la source de `useSave.ts` pour vérifier que `completionGoalKeys` y est bien inscrit.
 - **Vérifier avec `pnpm check`, puis `pnpm smoke` et `pnpm smoke:features`** (serveur de dev lancé), et
   `pnpm smoke:offline` sur le build de production quand on touche à la PWA ou aux icônes. L'app étant un
   SPA, ni `typecheck` ni `generate` ne détectent une erreur de rendu : seul le test navigateur le fait.
@@ -116,18 +134,31 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
 - S'arrêter et me poser la question dès qu'une alternative technique intéressante apparaît, qu'un choix
   produit n'est pas couvert, ou que le guide est ambigu.
 
-## Trous connus dans le guide source
+## Trous du guide source — comblés
 
-`/equipe` les regroupe sous « Fiches à compléter » ; c'est ce que `pnpm import:pokemon` sert à combler.
+Il n'y a plus de fiche `incomplete`. Ce qui suit reste vrai **du guide**, pas de l'app : le garder
+en tête avant de « corriger » un écart entre les deux.
 
-- **§6 n'avait de fiche ni pour Excadrill ni pour Rotom-Wash**, alors que §7.3 les place aux slots 2
+- **§6 n'a de fiche ni pour Excadrill ni pour Rotom-Wash**, alors que §7.3 les place aux slots 2
   et 4. Les deux ont été complétées depuis les données Unbound ; le guide, lui, garde des fiches
   complètes pour Dusknoir et Zeraora, tous deux sortis de l'équipe.
 - **§7.3 assigne à Excadrill le Choice Band *et* Rapid Spin**, or l'objet verrouille sur la première
-  capacité utilisée. La fiche assume la tension dans son build A et l'évite dans son build B.
-- **§5 phase 3 saute de 3.1 à 3.3** (pas de 3.2), et ne couvre que Togekiss et Tyranitar sur les six
-  membres de la composition finale.
-- Sceptile est cité comme sortant sans avoir de fiche.
+  capacité utilisée. La fiche assume la tension dans son build A et l'évite dans son build B — la
+  note du build A le dit à l'écran, pas seulement dans le fichier.
+- **§5 phase 3 saute de 3.1 à 3.3** et ne couvre que Togekiss et Tyranitar. Les quatre autres membres
+  ont désormais leurs entrées `phase-3.4` à `3.7` — elles ne viennent pas du guide. Seul Excadrill y
+  est prioritaire, et parce que §4.1 justifie l'urgence du retrait de hazards ; les trois autres
+  suivent l'ordre des sections §6, faute d'un classement de ROI dans la source.
+- **Sceptile** n'avait pas de fiche : complétée depuis romhackdex. Au passage, **Mega Sceptile a
+  *Technician* dans Unbound**, pas *Lightning Rod* comme dans le jeu officiel.
+- **§10.2 est périmé** : l'équipe de Frontier qu'il recommande met Zeraora en lead, alors que §6.5 et
+  §7.3 le sortent de l'équipe. `phase-5.5` le signale plutôt que de recopier la contradiction.
+- **§10.1 n'était pas suivi** : l'accès à la Frontier (barrière au nord de Seaport City, Frontier
+  Card) est devenu `phase-5.4`, et conditionne `phase-5.1`.
+- **Les tâches des fiches non actives ne comptent pas.** `trackedEntriesFor` ne suit que la roadmap
+  et les six actifs : les tâches ajoutées aux utilitaires §6.7 et aux sortants s'affichent sur leur
+  fiche mais n'entrent ni dans la progression ni dans « prochaines actions ». C'est volontaire —
+  élargir ce périmètre changerait les pourcentages d'une sauvegarde en cours.
 
 ## Notes
 

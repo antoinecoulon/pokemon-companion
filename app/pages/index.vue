@@ -4,7 +4,7 @@ import { phases } from '~/data/phases'
 
 useHead({ title: 'Accueil · Pokémon Companion' })
 
-const { overall, byPhase, readyRatio } = useProgress()
+const { overall, completion, byPhase, readyRatio } = useProgress()
 const { next, actionable, blocked } = useNextActions()
 const { active } = useRoster()
 
@@ -43,6 +43,21 @@ const readyCount = computed(() => active.value.filter(entry => readyRatio(entry.
             <UBadge v-if="blocked.length" color="warning" variant="subtle">
               {{ blocked.length }} tâches bloquées
             </UBadge>
+            <!--
+              Compteur séparé, et pas fondu dans l'anneau : la complétion mesure
+              ce qu'il reste à voir du jeu, la roadmap ce qu'il reste à faire pour
+              la Frontier. Les additionner diluerait les deux.
+            -->
+            <!--
+              NuxtLink autour du badge, et pas `:to` dessus : UBadge ignore la
+              prop et rend un <span>, donc un badge d'apparence cliquable qui ne
+              navigue nulle part — sans la moindre erreur.
+            -->
+            <NuxtLink to="/completion">
+              <UBadge color="neutral" variant="subtle" icon="i-lucide-trophy" class="hover:bg-elevated">
+                Complétion {{ completion.percent }} %
+              </UBadge>
+            </NuxtLink>
           </div>
         </div>
       </div>

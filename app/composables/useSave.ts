@@ -1,5 +1,6 @@
 import type { JournalEntry, PokemonProgress, PokemonStatus, ResourceKey, RosterOverride, SaveState, TaskId } from '~/data/types'
 import type { KnownContent } from '~/utils/prune'
+import { completionGoalKeys } from '~/data/completion'
 import { counters } from '~/data/counters'
 import { npcs } from '~/data/npcs'
 import { phases } from '~/data/phases'
@@ -75,6 +76,7 @@ const knownContent: KnownContent = {
   resourceKeys: new Set([
     ...npcs.map(npc => `npc:${npc.id}`),
     ...quests.map(quest => `quest:${quest.id}`),
+    ...completionGoalKeys,
   ]),
   counterIds: new Set(counters.map(counter => counter.id)),
 }

@@ -22,4 +22,24 @@ export default {
       text: 'À vérifier en jeu : le guide n’a pas confirmé que *Synchronize* affecte bien les rencontres sauvages dans Unbound (c’est le cas depuis la Gen 4 dans les jeux officiels, et le CFRU suit les mécaniques Gen 8, donc c’est très probable). Test rapide : mets un porteur de *Synchronize* d’une nature rare en tête et capture cinq sauvages d’affilée.',
     },
   ],
+  tasks: [
+    {
+      id: 'mon-synchro-1',
+      label: 'Obtenir un porteur de **Synchronize** — Ralts / Kirlia / Gardevoir, Abra, Espeon ou Umbreon',
+      priority: 1,
+      done: false,
+    },
+    {
+      id: 'mon-synchro-2',
+      label: '**Vérifier que ça marche dans Unbound** avant de compter dessus : porteur d’une nature rare en tête, cinq captures d’affilée',
+      requires: ['mon-synchro-1'],
+      done: false,
+    },
+    {
+      id: 'mon-synchro-3',
+      label: 'Lui donner la **nature visée** par la prochaine capture, puis le placer **en tête d’équipe** — 50 % des sauvages la partageront',
+      requires: ['mon-synchro-2'],
+      done: false,
+    },
+  ],
 } satisfies PokemonSheet

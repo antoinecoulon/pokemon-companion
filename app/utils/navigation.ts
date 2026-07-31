@@ -21,8 +21,10 @@ export const navItems: NavItem[] = [
   { label: 'Équipe', to: '/equipe', icon: 'i-lucide-users', primary: true },
   { label: 'Ressources', to: '/ressources', icon: 'i-lucide-package', primary: true },
   { label: 'Journal', to: '/journal', icon: 'i-lucide-notebook-pen', primary: true },
-  // Page de lecture, consultée ponctuellement : accessible depuis la sidebar,
-  // le header mobile et les liens de tâches.
+  // Pages consultées ponctuellement : accessibles depuis la sidebar, le header
+  // mobile et les liens de tâches. La bottom-nav est pleine à 5 entrées — toute
+  // nouvelle page passe forcément par ici.
+  { label: 'Complétion', to: '/completion', icon: 'i-lucide-trophy', primary: false },
   { label: 'Référence', to: '/reference', icon: 'i-lucide-book-open', primary: false },
 ]
 

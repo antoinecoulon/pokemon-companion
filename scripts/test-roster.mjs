@@ -133,7 +133,7 @@ const { findOrphans, pruneSave, isEmptyProgress } = await loadApp('utils/prune.t
 const known = {
   taskIds: new Set(['phase-1.1', 'mon-tyranitar-1', 'ready-tyranitar-ivs']),
   slugs: new Set(['tyranitar', 'togekiss']),
-  resourceKeys: new Set(['npc:nurse', 'quest:objets-pouvoir']),
+  resourceKeys: new Set(['npc:nurse', 'quest:objets-pouvoir', 'goal:sceptilite']),
   counterIds: new Set(['money', 'bp']),
 }
 
@@ -145,7 +145,7 @@ const save = {
   tasks: { 'phase-1.1': true, 'mon-tyranitar-1': true, 'ready-tyranitar-ivs': true, 'mon-disparu-3': true },
   pokemon: { tyranitar: filled, togekiss: blank, disparu: filled },
   counters: { money: 1000, ancien: 5 },
-  resources: { 'npc:nurse': true, 'quest:objets-pouvoir': true, 'npc:aboli': true },
+  resources: { 'npc:nurse': true, 'quest:objets-pouvoir': true, 'goal:sceptilite': true, 'npc:aboli': true },
   roster: { tyranitar: { slot: 2 }, disparu: { status: 'active' } },
   journal: [],
   updatedAt: '2026-07-30T00:00:00.000Z',
@@ -173,7 +173,8 @@ const pruned = pruneSave(save, known)
 check('clés valides conservées', Object.keys(pruned.tasks).sort(), ['mon-tyranitar-1', 'phase-1.1', 'ready-tyranitar-ivs'])
 check('fiche remplie conservée, vide et orpheline retirées', Object.keys(pruned.pokemon), ['tyranitar'])
 check('compteur valide conservé', pruned.counters, { money: 1000 })
-check('ressources valides conservées', Object.keys(pruned.resources).sort(), ['npc:nurse', 'quest:objets-pouvoir'])
+check('ressources valides conservées', Object.keys(pruned.resources).sort(), ['goal:sceptilite', 'npc:nurse', 'quest:objets-pouvoir'])
+check('un objectif de complétion n’est pas une orpheline', report.resources.includes('goal:sceptilite'), false)
 check('composition valide conservée', pruned.roster, { tyranitar: { slot: 2 } })
 check('journal et version intacts', [pruned.version, pruned.journal.length], [1, 0])
 check('purger deux fois ne change plus rien', findOrphans(pruned, known).total, 0)

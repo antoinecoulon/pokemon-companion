@@ -14,6 +14,7 @@
  *   pnpm new:npc "Move Tutor de Dehara"
  *   pnpm new:quest "#042" "Chasse aux Ronflex"
  *   pnpm new:task phase-2          # tâche dans une phase existante
+ *   pnpm new:goal portails "Regirock"
  */
 import { loadData, loadPokemon } from './lib/data.mjs'
 
@@ -158,12 +159,45 @@ switch (kind) {
     break
   }
 
+  case 'goal': {
+    const [sectionId, label] = args
+    if (!sectionId || !label) fail('usage : pnpm new:goal "<section-id>" "<libellé>"')
+    const id = slugify(label)
+
+    const { completionSections } = await loadData('completion.ts')
+    const section = completionSections.find(item => item.id === sectionId)
+    if (!section) {
+      fail(`section « ${sectionId} » inconnue. Disponibles : ${completionSections.map(s => s.id).join(', ')}`)
+    }
+
+    /*
+     * L'unicité se vérifie sur TOUTES les sections, pas seulement la cible : la
+     * clé persistée est `goal:<id>` sans mention de section, deux objectifs
+     * homonymes dans deux sections différentes ne feraient qu'une case.
+     */
+    const taken = completionSections.flatMap(item => item.goals).some(goal => goal.id === id)
+    if (taken) fail(`l'objectif « ${id} » existe déjà`)
+
+    block(`Objectif « ${label} » dans « ${section.title} »`, 'app/data/completion.ts', `      {
+        id: '${id}',
+        label: '${label}',
+        // location: '',
+        // details: [],
+        source: '', // '§9.1' pour le guide, sinon l'URL consultée
+      },`)
+    console.log(`\nClé de sauvegarde : goal:${id} — ne la renomme plus une fois cochée.`)
+    console.log('\n« source » est obligatoire, et ce n\'est pas une formalité : hors du guide,')
+    console.log('rien ne s\'écrit ici qui n\'ait été lu sur unboundwiki.com ou romhackdex.net.')
+    break
+  }
+
   default:
     console.error(`Type inconnu : « ${kind ?? '(aucun)'} »\n`)
     console.error('  pnpm new:pokemon <nom>')
     console.error('  pnpm new:npc "<service>"')
     console.error('  pnpm new:quest "<#code>" "<nom>"')
     console.error('  pnpm new:task <phase-id>')
+    console.error('  pnpm new:goal "<section-id>" "<libellé>"')
     process.exit(1)
 }
 

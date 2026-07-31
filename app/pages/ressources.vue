@@ -308,6 +308,12 @@ const openFarming = ref<string[]>([])
       title="Farming endgame"
       description="§11 — à consulter au coup par coup selon ce qu’il te manque."
     >
+      <template #action>
+        <NuxtLink to="/completion" class="text-xs text-primary hover:underline whitespace-nowrap">
+          Complétion post-game
+        </NuxtLink>
+      </template>
+
       <UAccordion
         v-model="openFarming"
         type="multiple"

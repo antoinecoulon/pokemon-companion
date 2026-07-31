@@ -19,6 +19,7 @@ const { npcs } = await loadData('npcs.ts')
 const { battleItems, consumables } = await loadData('items.ts')
 const { quests } = await loadData('quests.ts')
 const { farmingTopics } = await loadData('farming.ts')
+const { completionSections } = await loadData('completion.ts')
 
 const errors = []
 const warnings = []
@@ -91,7 +92,7 @@ for (const [id, { task, origin }] of allTasks) {
 /* --- 4. Les liens internes pointent vers des routes connues ------------ */
 
 const slugs = new Set(pokemon.map(mon => mon.slug))
-const staticRoutes = new Set(['/', '/roadmap', '/equipe', '/ressources', '/reference', '/journal'])
+const staticRoutes = new Set(['/', '/roadmap', '/equipe', '/ressources', '/reference', '/journal', '/completion'])
 
 for (const [id, { task }] of allTasks) {
   if (!task.link) continue
@@ -168,6 +169,17 @@ const resourceSets = [
   { name: 'items.ts (battleItems)', prefix: null, entries: battleItems, persisted: false },
   { name: 'items.ts (consumables)', prefix: null, entries: consumables, persisted: false },
   { name: 'farming.ts', prefix: null, entries: farmingTopics, persisted: false },
+  /*
+   * Les objectifs sont aplatis toutes sections confondues : `goal:<id>` ne porte
+   * pas la section, donc deux homonymes dans deux sections ne feraient qu'une
+   * seule case cochée. L'unicité doit être globale, pas locale.
+   */
+  {
+    name: 'completion.ts',
+    prefix: 'goal',
+    entries: completionSections.flatMap(section => section.goals),
+    persisted: true,
+  },
 ]
 
 const persistedKeys = new Map()
@@ -195,6 +207,54 @@ for (const { name, prefix, entries, persisted } of resourceSets) {
       persistedKeys.set(key, name)
     }
   }
+}
+
+/* --- 7 bis. Complétion : sections nommées, objectifs sourcés ----------- */
+
+/*
+ * `source` est requis par le type, mais TypeScript ne voit pas la chaîne vide.
+ * Or c'est tout l'intérêt du champ : hors du guide, rien ne s'écrit dans ce
+ * fichier qui n'ait été lu sur unboundwiki.com ou romhackdex.net. Un objectif
+ * sans source est un objectif qu'on ne peut plus vérifier — c'est ce qui a
+ * coûté trois entrées à §12.
+ */
+const seenSections = new Set()
+for (const section of completionSections) {
+  if (seenSections.has(section.id)) {
+    errors.push(`completion.ts : section dupliquée « ${section.id} »`)
+  }
+  seenSections.add(section.id)
+
+  if (!section.goals.length) {
+    warnings.push(`completion.ts : la section « ${section.id} » est vide`)
+  }
+
+  for (const goal of section.goals) {
+    if (typeof goal.label !== 'string' || !goal.label.trim()) {
+      errors.push(`completion.ts : « ${goal.id} » n'a pas de libellé`)
+    }
+    if (typeof goal.source !== 'string' || !goal.source.trim()) {
+      errors.push(`completion.ts : « ${goal.id} » n'a pas de source — guide (« §x.y ») ou URL consultée`)
+    }
+    else if (!goal.source.startsWith('§') && !goal.source.startsWith('https://')) {
+      warnings.push(`completion.ts : la source de « ${goal.id} » n'est ni une section du guide ni une URL`)
+    }
+  }
+}
+
+/*
+ * Le vrai piège n'est pas dans ce fichier : c'est d'ajouter une catégorie
+ * persistée sans l'inscrire dans `knownContent`. La purge prendrait alors chaque
+ * case cochée pour une orpheline et les effacerait toutes, en une fois. Le test
+ * de purge travaille sur un ensemble synthétique et ne peut pas le voir — d'où
+ * ce contrôle sur la source, comme pour les icônes de nuxt.config.ts.
+ */
+const saveSource = await readFile(new URL('../app/composables/useSave.ts', import.meta.url), 'utf8')
+if (!saveSource.includes('completionGoalKeys')) {
+  errors.push(
+    'app/composables/useSave.ts n\'inscrit pas completionGoalKeys dans knownContent — '
+    + 'la purge effacerait tous les objectifs de complétion cochés',
+  )
 }
 
 /* --- 8. Les sprites déclarés existent sur le disque -------------------- */
@@ -328,6 +388,10 @@ console.log(
 console.log(
   `Ressources : ${npcs.length} PNJ · ${quests.length} quêtes · `
   + `${battleItems.length + consumables.length} objets · ${farmingTopics.length} rubriques de farm`,
+)
+console.log(
+  `Complétion : ${completionSections.length} sections · `
+  + `${completionSections.reduce((total, section) => total + section.goals.length, 0)} objectifs`,
 )
 
 for (const warning of warnings) console.warn(`  avertissement — ${warning}`)

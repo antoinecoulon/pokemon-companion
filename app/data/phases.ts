@@ -187,7 +187,11 @@ export const phases: Phase[] = [
       {
         kind: 'quote',
         tone: 'warning',
-        text: 'Le guide source ne numérote que **deux** entrées ici (3.1 Togekiss et 3.3 Tyranitar — le 3.2 manque). Les quatre autres membres de la composition finale n’ont pas d’entrée de phase : leur travail d’optimisation vit dans leur fiche, section **Équipe**.',
+        text: 'Le guide source ne numérote que **deux** entrées ici (3.1 Togekiss et 3.3 Tyranitar — le 3.2 manque) alors que §7.3 arrête une composition de **six**. Les quatre entrées suivantes comblent ce trou : elles ne viennent pas du guide, elles renvoient vers les fiches, qui font foi.',
+      },
+      {
+        kind: 'p',
+        text: 'Le guide n’ordonne par retour sur investissement que les deux entrées qu’il numérote. Pour les quatre autres, seul **Excadrill** est justifié comme prioritaire — §4.1 identifie l’absence de retrait de hazards comme le trou de l’équipe. Les trois derniers suivent l’ordre des sections §6.',
       },
     ],
     tasks: [
@@ -206,6 +210,45 @@ export const phases: Phase[] = [
         link: '/equipe/tyranitar',
         ref: '§6.1',
         done: true,
+      },
+      {
+        id: 'phase-3.4',
+        label: '**Excadrill** — il apporte le *Rapid Spin* qui manque à toute l’équipe, et *Sand Rush* le fait doubler de Speed sous le sable de Tyranitar.',
+        details: [
+          'Sa fiche assume la tension que §7.3 laisse ouverte : le **Choice Band verrouille sur la première capacité utilisée**, donc incompatible avec *Rapid Spin*. Build A ou build B, il faut trancher.',
+        ],
+        // §4.1 : « ton équipe n'a aucun retrait de hazards », et Stealth Rock
+        // seul détruit Togekiss à 25 % par entrée. C'est le seul des quatre dont
+        // le guide justifie explicitement l'urgence.
+        priority: 20,
+        requires: ['phase-0.4'],
+        link: '/equipe/excadrill',
+        ref: '§7.3',
+        done: false,
+      },
+      {
+        id: 'phase-3.5',
+        label: '**Flagadoss** — le pivot régénérant qui remplace Sceptile et apporte la résistance au Fighting qui manquait.',
+        requires: ['phase-0.4'],
+        link: '/equipe/flagadoss',
+        ref: '§6.2',
+        done: false,
+      },
+      {
+        id: 'phase-3.6',
+        label: '**Scorvol** — mur physique et poseur de hazards, avec *Poison Heal* pour se soigner tout seul.',
+        requires: ['phase-0.4'],
+        link: '/equipe/scorvol',
+        ref: '§6.6',
+        done: false,
+      },
+      {
+        id: 'phase-3.7',
+        label: '**Rotom-Wash** — le slot 4 de §7.3, qu’aucune section §6 ne couvre. Sa fiche a été reconstituée depuis les données Unbound.',
+        requires: ['phase-0.4'],
+        link: '/equipe/motisma-lavage',
+        ref: '§7.3',
+        done: false,
       },
     ],
   },
@@ -238,16 +281,55 @@ export const phases: Phase[] = [
     id: 'phase-5',
     number: 5,
     title: 'Battle Frontier',
+    intro: [
+      {
+        kind: 'p',
+        text: 'La destination de tout le parcours. §10 décrit le lieu ; ce qui suit en extrait ce qui se fait, dans l’ordre où ça se fait.',
+      },
+    ],
     tasks: [
+      {
+        id: 'phase-5.4',
+        label: 'Accéder à la Frontier : **barrière au nord de Seaport City**, une fois Champion, puis parler au guide pour obtenir la **Frontier Card**.',
+        details: [
+          'Quatre bâtiments — **Battle Tower**, **Battle Circus**, **Battle Sands**, **Battle Mine** — chacun avec ses règles et son Frontier Brain.',
+        ],
+        ref: '§10.1',
+        done: false,
+      },
       {
         id: 'phase-5.1',
         label: 'Commencer par le **Battle Tower en Singles** (format le plus lisible).',
-        requires: ['phase-0.1'],
+        // La Frontier Card conditionne tout le reste de la phase : sans elle, le
+        // moteur proposerait des runs impossibles à lancer.
+        requires: ['phase-0.1', 'phase-5.4'],
         done: false,
       },
       {
         id: 'phase-5.2',
         label: '**Vérifier les règles du format avant de construire ton équipe** : selon le bâtiment et le tier, les objets doublons et certains talents/capacités (Moody, Chlorophyll, Baton Pass, Sticky Web…) sont interdits. Ne planifie pas 3 Leftovers.',
+        done: false,
+      },
+      {
+        id: 'phase-5.5',
+        label: 'Arrêter l’équipe de Frontier. **§10.2 est périmé** : il propose Zeraora en lead, or §6.5 et §7.3 le sortent de l’équipe. À reconstruire depuis la composition finale.',
+        details: [
+          'Ce que §10.2 cherchait reste valable : un **lead rapide**, un **cœur** qui absorbe le Ground destiné au reste, un **finisseur** qui casse les murs.',
+          'Togekiss et Tyranitar tiennent toujours les rôles de cœur et de finisseur ; le lead est le seul à redéfinir.',
+        ],
+        requires: ['phase-5.2'],
+        ref: '§10.2',
+        done: false,
+      },
+      {
+        id: 'phase-5.6',
+        label: 'Farmer les BP : privilégier les **Pokémon rapides à forte puissance brute** pour raccourcir les combats.',
+        details: [
+          'Le guide citait Zeraora Life Orb, Tyranitar Choice Band, Togekiss para-flinch — le principe tient même si le premier n’est plus dans l’équipe.',
+          'Les BP servent aux **Choice items** (48 BP pièce) ; la purge d’EV passe par les baies de Fallshore, à 0 BP.',
+        ],
+        requires: ['phase-5.1'],
+        ref: '§10.3',
         done: false,
       },
       {

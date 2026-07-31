@@ -42,4 +42,48 @@ export default {
       ],
     },
   ],
+  tasks: [
+    {
+      id: 'mon-queulorior-1',
+      label: 'Trouver et capturer un **Smeargle** — localisation non documentée par le guide, passer par le **DexNav** une fois l’espèce enregistrée',
+      priority: 1,
+      done: false,
+    },
+    {
+      id: 'mon-queulorior-2',
+      label: '*Sketch* n°1 → **False Swipe** (laisse toujours 1 HP)',
+      requires: ['mon-queulorior-1'],
+      done: false,
+    },
+    {
+      id: 'mon-queulorior-3',
+      label: '*Sketch* n°2 → **Spore** (endort à 100 %, double le taux de capture)',
+      requires: ['mon-queulorior-1'],
+      done: false,
+    },
+    {
+      id: 'mon-queulorior-4',
+      label: '*Sketch* n°3 → **Thief** ou **Covet** (source de Heart Scales, Star Pieces, Stasis Stones)',
+      requires: ['mon-queulorior-1'],
+      done: false,
+    },
+    {
+      id: 'mon-queulorior-5',
+      label: '*Sketch* n°4 → **Sweet Scent** (déclenche une rencontre immédiate)',
+      requires: ['mon-queulorior-1'],
+      done: false,
+    },
+    {
+      id: 'mon-queulorior-6',
+      label: 'Niveau 100 et **252 EV en HP + 252 en Defense** à Dresco — BST 250, sans ça il tombe sur n’importe quoi',
+      requires: ['mon-queulorior-1'],
+      done: false,
+    },
+    {
+      id: 'mon-queulorior-7',
+      label: 'Le laisser **les mains vides** : *Thief* échoue si Smeargle tient déjà un objet',
+      requires: ['mon-queulorior-4'],
+      done: false,
+    },
+  ],
 } satisfies PokemonSheet

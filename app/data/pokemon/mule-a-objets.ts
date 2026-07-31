@@ -31,4 +31,43 @@ export default {
       text: '**Ton Dusknoir sortant est un candidat naturel** : son talent caché est justement **Frisk**. Comme il quitte l’équipe de combat, tu peux lui appliquer une **Dream Mist** sans regret et le recycler en mule à objets. Ça lui donne une seconde vie utile au lieu de le laisser dormir en boîte.',
     },
   ],
+  tasks: [
+    {
+      id: 'mon-mule-a-objets-1',
+      label: 'Choisir le porteur : **Dusknoir recyclé** (talent caché *Frisk*, il quitte l’équipe de toute façon) ou **Banette**, disponible plus tôt',
+      priority: 1,
+      link: '/equipe/dusknoir',
+      done: false,
+    },
+    {
+      id: 'mon-mule-a-objets-2',
+      label: 'Si Dusknoir : **Dream Mist** pour basculer sur *Frisk* — sans regret, puisqu’il ne combat plus',
+      requires: ['mon-mule-a-objets-1'],
+      done: false,
+    },
+    {
+      id: 'mon-mule-a-objets-3',
+      label: 'Lui apprendre **Thief** (TM) — *Frisk* montre ce que porte le sauvage, *Thief* le prend',
+      requires: ['mon-mule-a-objets-1'],
+      done: false,
+    },
+    {
+      id: 'mon-mule-a-objets-4',
+      label: 'Farm **Heart Scales** sur les Luvdisc au Super Rod → Move Relearner de Crater Town',
+      requires: ['mon-mule-a-objets-3'],
+      done: false,
+    },
+    {
+      id: 'mon-mule-a-objets-5',
+      label: 'Farm **Star Pieces** sur les Minior (DexNav, Route 1) → améliorer les Power items',
+      requires: ['mon-mule-a-objets-3'],
+      done: false,
+    },
+    {
+      id: 'mon-mule-a-objets-6',
+      label: 'Farm **Stasis Stones** sur les Geodude / Roggenrola (5–10 %) → améliorer le Macho Brace jusqu’à ×10',
+      requires: ['mon-mule-a-objets-3'],
+      done: false,
+    },
+  ],
 } satisfies PokemonSheet

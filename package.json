@@ -20,6 +20,7 @@
     "new:npc": "node scripts/new-content.mjs npc",
     "new:quest": "node scripts/new-content.mjs quest",
     "new:task": "node scripts/new-content.mjs task",
+    "new:goal": "node scripts/new-content.mjs goal",
     "import:pokemon": "node scripts/import-pokemon.mjs",
     "rm:pokemon": "node scripts/rm-pokemon.mjs",
     "test:stats": "node scripts/test-stats.mjs",

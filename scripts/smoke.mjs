@@ -20,6 +20,7 @@ const routes = [
   { path: '/equipe/tyranitar', expect: 'Tyranitar' },
   { path: '/equipe/excadrill', expect: 'Excadrill' },
   { path: '/ressources', expect: null },
+  { path: '/completion', expect: 'Complétion post-game' },
   { path: '/reference', expect: null },
   { path: '/journal', expect: null },
 ]

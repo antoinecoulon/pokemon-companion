@@ -92,12 +92,30 @@ Elles **n’écrivent rien** : on relit, on colle.
 | Tâche de roadmap | `pnpm new:task phase-2` | `app/data/phases.ts` | `phase-<n>.<m>` |
 | PNJ | `pnpm new:npc "Move Tutor"` | `app/data/npcs.ts` | kebab-case, persisté en `npc:<id>` |
 | Quête | `pnpm new:quest "#042" "Nom"` | `app/data/quests.ts` | kebab-case, persisté en `quest:<id>` |
+| Objectif de complétion | `pnpm new:goal portails "Nom"` | `app/data/completion.ts` | kebab-case, persisté en `goal:<id>` |
 
 Pour le reste (objets, consommables, rubriques de farm, mécaniques, natures, glossaire), copie une
 entrée voisine : ces contenus ne sont pas persistés, leur id ne sert qu’à la clé de rendu.
 
 **De la prose** (analyse, mécanique, farming) s’écrit en tableau de `Block` : `p`, `list`, `quote`,
 `table`, `code`. Le formatage inline supporte `**gras**`, `*italique*` et `` `code` ``.
+
+### Complétion post-game
+
+`app/data/completion.ts` couvre ce que le guide ne couvre pas : le post-game du jeu lui-même (Black
+Trainer Card, Prints de la Frontier, légendaires des portails, Mega Stones, Game Corner) et ce que le
+guide mentionne sans le rendre cochable (les ramassages gratuits de §9.1, les accès aux talents cachés
+de §2.4, les deux tests de §0.1 et §6.7-C).
+
+Deux règles s’y appliquent, et `pnpm validate` les fait respecter :
+
+- **`source` est obligatoire** — une section du guide (`'§9.1'`) ou l’URL consultée. Hors du guide,
+  rien ne s’écrit ici qui n’ait été lu sur `unboundwiki.com` ou `romhackdex.net` ; §12 a déjà perdu
+  trois quêtes faute d’avoir pu les vérifier.
+- **La complétion ne compte pas dans la progression de la roadmap.** Elle a son propre pourcentage
+  (`useProgress().completion`). Ce sont des ressources, comme les PNJ et les quêtes : pas de
+  `requires`, pas de poids, jamais dans « prochaines actions ». Les fondre dans `overall` ferait
+  chuter d’un coup l’avancement d’une partie en cours.
 
 > ⚠️ **Ne renomme jamais un `id` existant.** Un libellé peut changer librement ; changer un id perd la
 > case cochée correspondante dans les sauvegardes déjà écrites. Cela vaut aussi pour les ids de PNJ et

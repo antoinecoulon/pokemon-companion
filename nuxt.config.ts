@@ -93,6 +93,7 @@ export default defineNuxtConfig({
         'lucide:package',
         'lucide:book-open',
         'lucide:notebook-pen',
+        'lucide:trophy',
         // app/data/counters.ts
         'lucide:banknote',
         'lucide:ticket',

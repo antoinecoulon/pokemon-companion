@@ -3,7 +3,17 @@
  * changement avec un délai — cocher cinq cases d'affilée ne doit pas produire
  * cinq écritures.
  */
-export default defineNuxtPlugin(() => {
+export default defineNuxtPlugin({
+  // Nommé pour que `sync.client.ts` puisse déclarer en dépendre : la
+  // synchronisation compare le local au distant, elle ne doit donc jamais
+  // s'exécuter avant que le local soit relu.
+  name: 'save',
+  setup() {
+    return setupSave()
+  },
+})
+
+function setupSave() {
   const { state, hydrate, persist } = useSave()
 
   hydrate()
@@ -22,4 +32,4 @@ export default defineNuxtPlugin(() => {
       persist()
     })
   }
-})
+}

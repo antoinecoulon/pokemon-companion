@@ -12,7 +12,7 @@
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
     "validate": "node scripts/validate-content.mjs",
-    "check": "nuxt prepare && pnpm validate && pnpm test:stats && pnpm test:roster && pnpm test:fiche && pnpm typecheck",
+    "check": "nuxt prepare && pnpm validate && pnpm test:stats && pnpm test:roster && pnpm test:fiche && pnpm test:sync && pnpm typecheck",
     "smoke": "node scripts/smoke.mjs",
     "icons": "node scripts/make-icons.mjs",
     "sprites": "node scripts/fetch-sprites.mjs",
@@ -25,6 +25,7 @@
     "test:stats": "node scripts/test-stats.mjs",
     "test:roster": "node scripts/test-roster.mjs",
     "test:fiche": "node scripts/test-fiche.mjs",
+    "test:sync": "node scripts/test-sync.mjs",
     "smoke:features": "node scripts/smoke-features.mjs",
     "smoke:offline": "node scripts/smoke-offline.mjs",
     "serve:pages": "node scripts/serve-static.mjs"

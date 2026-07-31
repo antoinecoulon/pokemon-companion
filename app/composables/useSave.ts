@@ -12,6 +12,40 @@ import { findOrphans, pruneSave } from '~/utils/prune'
 const STORAGE_KEY = 'pokemon-companion:save'
 
 /**
+ * Copie de secours des octets qu'on s'apprête à perdre.
+ *
+ * `normalize()` refuse ce qu'il ne reconnaît pas, et le premier `persist()` qui
+ * suit réécrit `STORAGE_KEY` par-dessus : sans cette copie, une sauvegarde
+ * illisible disparaît définitivement, en silence, à la première case cochée.
+ *
+ * Le contenu n'est jamais réinterprété — on garde la chaîne telle quelle, pour
+ * pouvoir la rendre à l'utilisateur ou la relire plus tard, une fois la
+ * migration manquante écrite.
+ */
+const BACKUP_KEY = 'pokemon-companion:save:backup'
+
+export interface SaveBackup {
+  /**
+   * `rejected` : sauvegarde illisible. `reset` : remise à zéro volontaire.
+   * `replaced` : écrasée par la sauvegarde distante, les deux ayant divergé.
+   */
+  reason: 'rejected' | 'reset' | 'replaced'
+  savedAt: string
+  /** Le JSON d'origine, tel quel. */
+  payload: string
+}
+
+/**
+ * Migrations, indexées par la version *d'origine* : `migrations[1]` transforme
+ * une sauvegarde v1 en v2, à elle de poser le nouveau `version`.
+ *
+ * Vide tant que `SAVE_VERSION` vaut 1. Ajouter un simple champ n'en demande pas
+ * — `normalize()` retombe sur le `{}` de `createEmptySave()`, voir `resources`
+ * plus bas. Une migration ne sert qu'à *réinterpréter* de l'existant.
+ */
+const migrations: Record<number, (save: Record<string, unknown>) => Record<string, unknown>> = {}
+
+/**
  * État initial des cases, tel que repris du guide markdown.
  *
  * `state.tasks` ne stocke QUE les choix explicites de l'utilisateur. Une tâche
@@ -68,8 +102,25 @@ function emptyProgress(): PokemonProgress {
  */
 function normalize(raw: unknown): SaveState | null {
   if (!raw || typeof raw !== 'object') return null
-  const input = raw as Partial<SaveState>
-  if (input.version !== SAVE_VERSION) return null
+  let input = raw as Partial<SaveState>
+  if (typeof input.version !== 'number') return null
+
+  /*
+   * Une sauvegarde *plus récente* que le code se refuse : elle vient d'un
+   * déploiement plus avancé, et la relire à la baisse perdrait ce qu'elle sait
+   * en trop. C'est le seul cas où le rejet reste la bonne réponse.
+   */
+  if (input.version > SAVE_VERSION) return null
+
+  while (input.version! < SAVE_VERSION) {
+    const from = input.version!
+    const step = migrations[from]
+    if (!step) return null
+    const next = step({ ...input } as Record<string, unknown>) as Partial<SaveState>
+    // Une migration qui n'avance pas boucle indéfiniment : on préfère refuser.
+    if (typeof next?.version !== 'number' || next.version <= from) return null
+    input = next
+  }
 
   const save = createEmptySave()
 
@@ -167,24 +218,107 @@ export function useSave() {
    * replanifierait une écriture — une boucle infinie d'accès au localStorage.
    */
   const lastSavedAt = useState<string | null>('save-updated-at', () => null)
+  /** Copie de secours présente dans le stockage, s'il y en a une. */
+  const backup = useState<SaveBackup | null>('save-backup', () => null)
+  /** Vrai quand c'est *cette* session qui vient de rejeter une sauvegarde. */
+  const justRejected = useState<boolean>('save-just-rejected', () => false)
+
+  /* --- Copie de secours ------------------------------------------------- */
+
+  function writeBackup(payload: string, reason: SaveBackup['reason']) {
+    const entry: SaveBackup = { reason, savedAt: new Date().toISOString(), payload }
+    try {
+      localStorage.setItem(BACKUP_KEY, JSON.stringify(entry))
+      backup.value = entry
+    }
+    catch (error) {
+      // Quota plein, ou stockage refusé : on n'a rien de mieux à proposer que
+      // de le dire. Surtout ne pas faire échouer l'hydratation pour autant.
+      console.error('[save] copie de secours impossible', error)
+    }
+  }
+
+  function readBackup(): SaveBackup | null {
+    try {
+      const stored = localStorage.getItem(BACKUP_KEY)
+      if (!stored) return null
+      const parsed = JSON.parse(stored) as Partial<SaveBackup>
+      if (typeof parsed?.payload !== 'string') return null
+      const reasons: SaveBackup['reason'][] = ['rejected', 'reset', 'replaced']
+      return {
+        reason: reasons.includes(parsed.reason!) ? parsed.reason! : 'rejected',
+        savedAt: typeof parsed.savedAt === 'string' ? parsed.savedAt : '',
+        payload: parsed.payload,
+      }
+    }
+    catch {
+      return null
+    }
+  }
+
+  function discardBackup() {
+    try {
+      localStorage.removeItem(BACKUP_KEY)
+    }
+    catch (error) {
+      console.error('[save] suppression de la copie impossible', error)
+    }
+    backup.value = null
+    justRejected.value = false
+  }
+
+  /**
+   * Copie de secours à la demande, pour un appelant qui s'apprête à écraser
+   * l'état — la synchronisation avant d'adopter une sauvegarde distante.
+   */
+  function backupNow(reason: SaveBackup['reason']) {
+    writeBackup(exportJson(), reason)
+  }
+
+  /**
+   * Relit une sauvegarde sérialisée sans l'adopter.
+   *
+   * `importJson` remplace l'état ; la synchronisation, elle, doit d'abord
+   * *comparer* le distant au local avant de décider qui gagne.
+   */
+  function parseSave(text: string): SaveState | null {
+    try {
+      return normalize(JSON.parse(text))
+    }
+    catch {
+      return null
+    }
+  }
 
   /** Appelé une seule fois, par le plugin client. */
   function hydrate() {
     if (ready.value) return
+    let stored: string | null = null
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
+      stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
         const parsed = normalize(JSON.parse(stored))
         if (parsed) {
           state.value = parsed
           lastSavedAt.value = parsed.updatedAt
         }
-        else { console.warn('[save] sauvegarde ignorée : version ou forme inattendue') }
+        else {
+          // Avant que le premier `persist()` n'écrase ces octets.
+          writeBackup(stored, 'rejected')
+          justRejected.value = true
+          console.warn('[save] sauvegarde ignorée : version ou forme inattendue — copie de secours conservée')
+        }
       }
     }
     catch (error) {
+      // JSON invalide : les octets restent récupérables, eux.
+      if (stored) {
+        writeBackup(stored, 'rejected')
+        justRejected.value = true
+      }
       console.error('[save] lecture impossible, on repart d’une sauvegarde vide', error)
     }
+    backup.value ??= readBackup()
     ready.value = true
   }
 
@@ -328,6 +462,9 @@ export function useSave() {
   }
 
   function reset() {
+    // Même filet que pour une sauvegarde illisible : la remise à zéro est
+    // confirmée, donc voulue, mais elle reste irréversible côté écran.
+    writeBackup(exportJson(), 'reset')
     state.value = createEmptySave()
     persist()
   }
@@ -348,6 +485,11 @@ export function useSave() {
     state,
     ready: readonly(ready),
     lastSavedAt: readonly(lastSavedAt),
+    backup: readonly(backup),
+    justRejected: readonly(justRejected),
+    discardBackup,
+    backupNow,
+    parseSave,
     hydrate,
     persist,
     isDone,

@@ -282,6 +282,43 @@ for (const dir of [`${root}app/data/`, `${root}app/utils/`]) {
   }
 }
 
+/* --- 10. Les noms d'icônes existent vraiment --------------------------- */
+
+/*
+ * Un nom d'icône inexistant ne casse rien : @nuxt/icon rend un <svg> vide, sans
+ * la moindre erreur, et la commande devient un bouton invisible. C'est ainsi que
+ * `i-lucide-broom` — qui n'a jamais existé dans lucide — a laissé l'entrée
+ * « Nettoyer la sauvegarde » sans icône pendant des mois.
+ *
+ * On vérifie donc chaque nom contre le jeu réellement installé, dans tout ce que
+ * l'app contient : templates compris, puisque `scan` embarque sans vérifier.
+ */
+const lucide = JSON.parse(
+  await readFile(new URL('../node_modules/@iconify-json/lucide/icons.json', import.meta.url), 'utf8'),
+)
+const known = new Set([...Object.keys(lucide.icons), ...Object.keys(lucide.aliases ?? {})])
+
+async function* sourceFiles(dir) {
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = `${dir}${entry.name}`
+    if (entry.isDirectory()) yield * sourceFiles(`${path}/`)
+    else if (/\.(?:ts|vue)$/.test(entry.name)) yield path
+  }
+}
+
+const seen = new Map()
+for await (const path of sourceFiles(`${root}app/`)) {
+  const source = await readFile(path, 'utf8')
+  for (const [, name] of source.matchAll(/i-lucide-([a-z0-9-]+)/g)) {
+    if (!seen.has(name)) seen.set(name, path.replace(root, ''))
+  }
+}
+for (const [name, path] of seen) {
+  if (!known.has(name)) {
+    errors.push(`icône « i-lucide-${name} » (${path}) n'existe pas dans lucide — elle rendra un <svg> vide`)
+  }
+}
+
 /* --- Rapport ----------------------------------------------------------- */
 
 const activeCount = pokemon.filter(mon => mon.status === 'active').length

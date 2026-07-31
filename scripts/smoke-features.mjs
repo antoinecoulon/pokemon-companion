@@ -400,6 +400,176 @@ if (await prunePage.getByRole('menuitem', { name: /Nettoyer la sauvegarde \(\d/ 
 }
 
 await pruneContext.close()
+
+/* --- 7. Copie de secours d'une sauvegarde illisible -------------------- */
+
+/*
+ * `normalize()` refuse ce qu'il ne reconnaît pas, et le premier `persist()` qui
+ * suit réécrit la clé par-dessus : sans copie, la sauvegarde disparaît en
+ * silence. C'est la seule opération réellement destructrice du code, et elle se
+ * déclenche toute seule au chargement — d'où ce contrôle.
+ */
+const backupContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } })
+
+// Version supérieure à celle du code : cas d'un déploiement revenu en arrière.
+const doomedSave = JSON.stringify({
+  version: 99,
+  tasks: { 'phase-1.1': true },
+  pokemon: {},
+  counters: { money: 123456 },
+  resources: {},
+  roster: {},
+  journal: [],
+  updatedAt: new Date().toISOString(),
+})
+
+await backupContext.addInitScript((payload) => {
+  localStorage.setItem('pokemon-companion:save', payload)
+}, doomedSave)
+
+const backupPage = await backupContext.newPage()
+backupPage.on('pageerror', error => failures.push(`secours — exception : ${error.message.split('\n')[0]}`))
+await backupPage.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
+await backupPage.waitForTimeout(700)
+
+// L'échec doit se voir à l'écran, pas seulement dans la console.
+if (await backupPage.getByText('Sauvegarde illisible').count() === 0) {
+  failures.push('secours — aucune alerte à l’écran alors que la sauvegarde a été rejetée')
+}
+
+const storedBackup = await backupPage.evaluate(() =>
+  localStorage.getItem('pokemon-companion:save:backup'))
+
+if (!storedBackup) {
+  failures.push('secours — aucune copie écrite : la sauvegarde rejetée est perdue')
+}
+else {
+  const entry = JSON.parse(storedBackup)
+  if (entry.payload !== doomedSave) {
+    failures.push('secours — la copie ne contient pas les octets d’origine')
+  }
+  if (entry.reason !== 'rejected') {
+    failures.push(`secours — motif « ${entry.reason} », « rejected » attendu`)
+  }
+}
+
+// Et elle doit être récupérable, sinon la conserver ne sert à rien.
+await backupPage.getByRole('button', { name: /Gérer la sauvegarde/ }).click()
+await backupPage.waitForTimeout(300)
+if (await backupPage.getByRole('menuitem', { name: /Copie de la sauvegarde illisible/ }).count() === 0) {
+  failures.push('secours — la copie n’est pas proposée au téléchargement dans le menu')
+}
+await backupPage.keyboard.press('Escape')
+
+/*
+ * Rien n'a réécrit la sauvegarde illisible : elle est toujours là, donc le
+ * problème est toujours entier. L'alerte doit se répéter — se taire au second
+ * chargement ferait disparaître le seul signal qui mène à la copie.
+ */
+await backupPage.reload({ waitUntil: 'networkidle' })
+await backupPage.waitForTimeout(700)
+if (await backupPage.evaluate(() => localStorage.getItem('pokemon-companion:save:backup')) === null) {
+  failures.push('secours — la copie disparaît au rechargement')
+}
+if (await backupPage.getByText('Sauvegarde illisible').count() === 0) {
+  failures.push('secours — l’alerte disparaît alors que la sauvegarde illisible est toujours en place')
+}
+
+// Et la copie reste fidèle : un second rejet ne doit pas l'écraser par autre chose.
+const rewritten = JSON.parse(await backupPage.evaluate(() =>
+  localStorage.getItem('pokemon-companion:save:backup')))
+if (rewritten.payload !== doomedSave) {
+  failures.push('secours — la copie a été écrasée par un contenu différent au second chargement')
+}
+
+await backupContext.close()
+
+/* --- 8. Une sauvegarde valide ne déclenche rien ------------------------ */
+
+const intactContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } })
+await intactContext.addInitScript(() => {
+  localStorage.setItem('pokemon-companion:save', JSON.stringify({
+    version: 1,
+    tasks: { 'phase-1.1': true },
+    pokemon: {},
+    counters: {},
+    resources: {},
+    roster: {},
+    journal: [],
+    updatedAt: new Date().toISOString(),
+  }))
+})
+
+const intactPage = await intactContext.newPage()
+intactPage.on('pageerror', error => failures.push(`intact — exception : ${error.message.split('\n')[0]}`))
+await intactPage.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
+await intactPage.waitForTimeout(700)
+
+if (await intactPage.evaluate(() => localStorage.getItem('pokemon-companion:save:backup')) !== null) {
+  failures.push('intact — une copie de secours est écrite alors que la sauvegarde est lisible')
+}
+if (await intactPage.getByText('Sauvegarde illisible').count() !== 0) {
+  failures.push('intact — alerte affichée sur une sauvegarde parfaitement valide')
+}
+
+await intactContext.close()
+
+/* --- 9. Écran de synchronisation, appareil non relié ------------------- */
+
+/*
+ * Sans token, aucun appel réseau ne doit partir : la synchronisation est une
+ * option, pas un prérequis. On vérifie donc que l'app s'ouvre normalement, que
+ * l'écran de configuration s'affiche, et surtout qu'aucune requête ne sort vers
+ * GitHub — une app hors-ligne qui appelle une API au démarrage, ça se voit au
+ * premier tunnel.
+ */
+const syncContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } })
+const syncPage = await syncContext.newPage()
+const githubCalls = []
+syncPage.on('request', (request) => {
+  if (request.url().includes('api.github.com')) githubCalls.push(request.url())
+})
+syncPage.on('pageerror', error => failures.push(`synchro — exception : ${error.message.split('\n')[0]}`))
+
+await syncPage.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
+await syncPage.waitForTimeout(700)
+
+if (githubCalls.length) {
+  failures.push(`synchro — ${githubCalls.length} appel(s) à GitHub alors qu'aucun token n'est enregistré`)
+}
+
+await syncPage.getByRole('button', { name: /Gérer la sauvegarde/ }).click()
+await syncPage.waitForTimeout(300)
+
+if (await syncPage.getByRole('menuitem', { name: /appareil non relié/ }).count() === 0) {
+  failures.push('synchro — le menu n’annonce pas que l’appareil n’est pas relié')
+}
+if (await syncPage.getByRole('menuitem', { name: 'Synchroniser maintenant' }).count() !== 0) {
+  failures.push('synchro — « Synchroniser maintenant » proposé alors qu’aucun token n’est enregistré')
+}
+
+await syncPage.getByRole('menuitem', { name: /appareil non relié/ }).click()
+await syncPage.waitForTimeout(400)
+
+if (await syncPage.getByLabel('Token GitHub').count() === 0) {
+  failures.push('synchro — le champ de token ne s’affiche pas')
+}
+// Le bouton reste inerte tant qu'aucun token n'est saisi.
+if (await syncPage.getByRole('button', { name: 'Relier cet appareil' }).isDisabled() === false) {
+  failures.push('synchro — « Relier cet appareil » est actif avec un champ vide')
+}
+
+/*
+ * Le contenu des icônes, pas leur simple présence : un nom inexistant rend un
+ * <svg> vide, sans erreur. C'est ce qui avait laissé `i-lucide-broom` invisible.
+ */
+const emptyIcons = await syncPage.evaluate(() =>
+  [...document.querySelectorAll('svg')].filter(svg => svg.innerHTML.trim() === '').length)
+if (emptyIcons > 0) {
+  failures.push(`synchro — ${emptyIcons} icône(s) rendue(s) vide(s) à l’écran`)
+}
+
+await syncContext.close()
 await browser.close()
 
 /* --- Rapport ---------------------------------------------------------- */
@@ -412,5 +582,5 @@ if (failures.length) {
 
 console.log(
   'Critères déduits · doublon d’objet · CRUD du journal · ressources acquises · '
-  + 'composition d’équipe · purge de sauvegarde — tout passe.',
+  + 'composition d’équipe · purge de sauvegarde · copie de secours · écran de synchro — tout passe.',
 )

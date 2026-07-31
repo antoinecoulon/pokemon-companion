@@ -27,6 +27,7 @@ comme source de vérité éditoriale, mais l'app le remplace à l'usage.
 | Rendu | SPA (`ssr: false`) | l'état vit dans le `localStorage` ; aucun intérêt au prerender, zéro risque de mismatch d'hydratation |
 | Contenu | découpé en TypeScript dans `app/data/` | `satisfies` fait échouer le build sur un id invalide, ce qui protège la sauvegarde |
 | Persistance | `localStorage` + export/import JSON | pas de backend, pas de compte, hors-ligne |
+| Multi-appareils | gist privé GitHub, « le plus récent gagne » | seul stockage déjà possédé par le joueur ; l'hébergement statique interdit un backend |
 | Accès | build statique + PWA installable | consultable sur téléphone, y compris hors connexion |
 | Navigation | dashboard + Roadmap / Équipe / Ressources / Référence, + Journal | met l'action en avant tout en suivant la structure du guide |
 | Engagement | progression visuelle + « prochaine action » calculée | retenu ; la gamification (badges, streaks) a été écartée |
@@ -87,6 +88,21 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   toute balise de composant non résolue dans le DOM.
 - **`pnpm typecheck` peut passer sur des types périmés.** `pnpm check` lance donc `nuxt prepare` d'abord :
   une erreur de `nuxt.config.ts` est restée invisible jusqu'à une régénération.
+- **La sauvegarde se synchronise entre appareils via un gist privé.** Le `localStorage` reste la
+  source de vérité ; `useSync` n'est qu'un aller-retour opportuniste par-dessus, qui ne bloque
+  jamais l'interface. Toute la logique qui peut faire *perdre* une progression vit dans
+  `app/utils/sync.ts`, isolée du réseau et testée par `pnpm test:sync` — `useSync` ne fait
+  qu'exécuter son verdict. Ne jamais y toucher sans étendre le test. Le garde-fou central est
+  `isPristineSave` : un appareil neuf est toujours « plus récent » que le distant, donc sans lui la
+  règle « le plus récent gagne » écraserait tout à la première ouverture. Le token vit sous
+  `pokemon-companion:sync`, **hors de `SaveState`** — il ne doit jamais entrer dans `knownContent`
+  ni dans un export.
+- **Ce que `normalize()` refuse n'est plus perdu.** Une sauvegarde illisible est recopiée telle quelle
+  sous `pokemon-companion:save:backup` avant d'être abandonnée, et l'échec se voit à l'écran — avant,
+  c'était un `console.warn` que le premier `persist()` rendait définitif. Une version *antérieure*
+  passe par `migrations` (indexé par la version d'origine, vide aujourd'hui) ; seule une version
+  *postérieure* au code reste refusée. Ne pas ajouter de bump de `SAVE_VERSION` pour un simple champ
+  ajouté : `normalize()` retombe déjà sur le défaut de `createEmptySave()`.
 - **Une clé de sauvegarde qui perd son contenu ne disparaît pas toute seule.** `normalize()` conserve
   tout ce qu'il reconnaît par sa forme. Après toute suppression de contenu, la purge se fait dans l'app
   (Sauvegarde → Nettoyer) ; l'ensemble des clés légitimes est `knownContent` dans `useSave.ts` — y

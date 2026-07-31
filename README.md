@@ -183,6 +183,54 @@ Un seul objet JSON dans `localStorage`, sous la clé `pokemon-companion:save` :
 plus tard se remplit de sa valeur par défaut, sans bump de `SAVE_VERSION`. C’est ainsi que `resources`
 est apparu sans casser les sauvegardes v1.
 
+Une sauvegarde d’une version **antérieure** passe par `migrations`, indexé par la version d’origine —
+vide tant que `SAVE_VERSION` vaut 1, mais c’est là qu’une réinterprétation de l’existant s’écrit. Seule
+une version **postérieure** au code est refusée : la relire à la baisse perdrait ce qu’elle sait en trop.
+
+### Synchronisation entre appareils
+
+La sauvegarde vit dans un **gist privé** du compte GitHub du joueur. L’app étant un site statique,
+il n’y a pas de serveur où faire vivre un backend — le gist est un stockage qu’on possède déjà,
+privé, sans compte à créer ni service à payer.
+
+Menu Sauvegarde → *Synchronisation*, puis un token collé sur chaque appareil. Le gist est retrouvé
+par son nom de fichier, pas par son id : relier un second appareil ne demande donc rien d’autre que
+le token.
+
+Le token doit être **classic**, avec la portée **`gist` et rien d’autre**
+([lien pré-rempli](https://github.com/settings/tokens/new?scopes=gist&description=Pok%C3%A9mon%20Companion)).
+Les tokens *fine-grained* ne conviennent pas : GitHub ne leur donne aucune permission sur les gists.
+Contrepartie assumée : la portée `gist` couvre **tous** les gists du compte, pas seulement celui de
+l’app — c’est le grain le plus fin que GitHub propose ici.
+
+Le `localStorage` **reste la source de vérité**. La synchro est un aller-retour opportuniste
+par-dessus, déclenché à l’ouverture de l’app, au retour du réseau, et au retour sur l’onglet — ce
+dernier cas étant le courant sur téléphone, où l’app passe en arrière-plan sans jamais se fermer.
+Elle ne bloque jamais l’interface : hors-ligne, on coche, et l’envoi part plus tard.
+
+Le token est rangé sous `pokemon-companion:sync`, **hors de `SaveState`** : il ne part ni dans le
+gist, ni dans un export JSON, et la purge ne le voit pas.
+
+**Conflits : le plus récent gagne**, sans fusion. La décision est prise par `decideSync`
+(`app/utils/sync.ts`), isolée du réseau et testée par `pnpm test:sync` — c’est le seul endroit du
+code qui peut faire perdre une progression. Deux points s’y jouent :
+
+- un appareil neuf a un `updatedAt` plus récent que le distant alors qu’il est vide ; sans le
+  contrôle `isPristineSave`, il écraserait des mois de progression dès la première ouverture ;
+- quand les deux côtés ont vraiment divergé, le perdant part en copie de secours avant d’être
+  écrasé, et un avertissement persistant le signale.
+
+### Copie de secours
+
+Ce qui n’est pas relu n’est pas perdu. Avant d’abandonner une sauvegarde illisible, `hydrate()` en
+recopie les octets bruts sous `pokemon-companion:save:backup` — sans quoi le premier `persist()` venu
+les écraserait en silence, à la première case cochée. La remise à zéro passe par le même filet.
+
+L’échec se voit à l’écran : alerte persistante au chargement, bouton du menu en `warning`, et une entrée
+pour retélécharger la copie. Elle réapparaît tant que la sauvegarde illisible est encore là — se taire
+au second chargement supprimerait le seul chemin vers la copie. `pnpm smoke:features` couvre les deux
+cas, rejet et sauvegarde saine.
+
 Le menu **base de données** de l’en-tête permet d’exporter, d’importer, de **nettoyer** et de
 réinitialiser. C’est aussi le moyen de transférer sa progression vers le téléphone : exporter ici,
 importer là-bas.

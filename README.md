@@ -137,6 +137,34 @@ main, c’est perdre la correction à la régénération suivante — une donné
 (84 missions, 100 cells, 32 raid dens…) et échoue bruyamment plutôt que de rendre un fichier amputé.
 Les pages sont mises en cache dans `.cache/wiki/` ; `--fresh` l’ignore, `--dry-run` n’écrit rien.
 
+### Elite Redux — un générateur, d’autres sources
+
+Elite Redux est **open source**, donc la donnée se lit dans son code plutôt que sur un wiki. Deux
+fichiers de `app/data/elite-redux/` sont générés, par un script **distinct** de `scrape:wiki` :
+
+```bash
+pnpm gen:elite <encounters|abilities|all> [--fresh] [--dry-run]
+```
+
+| Fichier généré | Source | Volume |
+| --- | --- | --- |
+| `encounters.ts` | `wild_encounters.json` du decomp, noms résolus depuis `species_names.h` | 142 zones, 635 espèces |
+| `abilities.ts` | `AbilityList.textproto` de `er-config` | 1 039 talents |
+
+Mêmes règles que les scrapers Unbound : ne pas éditer la sortie, corriger
+`scripts/lib/gen-<nom>.mjs` ; chaque générateur contrôle son compte et échoue plutôt que de rendre
+un fichier amputé. Le cache vit dans `.cache/elite-redux/`.
+
+**Aucun id de ces deux fichiers n’est persisté** — ce sont des données de consultation, pas des
+cases à cocher. Une régénération ne peut donc pas faire perdre de progression, contrairement au
+contenu adossé au wiki d’Unbound où l’id *est* le contrat avec la sauvegarde.
+
+Trois pièges que les parseurs traitent explicitement, et qu’il faut connaître avant d’y toucher :
+une table terrestre a **12 slots, pas 12 espèces** (compter les espèces uniques fait passer une
+table valide pour tronquée) ; `hidden_mons` est à taux 0 et remplie de données de test, donc **ne se
+publie pas** ; et les formes régionales **partagent le nom de base** (`SPECIES_MEOWTH_GALARIAN` rend
+« Meowth »), d’où une table de suffixes fermée et un contrôle de libellés ambigus.
+
 Pour le reste (objets, consommables, rubriques de farm, mécaniques, natures, glossaire), copie une
 entrée voisine : ces contenus ne sont pas persistés, leur id ne sert qu’à la clé de rendu.
 
@@ -347,7 +375,9 @@ pnpm smoke          # dans un autre : toutes les routes des deux jeux × 2 viewp
                     # (1280 et 375 px), échoue sur toute erreur console, page vide ou
                     # débordement horizontal ; vérifie le CLOISONNEMENT des sauvegardes
                     # (cocher chez un jeu n'écrit pas chez l'autre), le sélecteur de jeu,
-                    # la persistance et l'aller-retour export/import
+                    # les sections facultatives de /reference (rendues chez Elite Redux,
+                    # absentes chez Unbound) et leurs recherches, la persistance et
+                    # l'aller-retour export/import
 pnpm smoke:features # critères « Endgame Ready » déduits, détection d'objet en double,
                     # CRUD du journal
 ```

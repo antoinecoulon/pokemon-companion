@@ -432,6 +432,58 @@ export interface Tool {
 }
 
 /* ------------------------------------------------------------------------- *
+ * Référence tirée du code d'un jeu
+ *
+ * Deux jeux de données volumineux et **générés**, aujourd'hui fournis par Elite
+ * Redux seul, dont le code est ouvert. Ils sont facultatifs : un jeu qui ne les
+ * fournit pas ne rend simplement pas les sections correspondantes.
+ *
+ * Rien ici n'est persisté. Ce sont des données de consultation, pas des cases à
+ * cocher — aucun id n'entre dans `knownContent`, donc une régénération ne peut
+ * pas faire perdre une progression. C'est ce qui les distingue des ressources
+ * adossées au wiki d'Unbound, où l'id *est* le contrat avec la sauvegarde.
+ * ------------------------------------------------------------------------- */
+
+/** Méthode de rencontre, telle que le jeu les distingue. */
+export type EncounterMethodId = 'land' | 'water' | 'fishing' | 'rock-smash' | 'honey'
+
+export interface EncounterSlot {
+  /** Nom d'affichage, forme comprise : `Zorua-Hisuian`. */
+  species: string
+  /**
+   * Nombre d'emplacements occupés dans la table, donc la fréquence relative.
+   * Une table terrestre en compte douze : six emplacements = une fois sur deux.
+   */
+  slots: number
+  min: number
+  max: number
+}
+
+export interface EncounterMethod {
+  method: EncounterMethodId
+  /** Taux de déclenchement de la méthode elle-même. */
+  rate: number
+  slots: EncounterSlot[]
+}
+
+export interface EncounterZone {
+  id: string
+  label: string
+  methods: EncounterMethod[]
+  /** Réserve sur la zone : tables alternatives, variantes inaccessibles… */
+  note?: string
+}
+
+export interface AbilityEntry {
+  id: string
+  name: string
+  /** Texte court, celui que le jeu affiche. */
+  description: string
+  /** Détail des interactions, quand la source en donne un. */
+  expanded?: string
+}
+
+/* ------------------------------------------------------------------------- *
  * Compteurs de ressources
  * ------------------------------------------------------------------------- */
 

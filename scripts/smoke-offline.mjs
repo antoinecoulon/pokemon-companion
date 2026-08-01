@@ -32,6 +32,12 @@ const routes = [
   '/unbound/journal',
   '/elite-redux',
   '/elite-redux/completion',
+  /*
+   * La raison d'être de cette page : encounters et talents se consultent en
+   * jouant, souvent sans réseau. Si elle ne survit pas au mode hors-ligne, elle
+   * ne sert à rien.
+   */
+  '/elite-redux/reference',
 ]
 
 const problems = []

@@ -1,10 +1,13 @@
 import type { GameContent } from '../games'
 import type { ResourceKey } from '../types'
 import { navFor } from '~/utils/navigation'
+import { abilities } from './abilities'
 import { completionSections } from './completion'
 import { counters } from './counters'
+import { encounters } from './encounters'
 import { phases } from './phases'
 import { readinessCriteria } from './readiness'
+import { glossary, mechanics, tools } from './reference'
 
 /**
  * Assemblage du contenu Elite Redux.
@@ -13,11 +16,12 @@ import { readinessCriteria } from './readiness'
  * partie commence. Les fiches Pokémon se rempliront au fil du jeu, la
  * complétion aussi.
  *
- * Deux pages du companion ne sont volontairement **pas** fournies —
- * `/ressources` et `/reference`. Elles n'existent donc ni dans la nav ni en
- * direct : la page répond 404 plutôt que de se rendre vide. Unbound les tient
- * de son guide markdown ; ici, l'équivalent (statuts, météo, level caps) vit
- * dans `docs/elite-redux/01-la-rom.md` et n'a pas encore été porté.
+ * `/ressources` n'est volontairement **pas** fournie, et la page répond donc
+ * 404 plutôt que de se rendre vide. Ce n'est pas un trou à combler : les
+ * « services » de ce jeu (Nurse Joy, Adoption Center, Candy Box) sont déjà des
+ * tâches de phase 1, et en refaire des entrées `npc:` cochables recopierait une
+ * entrée qui existe ailleurs — ce que ce projet s'interdit. Il n'y a par
+ * ailleurs ni farming ni économie à documenter : tout est gratuit et illimité.
  */
 export const eliteReduxContent: GameContent = {
   phases,
@@ -56,5 +60,24 @@ export const eliteReduxContent: GameContent = {
     { label: 'Progression', to: '/completion', icon: 'i-lucide-trophy', primary: true },
     { label: 'Équipe', to: '/equipe', icon: 'i-lucide-users', primary: true },
     { label: 'Journal', to: '/journal', icon: 'i-lucide-notebook-pen', primary: true },
+    // Consultée ponctuellement, comme chez Unbound : la bottom-nav mobile
+    // s'arrête à 5 entrées, et les quatre ci-dessus sont le parcours quotidien.
+    { label: 'Référence', to: '/reference', icon: 'i-lucide-book-open', primary: false },
   ]),
+
+  reference: {
+    mechanics,
+    tools,
+    glossary,
+    descriptions: {
+      mechanics: 'Ce que ce hack change, et qu’aucun réflexe d’un autre jeu ne couvre — quatre talents simultanés, level caps, statuts inédits.',
+      natures: 'La nature s’édite librement dans l’écran de résumé : c’est un choix, plus un tirage. Aucun usage n’est « recommandé » ici — celui d’Unbound tient à son guide.',
+      tools: 'Le patcher officiel, les références en ligne, et les sites à ne pas utiliser.',
+      glossary: 'Le vocabulaire propre à Elite Redux, celui qui n’a pas le même sens ailleurs.',
+      encounters: 'Les 142 zones du jeu, telles que le code les décrit. Chercher un lieu pour voir ses tables, ou une espèce pour savoir où elle vit.',
+      abilities: 'Les talents du jeu, avec la description que l’écran affiche. Toutes ont été réécrites : connaître un talent par son nom d’origine induit en erreur.',
+    },
+    encounters,
+    abilities,
+  },
 }

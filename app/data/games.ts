@@ -3,9 +3,12 @@ import type { NavItem } from '~/utils/navigation'
 import type { KnownContent } from '~/utils/prune'
 import type { TaskEntry } from '~/utils/tasks'
 import type {
+  AbilityEntry,
   BattleItem,
   Consumable,
   CounterDef,
+  EncounterMethodId,
+  EncounterZone,
   FarmingTopic,
   GlossaryEntry,
   Npc,
@@ -75,6 +78,22 @@ export interface GameContent {
     mechanics: ReferenceSection[]
     tools: Tool[]
     glossary: GlossaryEntry[]
+    /**
+     * Chapeaux des sections de la page, propres au jeu.
+     *
+     * Ils citaient le guide d'Unbound en dur dans le template (« §13.1 — … »),
+     * ce qui n'a aucun sens pour un jeu qui n'a pas de guide numéroté.
+     */
+    descriptions?: Partial<Record<
+      'mechanics' | 'natures' | 'tools' | 'glossary' | 'encounters' | 'abilities',
+      string
+    >>
+    /**
+     * Deux jeux de données générés depuis le code d'un jeu ouvert, facultatifs.
+     * Un jeu qui ne les fournit pas ne rend pas la section correspondante.
+     */
+    encounters?: EncounterZone[]
+    abilities?: AbilityEntry[]
   }
   resources?: {
     npcs: Npc[]
@@ -113,6 +132,24 @@ export interface Game {
    */
   contentDefaults: Map<TaskId, boolean>
   knownContent: KnownContent
+  /**
+   * Index inversé des rencontres : « où trouve-t-on cette espèce ».
+   *
+   * Dérivé du contenu plutôt que généré, sur le même motif que `pokemonBySlug` —
+   * la donnée n'existe qu'une fois, et le fichier généré reste lisible. Vide
+   * pour un jeu sans encounters.
+   */
+  encountersBySpecies: Map<string, SpeciesEncounter[]>
+}
+
+/** Une occurrence d'espèce, aplatie pour l'affichage « où trouver X ». */
+export interface SpeciesEncounter {
+  zoneId: string
+  zoneLabel: string
+  method: EncounterMethodId
+  slots: number
+  min: number
+  max: number
 }
 
 interface GameDef {
@@ -161,7 +198,31 @@ function defineGame(def: GameDef): Game {
       ]),
       counterIds: new Set(content.counters.map(counter => counter.id)),
     },
+    encountersBySpecies: indexBySpecies(content.reference?.encounters ?? []),
   }
+}
+
+function indexBySpecies(zones: EncounterZone[]): Map<string, SpeciesEncounter[]> {
+  const index = new Map<string, SpeciesEncounter[]>()
+  for (const zone of zones) {
+    for (const method of zone.methods) {
+      for (const slot of method.slots) {
+        const list = index.get(slot.species) ?? []
+        list.push({
+          zoneId: zone.id,
+          zoneLabel: zone.label,
+          method: method.method,
+          slots: slot.slots,
+          min: slot.min,
+          max: slot.max,
+        })
+        index.set(slot.species, list)
+      }
+    }
+  }
+  /* Le niveau minimum d'abord : c'est l'ordre utile sous un level cap. */
+  for (const list of index.values()) list.sort((a, b) => a.min - b.min || a.zoneLabel.localeCompare(b.zoneLabel))
+  return index
 }
 
 export const games: Game[] = [

@@ -194,7 +194,7 @@ function renderMissions(missions) {
     return lines.join('\n')
   })
 
-  return `import type { Mission } from './types'
+  return `import type { Mission } from '../types'
 
 /**
  * Les 84 missions d'Unbound.

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { EncounterMethodId } from '~/data/types'
 import { natures } from '~/data/natures'
 
 const { current } = useGame()
@@ -13,6 +14,13 @@ if (!reference) {
   throw createError({ statusCode: 404, statusMessage: 'Page indisponible pour ce jeu', fatal: true })
 }
 const { mechanics, tools, glossary } = reference
+
+/*
+ * Chapeaux de section : ils vivaient en dur ici et citaient le guide Unbound
+ * (« §13.1 — … »), ce qu'un jeu sans guide numéroté ne peut pas porter. Le repli
+ * n'est pas décoratif — une chaîne vide masque la description côté SectionBlock.
+ */
+const captions = reference.descriptions ?? {}
 
 useHead({ title: 'Référence · Pokémon Companion' })
 
@@ -34,6 +42,79 @@ onMounted(() => {
   if (match) openSection(match.id)
 })
 
+/*
+ * Encounters et talents — fournis par les jeux dont le code est ouvert, donc
+ * Elite Redux seul aujourd'hui. Unbound ne les a pas : les sections
+ * disparaissent, elles ne se rendent pas vides.
+ */
+const encounters = reference.encounters ?? []
+const abilities = reference.abilities ?? []
+const bySpecies = current.value.encountersBySpecies
+
+const METHOD_LABELS: Record<EncounterMethodId, string> = {
+  'land': 'Herbes',
+  'water': 'Surf',
+  'fishing': 'Pêche',
+  'rock-smash': 'Rock Smash',
+  'honey': 'Honey',
+}
+
+/*
+ * Un seul champ pour les deux entrées : le joueur cherche « Route 116 » ou
+ * « Larvitar » sans vouloir choisir un mode au préalable. On interroge donc les
+ * deux index et on montre ce qui répond.
+ */
+const encounterSearch = ref('')
+
+/*
+ * Rien n'est rendu tant qu'on n'a pas cherché : 142 zones dépliées, ce sont des
+ * milliers de lignes de tableau dans le DOM d'un téléphone. Les puces de zone
+ * suffisent à parcourir, et remplissent le champ au clic.
+ */
+const matchedZones = computed(() => {
+  const query = encounterSearch.value.trim().toLowerCase()
+  if (!query) return []
+  return encounters.filter(zone => zone.label.toLowerCase().includes(query)).slice(0, 6)
+})
+
+const matchedSpecies = computed(() => {
+  const query = encounterSearch.value.trim().toLowerCase()
+  if (query.length < 2) return []
+  return [...bySpecies.keys()]
+    .filter(species => species.toLowerCase().includes(query))
+    .sort((a, b) => a.length - b.length || a.localeCompare(b))
+    .slice(0, 6)
+    .map(species => ({ species, spots: bySpecies.get(species) ?? [] }))
+})
+
+const speciesCount = computed(() => bySpecies.size)
+
+/* Talents */
+const abilitySearch = ref('')
+const ABILITY_LIMIT = 60
+
+const filteredAbilities = computed(() => {
+  const query = abilitySearch.value.trim().toLowerCase()
+  if (!query) return abilities.slice(0, ABILITY_LIMIT)
+  return abilities
+    .filter(ability =>
+      ability.name.toLowerCase().includes(query)
+      || ability.description.toLowerCase().includes(query)
+      || (ability.expanded ?? '').toLowerCase().includes(query),
+    )
+    .slice(0, ABILITY_LIMIT)
+})
+
+const abilityMatches = computed(() => {
+  const query = abilitySearch.value.trim().toLowerCase()
+  if (!query) return abilities.length
+  return abilities.filter(ability =>
+    ability.name.toLowerCase().includes(query)
+    || ability.description.toLowerCase().includes(query)
+    || (ability.expanded ?? '').toLowerCase().includes(query),
+  ).length
+})
+
 /* Natures (§13.1) */
 const natureSearch = ref('')
 const filteredNatures = computed(() => {
@@ -48,7 +129,7 @@ const filteredNatures = computed(() => {
     <!-- Mécaniques -->
     <SectionBlock
       title="Mécaniques"
-      description="§1–4, §10, §13.0 — les fondamentaux du endgame : IV, EV, natures, talents, rôles, Battle Frontier."
+      :description="captions.mechanics"
     >
       <!-- Sommaire -->
       <nav class="flex flex-wrap gap-1.5">
@@ -121,10 +202,157 @@ const filteredNatures = computed(() => {
       </UAccordion>
     </SectionBlock>
 
+    <!-- Encounters : fournis par les jeux au code ouvert -->
+    <SectionBlock
+      v-if="encounters.length"
+      title="Où trouver quoi"
+      :description="captions.encounters"
+    >
+      <UInput
+        v-model="encounterSearch"
+        icon="i-lucide-search"
+        placeholder="Un lieu (« Route 116 ») ou une espèce (« Larvitar »)…"
+      />
+
+      <!-- Espèces : la question « où vit-il ? », posée dans ce sens -->
+      <div v-for="match in matchedSpecies" :key="match.species" class="space-y-2">
+        <h3 class="text-sm font-semibold text-highlighted">
+          {{ match.species }}
+          <span class="text-dimmed font-normal">· {{ match.spots.length }} zone{{ match.spots.length > 1 ? 's' : '' }}</span>
+        </h3>
+        <div class="table-scroll rounded-[var(--ui-radius)] border border-default">
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-muted">
+              <tr>
+                <th class="px-3 py-2 text-left font-medium text-highlighted">Lieu</th>
+                <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">Méthode</th>
+                <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">Niveaux</th>
+                <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">Slots</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="spot in match.spots" :key="`${spot.zoneId}-${spot.method}`" class="border-t border-default">
+                <td class="px-3 py-2 text-highlighted">
+                  {{ spot.zoneLabel }}
+                </td>
+                <td class="px-3 py-2 text-toned whitespace-nowrap">
+                  {{ METHOD_LABELS[spot.method] }}
+                </td>
+                <td class="px-3 py-2 text-toned tabular-nums whitespace-nowrap">
+                  {{ spot.min === spot.max ? spot.min : `${spot.min}–${spot.max}` }}
+                </td>
+                <td class="px-3 py-2 text-dimmed tabular-nums whitespace-nowrap">
+                  {{ spot.slots }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Zones : la table complète d'un lieu -->
+      <div v-for="zone in matchedZones" :key="zone.id" class="space-y-2">
+        <h3 class="text-sm font-semibold text-highlighted">
+          {{ zone.label }}
+        </h3>
+        <p v-if="zone.note" class="text-xs text-dimmed">
+          {{ zone.note }}
+        </p>
+        <div v-for="method in zone.methods" :key="method.method" class="space-y-1">
+          <p class="text-xs text-toned">
+            <span class="font-medium text-highlighted">{{ METHOD_LABELS[method.method] }}</span>
+            <span class="text-dimmed"> · taux {{ method.rate }}</span>
+          </p>
+          <div class="table-scroll rounded-[var(--ui-radius)] border border-default">
+            <table class="w-full text-sm border-collapse">
+              <tbody>
+                <tr v-for="slot in method.slots" :key="slot.species" class="border-t border-default first:border-t-0">
+                  <td class="px-3 py-1.5 text-highlighted">
+                    {{ slot.species }}
+                  </td>
+                  <td class="px-3 py-1.5 text-toned tabular-nums whitespace-nowrap w-24">
+                    {{ slot.min === slot.max ? slot.min : `${slot.min}–${slot.max}` }}
+                  </td>
+                  <td class="px-3 py-1.5 text-dimmed tabular-nums whitespace-nowrap w-20">
+                    {{ slot.slots }} slot{{ slot.slots > 1 ? 's' : '' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <p v-if="encounterSearch.trim() && !matchedZones.length && !matchedSpecies.length" class="text-sm text-dimmed">
+        Ni lieu ni espèce ne correspond. {{ encounters.length }} zones et {{ speciesCount }} espèces indexées.
+      </p>
+
+      <!-- Sommaire des lieux : rien n'est déplié tant qu'on n'a pas cherché -->
+      <div v-if="!encounterSearch.trim()" class="space-y-2">
+        <p class="text-sm text-dimmed">
+          {{ encounters.length }} zones, {{ speciesCount }} espèces. Cherche un lieu ou une espèce ci-dessus, ou pioche&nbsp;:
+        </p>
+        <nav class="flex flex-wrap gap-1.5">
+          <button
+            v-for="zone in encounters"
+            :key="zone.id"
+            type="button"
+            class="px-2.5 py-1 rounded-[var(--ui-radius)] border border-default text-xs text-toned hover:bg-elevated/60 transition-colors"
+            @click="encounterSearch = zone.label"
+          >
+            {{ zone.label }}
+          </button>
+        </nav>
+      </div>
+    </SectionBlock>
+
+    <!-- Talents -->
+    <SectionBlock
+      v-if="abilities.length"
+      title="Talents"
+      :description="captions.abilities"
+    >
+      <UInput
+        v-model="abilitySearch"
+        icon="i-lucide-search"
+        placeholder="Chercher un talent, ou un effet (« sandstorm », « contact »)…"
+      />
+
+      <p class="text-xs text-dimmed">
+        {{ abilityMatches }} talent{{ abilityMatches > 1 ? 's' : '' }}
+        <span v-if="abilityMatches > filteredAbilities.length">· {{ filteredAbilities.length }} affichés, affine la recherche</span>
+      </p>
+
+      <div class="space-y-2">
+        <AppCard v-for="ability in filteredAbilities" :key="ability.id" density="compact">
+          <div class="space-y-1">
+            <h3 class="text-sm font-medium text-highlighted">
+              {{ ability.name }}
+            </h3>
+            <p class="text-xs text-toned">
+              {{ ability.description }}
+            </p>
+            <details v-if="ability.expanded" class="text-xs">
+              <summary class="cursor-pointer text-primary hover:underline">
+                Détail des interactions
+              </summary>
+              <p class="pt-1 text-dimmed">
+                {{ ability.expanded }}
+              </p>
+            </details>
+          </div>
+        </AppCard>
+      </div>
+
+      <p v-if="!filteredAbilities.length" class="text-sm text-dimmed">
+        Aucun talent ne correspond à cette recherche.
+      </p>
+    </SectionBlock>
+
     <!-- Table des natures -->
     <SectionBlock
       title="Table des natures"
-      description="§13.1 — seules 8 natures ont un usage recommandé, les 12 autres sont des natures « miroir » peu utilisées."
+      :description="captions.natures"
     >
       <UInput
         v-model="natureSearch"
@@ -178,7 +406,7 @@ const filteredNatures = computed(() => {
     <!-- Outils -->
     <SectionBlock
       title="Outils"
-      description="§13.0 — à garder ouverts dans un onglet pendant l’optimisation."
+      :description="captions.tools"
     >
       <div class="space-y-2">
         <AppCard
@@ -209,7 +437,7 @@ const filteredNatures = computed(() => {
     <!-- Glossaire -->
     <SectionBlock
       title="Glossaire"
-      description="§13.3 — le vocabulaire compétitif utilisé partout ailleurs dans ce companion."
+      :description="captions.glossary"
     >
       <dl class="rounded-[var(--ui-radius)] border border-default divide-y divide-default">
         <div

@@ -276,12 +276,23 @@ L'app suit plusieurs jeux. Tout part de **`app/data/games.ts`**, seul endroit qu
   était une constante (`taskEntries`, `completionGroups`, `knownContent`) est devenu une fonction du
   `GameContent`, calculée une fois par jeu dans `defineGame()`. Une constante figerait le premier jeu
   importé.
-- **`/ressources` et `/reference` sont facultatives.** Un jeu qui ne les fournit pas ne les met pas
-  dans sa `nav`, et la page répond **404** plutôt que de se rendre vide. `pnpm validate` refuse une
-  nav qui proposerait une page absente.
-- **Les scripts de contenu sont spécifiques à Unbound** (`scrape:wiki`, `new:*`, `import:pokemon`,
-  `rm:pokemon`, `sprites`) : ils visent unboundwiki et les conventions de son guide. Leur ajouter un
-  `--game` serait de l'abstraction prématurée — un autre jeu aura ses propres sources.
+- **`/ressources` et `/reference` sont facultatives, et leurs *sections* aussi.** Un jeu qui ne
+  fournit pas une page ne la met pas dans sa `nav`, et la page répond **404** plutôt que de se rendre
+  vide. À l'intérieur de `/reference`, `encounters` et `abilities` sont facultatifs de la même façon :
+  la section ne se rend pas si le jeu ne les fournit pas. Les chapeaux de section (`descriptions`)
+  viennent eux aussi du contenu — ils citaient le guide d'Unbound en dur dans le template, ce qui n'a
+  aucun sens pour un jeu sans guide numéroté. `pnpm validate` refuse une nav qui proposerait une page
+  absente, et un chapeau qui décrirait une section non fournie ; `pnpm smoke` vérifie que les deux
+  sections apparaissent chez Elite Redux et **pas** chez Unbound.
+- **Un `link` de tâche peut porter une ancre** (`/reference#roxanne`), et `pnpm validate` contrôle que
+  l'ancre existe parmi les sections et sous-sections de la référence du jeu. Sans ce contrôle, une
+  coquille atterrit en haut de page sans rien signaler.
+- **Les scripts de contenu sont spécifiques à un jeu, jamais partagés.** Unbound a `scrape:wiki`,
+  `new:*`, `import:pokemon`, `rm:pokemon`, `sprites` — ils visent unboundwiki et les conventions de
+  son guide. Elite Redux a `gen:elite`, qui lit les dépôts GitHub du jeu. Leur donner un `--game`
+  commun ne ferait que coupler des parseurs sans rien de partagé. ⚠️ Les scrapers Unbound **écrivent
+  dans `app/data/unbound/`** : le type importé par le fichier généré est donc `'../types'`, et
+  l'oublier ne se voit qu'à la régénération suivante (c'était cassé depuis le passage au multi-jeux).
 - **La synchro garde un fichier de gist par jeu**, dans le même gist. Celui d'Unbound conserve son nom
   d'origine (`pokemon-companion.json`), donc un gist déjà en place continue de fonctionner.
   `SyncConfig.markers` est indexé par jeu, et `readMarkers()` **reprend l'ancien `marker` unique sur
@@ -293,7 +304,10 @@ L'app suit plusieurs jeux. Tout part de **`app/data/games.ts`**, seul endroit qu
 ### Pokémon Elite Redux
 
 Doc de référence hors-ligne dans **`docs/elite-redux/`** (description de la ROM, checklist de début
-de partie, sources). Le contenu de l'app en est tiré.
+de partie, sources). Le contenu de l'app en est tiré — `01-la-rom.md` et `02-bien-debuter.md` sont
+transcrits dans `app/data/elite-redux/reference.ts`, et le markdown reste l'archive de la démarche.
+Il porte encore les six points **« à vérifier en jeu »** (`03-sources.md`), qui ne se devinent pas :
+le plus rapide à lever est le level cap avant Roxanne, qui doit afficher **16**.
 
 - **Structure propre au jeu, et surtout pas un décalque d'Unbound** : quatre phases ordonnées
   (Débuter → Construire une équipe → Compléter le jeu → Post-game) plus un axe complétion.
@@ -305,9 +319,27 @@ de partie, sources). Le contenu de l'app en est tiré.
   `innates` à la place — les 3 talents passifs se débloquent en cours de partie et changent le build.
 - **Difficulté et level caps sont deux réglages distincts.** Tous les sites tiers les confondent. En
   caps Elite : 16 avant le premier badge, puis 23 · 36 · 45 · 50 · 55 · 60 · 70 · 80.
+- **Deux fichiers de contenu sont _générés_ depuis le code du jeu** : `encounters.ts` (142 zones,
+  635 espèces) et `abilities.ts` (1 039 talents). Le cycle est `pnpm gen:elite
+  <encounters|abilities|all>`, puis relecture, puis `pnpm check` — même contrat que `scrape:wiki`,
+  chaque module de `scripts/lib/gen-<nom>.mjs` exporte `generate({ fresh })` et **doit** contrôler son
+  compte avec `expectCount()`. Cache dans `.cache/elite-redux/`.
+  **Aucun id de ces fichiers n'est persisté** : ce sont des données de consultation, donc une
+  régénération est sans risque pour une sauvegarde — c'est ce qui les distingue du contenu wiki
+  d'Unbound. Trois pièges déjà rencontrés, à ressortir avant de toucher aux parseurs : une table
+  terrestre a **12 slots et non 12 espèces** (compter les espèces uniques faisait passer Granite Cave
+  B1F pour tronquée) ; `hidden_mons` est à taux 0 et remplie de données de test (Dialga/Palkia/Giratina
+  niveau 5 sur la Route 116), donc **ne se publie pas** ; les formes régionales **partagent le nom de
+  base** dans `species_names.h` (`SPECIES_MEOWTH_GALARIAN` rend « Meowth »), d'où une table de
+  suffixes fermée et un contrôle final qui refuse deux constants rendant le même libellé.
 - **Sources** : le jeu est open source, donc la donnée se lit dans le code plutôt que sur un wiki.
-  `Elite-Redux/eliteredux-source` (level caps dans `src/pokemon.c`, encounters, starters) et
-  `Elite-Redux/er-config` (`HelpArticles.textproto` = les articles d'aide affichés en jeu).
+  `Elite-Redux/eliteredux-source` (level caps dans `src/pokemon.c`, `wild_encounters.json`,
+  `species_names.h`, starters) et `Elite-Redux/er-config` (`HelpArticles.textproto` = les articles
+  d'aide affichés en jeu, `AbilityList.textproto` = les talents). ⚠️ `er-config` n'a **aucune branche
+  stable** : la lecture se fait sur `upcoming`, la branche de développement.
+  Deux gisements volontairement **non exploités** : `dex-strategy.md` et `recommended_sets.h` sont le
+  matériau des futures fiches Pokémon, pas de la référence ; `TrainerList.textproto` contient toutes
+  les équipes de la Ligue, et les embarquer avant d'avoir joué gâcherait la partie.
   ⚠️ `wiki.elite-redux.com` est **hors service** et `dex.elite-redux.com` injoignable en CLI (à
   ouvrir au navigateur). `eliteredux.net` et consorts sont des fermes SEO : ne jamais s'y fier ni y
   télécharger le patch — le patcher officiel est `elite-redux.com`.

@@ -50,6 +50,7 @@ export const phases: Phase[] = [
           'Randomizers sur off, auto-run sur on, shiny rate au goût.',
         ],
         requires: ['phase-1.1'],
+        link: '/reference#difficulte-level-caps',
         key: true,
         done: false,
       },
@@ -59,8 +60,10 @@ export const phases: Phase[] = [
         details: [
           '9 trios régionaux de Kanto à Paldea, plus 15 trios monotype pour un run thématique.',
           'Aucun mauvais choix : toutes les lignes ont été retravaillées, et ce sont toutes des lignes à trois stades.',
+          'La liste des 72, par région et par type, est dans la référence.',
         ],
         requires: ['phase-1.2'],
+        link: '/reference#starters',
         done: false,
       },
       {
@@ -84,6 +87,7 @@ export const phases: Phase[] = [
         ],
         requires: ['phase-1.4'],
         key: true,
+        link: '/reference#economie',
         done: false,
       },
       {
@@ -97,12 +101,17 @@ export const phases: Phase[] = [
         ],
         requires: ['phase-1.5'],
         key: true,
+        link: '/reference#zero-grind',
         done: false,
       },
       {
         id: 'phase-1.7',
         label: 'Battre **Calvin sur la Route 102** : il donne un **second starter**, tiré au hasard.',
+        details: [
+          'Les espèces sauvages de chaque zone traversée sont dans la référence, section « Où trouver quoi » — chercher le lieu, ou l’espèce qu’on veut recruter.',
+        ],
         requires: ['phase-1.6'],
+        link: '/reference',
         done: false,
       },
       {
@@ -113,6 +122,7 @@ export const phases: Phase[] = [
           '⚠️ Contenu exact des combats à vérifier en jeu.',
         ],
         requires: ['phase-1.7'],
+        link: '/reference',
         done: false,
       },
       {
@@ -126,6 +136,7 @@ export const phases: Phase[] = [
         ],
         requires: ['phase-1.8'],
         key: true,
+        link: '/reference#roxanne',
         done: false,
       },
       {
@@ -134,8 +145,10 @@ export const phases: Phase[] = [
         details: [
           'Route 116, à l’extérieur du Rusturf Tunnel : battre l’**Ace Trainer** pour M.Nidoking et M.Nidoqueen.',
           'Granite Cave B2F : battre le **Black Belt** pour les Mega Stones des **trois Hitmon**.',
+          'Rusturf Tunnel et Granite Cave valent le détour pour leurs encounters : Larvitar, Drilbur, Noibat, Riolu, Axew, Abra. Voir la référence.',
         ],
         requires: ['phase-1.9'],
+        link: '/reference',
         done: false,
       },
       {
@@ -148,6 +161,7 @@ export const phases: Phase[] = [
         ],
         requires: ['phase-1.10'],
         key: true,
+        link: '/reference#brawly',
         done: false,
       },
       {

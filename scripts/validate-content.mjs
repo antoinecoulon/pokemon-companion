@@ -109,8 +109,22 @@ for (const [id, { task, origin }] of allTasks) {
  */
 const staticRoutes = new Set(['/', '/roadmap', '/equipe', '/ressources', '/reference', '/journal', '/completion'])
 
+/** Toutes les ancres qu'une page de référence sait ouvrir, sections et sous-sections. */
+function referenceAnchors(game) {
+  const anchors = new Set()
+  const walk = (sections) => {
+    for (const section of sections ?? []) {
+      anchors.add(section.id)
+      walk(section.subsections)
+    }
+  }
+  walk(game.content.reference?.mechanics)
+  return anchors
+}
+
 for (const game of games) {
   const gameSlugs = new Set(game.content.pokemon.map(mon => mon.slug))
+  const anchors = referenceAnchors(game)
   for (const phase of game.content.phases) {
     for (const task of phase.tasks) {
       if (!task.link) continue
@@ -118,18 +132,32 @@ for (const game of games) {
         errors.push(`${game.id} : « ${task.id} » a un lien déjà préfixé (« ${task.link} ») — il doit être relatif à la racine du jeu`)
         continue
       }
-      const isSheet = task.link.startsWith('/equipe/') && gameSlugs.has(task.link.slice('/equipe/'.length))
-      if (!staticRoutes.has(task.link) && !isSheet) {
-        errors.push(`${game.id} : « ${task.id} » pointe vers « ${task.link} », qui n'est pas une route connue`)
+      /*
+       * Une ancre est autorisée (`/reference#roxanne`) et se contrôle : sans ça,
+       * une coquille dans le fragment atterrirait en haut de page sans rien
+       * signaler — le mode d'échec silencieux habituel de ce projet.
+       */
+      const [path, anchor] = task.link.split('#')
+      const isSheet = path.startsWith('/equipe/') && gameSlugs.has(path.slice('/equipe/'.length))
+      if (!staticRoutes.has(path) && !isSheet) {
+        errors.push(`${game.id} : « ${task.id} » pointe vers « ${path} », qui n'est pas une route connue`)
+      }
+      if (anchor !== undefined) {
+        if (path !== '/reference') {
+          errors.push(`${game.id} : « ${task.id} » porte une ancre sur « ${path} », que seule /reference sait ouvrir`)
+        }
+        else if (!anchors.has(anchor)) {
+          errors.push(`${game.id} : « ${task.id} » pointe vers l'ancre « #${anchor} », absente des sections de référence`)
+        }
       }
       /*
        * Une page facultative non fournie répond 404 : y envoyer une tâche
        * enverrait le joueur dans le mur.
        */
-      if (task.link === '/reference' && !game.content.reference) {
+      if (path === '/reference' && !game.content.reference) {
         errors.push(`${game.id} : « ${task.id} » pointe vers /reference, que ce jeu ne fournit pas`)
       }
-      if (task.link === '/ressources' && !game.content.resources) {
+      if (path === '/ressources' && !game.content.resources) {
         errors.push(`${game.id} : « ${task.id} » pointe vers /ressources, que ce jeu ne fournit pas`)
       }
     }
@@ -659,15 +687,87 @@ for (const game of games) {
   if (primary.length > 5) {
     errors.push(`${game.id} : ${primary.length} entrées de nav principales, la bottom-nav mobile en tient 5`)
   }
+
+  /*
+   * Encounters et talents — deux jeux de données *générés* depuis le code d'un
+   * jeu ouvert. Ils vivent dans `reference`, donc un jeu qui les fournit sans
+   * fournir de référence les rendrait invisibles : la page répondrait 404.
+   */
+  const { encounters = [], abilities = [] } = game.content.reference ?? {}
+
+  const zoneIds = new Set()
+  for (const zone of encounters) {
+    if (zoneIds.has(zone.id)) errors.push(`${game.id} : zone de rencontre dupliquée « ${zone.id} »`)
+    zoneIds.add(zone.id)
+    if (!zone.methods.length) {
+      errors.push(`${game.id} : la zone « ${zone.id} » n'a aucune méthode de rencontre`)
+    }
+    for (const method of zone.methods) {
+      if (!method.slots.length) {
+        errors.push(`${game.id} : « ${zone.id} » a une méthode ${method.method} sans aucune espèce`)
+      }
+      for (const slot of method.slots) {
+        if (slot.min > slot.max) {
+          errors.push(`${game.id} : ${zone.id} · ${slot.species} a un niveau min (${slot.min}) supérieur au max (${slot.max})`)
+        }
+      }
+    }
+  }
+
+  /*
+   * L'index inversé est *dérivé* : c'est le contrôle qui attrape une dérivation
+   * de travers, où une espèce se retrouverait rattachée à une zone inexistante.
+   */
+  for (const [species, spots] of game.encountersBySpecies) {
+    for (const spot of spots) {
+      if (!zoneIds.has(spot.zoneId)) {
+        errors.push(`${game.id} : l'index place « ${species} » dans « ${spot.zoneId} », zone inconnue`)
+      }
+    }
+  }
+  if (encounters.length && !game.encountersBySpecies.size) {
+    errors.push(`${game.id} : ${encounters.length} zones de rencontre mais un index d'espèces vide`)
+  }
+
+  const abilityNames = new Set()
+  for (const ability of abilities) {
+    if (abilityNames.has(ability.name)) {
+      errors.push(`${game.id} : talent dupliqué « ${ability.name} »`)
+    }
+    abilityNames.add(ability.name)
+    if (!ability.description?.trim()) {
+      errors.push(`${game.id} : le talent « ${ability.name} » n'a pas de description`)
+    }
+  }
+
+  /*
+   * Un chapeau de section sans sa section, ou l'inverse : les deux se voient à
+   * l'écran (un blanc, ou une section muette) sans lever la moindre erreur.
+   */
+  const captions = game.content.reference?.descriptions ?? {}
+  if (captions.encounters && !encounters.length) {
+    errors.push(`${game.id} : un chapeau décrit les encounters, que ce jeu ne fournit pas`)
+  }
+  if (captions.abilities && !abilities.length) {
+    errors.push(`${game.id} : un chapeau décrit les talents, que ce jeu ne fournit pas`)
+  }
 }
 
 /* --- Rapport ------------------------------------------------------------ */
 
 for (const game of games) {
   const tasks = game.taskEntries.length
+  const { encounters = [], abilities = [] } = game.content.reference ?? {}
+  /*
+   * Les deux jeux générés sont affichés quand ils existent : c'est là qu'une
+   * régénération amputée se verrait — 12 zones au lieu de 142 ne lève rien.
+   */
+  const generated = encounters.length || abilities.length
+    ? ` · ${encounters.length} zones (${game.encountersBySpecies.size} espèces) · ${abilities.length} talents`
+    : ''
   console.log(
     `${game.label} : ${game.content.phases.length} phases · ${tasks} tâches · `
-    + `${game.content.pokemon.length} fiches · ${game.completionEntries.length} entrées de complétion`,
+    + `${game.content.pokemon.length} fiches · ${game.completionEntries.length} entrées de complétion${generated}`,
   )
 }
 

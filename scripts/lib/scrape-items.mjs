@@ -147,7 +147,7 @@ function renderItems(items) {
     return lines.join('\n')
   })
 
-  return `import type { KeyItem } from './types'
+  return `import type { KeyItem } from '../types'
 
 /**
  * Les ${ITEM_COUNT} Key Items d'Unbound qui ont une fiche détail sur le wiki.

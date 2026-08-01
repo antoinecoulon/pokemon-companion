@@ -138,7 +138,7 @@ function renderEntries(entries) {
 }
 
 function renderCollectibles(cells, dens) {
-  return `import type { CollectibleSet } from './types'
+  return `import type { CollectibleSet } from '../types'
 
 /**
  * Zygarde Cells et raid dens.

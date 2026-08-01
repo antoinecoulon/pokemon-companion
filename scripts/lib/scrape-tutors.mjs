@@ -141,7 +141,7 @@ function renderTutors(tutors) {
     return lines.join('\n')
   })
 
-  return `import type { Tutor } from './types'
+  return `import type { Tutor } from '../types'
 
 /**
  * Les ${tutors.length} move tutors d'Unbound (Shard Tutors, Gem Family du KBT

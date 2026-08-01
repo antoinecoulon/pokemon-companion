@@ -43,6 +43,7 @@ const routes = [
   { path: '/elite-redux/completion', expect: 'Débuter' },
   { path: '/elite-redux/equipe', expect: null },
   { path: '/elite-redux/journal', expect: null },
+  { path: '/elite-redux/reference', expect: 'Talents' },
 ]
 
 const failures = []
@@ -198,6 +199,63 @@ await mobile.close()
   await context.close()
 }
 
+/* --- 1 quater. Référence : ce qui est facultatif l'est vraiment -------- */
+
+/*
+ * Encounters et talents ne sont fournis que par les jeux au code ouvert. Le
+ * mode d'échec qu'on cherche est le rendu à vide : une section qui s'affiche
+ * avec un titre et rien dedans ne lève aucune erreur, et une section qui
+ * disparaît là où elle devrait être ne se voit pas non plus au typecheck.
+ */
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+
+  const elite = await openPage(context, 'référence elite-redux')
+  await elite.goto(`${baseUrl}/elite-redux/reference`, { waitUntil: 'networkidle' })
+
+  for (const title of ['Où trouver quoi', 'Talents']) {
+    if (await elite.locator('h2', { hasText: title }).count() === 0) {
+      failures.push(`référence elite-redux — section « ${title} » absente`)
+    }
+  }
+
+  /* La recherche doit réellement filtrer : un champ qui n'agit pas est le
+   * défaut probable ici, et il est invisible tant qu'on ne compte pas. */
+  const abilityField = elite.getByPlaceholder('Chercher un talent', { exact: false })
+  const before = await elite.locator('h3').count()
+  await abilityField.fill('Sand Stream')
+  await elite.waitForTimeout(300)
+  const after = await elite.locator('h3').count()
+  if (after >= before) {
+    failures.push(`référence elite-redux — la recherche de talent ne filtre pas (${before} → ${after})`)
+  }
+  if (await elite.locator('h3', { hasText: 'Sand Stream' }).count() === 0) {
+    failures.push('référence elite-redux — « Sand Stream » introuvable dans les talents')
+  }
+
+  /* Une espèce : c'est l'index inversé qui répond, pas la liste des zones. */
+  const encounterField = elite.getByPlaceholder('Un lieu', { exact: false })
+  await encounterField.fill('Larvitar')
+  await elite.waitForTimeout(300)
+  const bodyText = await elite.locator('body').innerText()
+  if (!bodyText.includes('Rusturf Tunnel')) {
+    failures.push('référence elite-redux — « Larvitar » ne renvoie pas Rusturf Tunnel')
+  }
+
+  const unbound = await openPage(context, 'référence unbound')
+  await unbound.goto(`${baseUrl}/unbound/reference`, { waitUntil: 'networkidle' })
+  for (const title of ['Où trouver quoi', 'Talents']) {
+    if (await unbound.locator('h2', { hasText: title }).count() > 0) {
+      failures.push(`référence unbound — section « ${title} » rendue alors qu'Unbound ne la fournit pas`)
+    }
+  }
+  if (await unbound.locator('h2', { hasText: 'Table des natures' }).count() === 0) {
+    failures.push('référence unbound — la table des natures a disparu')
+  }
+
+  await context.close()
+}
+
 /* --- 2. Persistance : cocher une tâche, recharger --------------------- */
 
 const persistence = await browser.newContext({ viewport: { width: 1280, height: 900 } })
@@ -276,4 +334,4 @@ if (failures.length) {
   process.exit(1)
 }
 
-console.log(`${routes.length} routes × 2 viewports · cloisonnement des jeux · sélecteur · persistance · aller-retour export/import — tout passe.`)
+console.log(`${routes.length} routes × 2 viewports · cloisonnement des jeux · sélecteur · sections facultatives de référence · persistance · aller-retour export/import — tout passe.`)

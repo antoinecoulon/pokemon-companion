@@ -152,7 +152,22 @@ export const unboundContent: GameContent = {
     ...collectibleKeys,
     ...keyItemKeys,
   ],
-  reference: { mechanics, tools, glossary },
+  reference: {
+    mechanics,
+    tools,
+    glossary,
+    /*
+     * Ces chapeaux vivaient en dur dans `pages/[game]/reference.vue`, où ils
+     * citaient les sections du guide Unbound — sans aucun sens pour un jeu qui
+     * n'en a pas. Le texte est repris à l'identique : la page ne change pas.
+     */
+    descriptions: {
+      mechanics: '§1–4, §10, §13.0 — les fondamentaux du endgame : IV, EV, natures, talents, rôles, Battle Frontier.',
+      natures: '§13.1 — seules 8 natures ont un usage recommandé, les 12 autres sont des natures « miroir » peu utilisées.',
+      tools: '§13.0 — à garder ouverts dans un onglet pendant l’optimisation.',
+      glossary: '§13.3 — le vocabulaire compétitif utilisé partout ailleurs dans ce companion.',
+    },
+  },
   resources: { npcs, battleItems, battleItemsTip, consumables, farmingTopics },
   nav: navFor('/unbound', [
     { label: 'Accueil', to: '/', icon: 'i-lucide-house', primary: true },

@@ -90,7 +90,7 @@ export default {
     {
       id: 'mon-excadrill-2',
       label: 'Lire ses IV/EV actuels (PNJ Frontier)',
-      requires: ['mon-excadrill-1', 'phase-0.0'],
+      requires: ['mon-excadrill-1'],
     },
     {
       id: 'mon-excadrill-3',
@@ -106,27 +106,27 @@ export default {
     {
       id: 'mon-excadrill-5',
       label: 'Nature → **Adamant** (build A) ou **Jolly** (build B), Tehl Town, 50 000 $',
-      requires: ['mon-excadrill-1', 'phase-1.1'],
+      requires: ['mon-excadrill-1'],
     },
     {
       id: 'mon-excadrill-6',
       label: 'EV : Trainer House de Dresco, dresseur Attack (Power Bracer) + dresseur Speed (Power Anklet)',
-      requires: ['mon-excadrill-3', 'phase-1.4'],
+      requires: ['mon-excadrill-3'],
     },
     {
       id: 'mon-excadrill-7',
       label: 'IV : Bottle Caps sur **Attack, Speed, HP** — **ignore la SpA**',
-      requires: ['mon-excadrill-2', 'phase-2.4'],
+      requires: ['mon-excadrill-2'],
     },
     {
       id: 'mon-excadrill-8',
-      label: 'Moveset : **Earthquake (TM)** et **Rock Slide (TM)** ; **Rapid Spin**, **Iron Head** et **Swords Dance** via le Move Relearner de **Crater Town** (Heart Scales) ou les tuteurs de la Battle Frontier',
+      label: 'Moveset : **Earthquake (TM)**, **Rock Slide (TM)** et **Swords Dance (TM)** ; **Rapid Spin** via le Move Relearner de **Crater Town** (Heart Scales) si oublié. ⚠️ **Iron Head n\'est pas un acquis de niveau** — il ne passe pas par le Move Relearner, uniquement par les **tuteurs de la Battle Frontier**',
       requires: ['mon-excadrill-1'],
     },
     {
       id: 'mon-excadrill-9',
       label: 'Objet : **Choice Band** (48 BP au Battle Tower) pour le build A, **Leftovers** ou **Life Orb** pour le build B',
-      requires: ['mon-excadrill-1', 'phase-2.6'],
+      requires: ['mon-excadrill-1'],
     },
     {
       id: 'mon-excadrill-10',

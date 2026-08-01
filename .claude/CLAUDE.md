@@ -17,7 +17,9 @@ Faciliter mon suivi via une application web qui me permette de suivre mes progr�
 et statistiques simplement et rapidement. Navigation fluide et organisée, mobile-friendly.
 
 **État : l'application est construite et fonctionnelle.** Le guide markdown reste archivé dans `docs/`
-comme source de vérité éditoriale, mais l'app le remplace à l'usage.
+pour l'historique de la démarche, mais **il n'est plus une source de vérité** : la partie a
+progressé au-delà de ce qu'il couvre, et une relecture (2026-08) y a trouvé des erreurs factuelles
+(talents cachés, movesets). Pour toute donnée Pokémon, voir la référence externe ci-dessous.
 
 ## Décisions techniques prises
 
@@ -29,32 +31,44 @@ comme source de vérité éditoriale, mais l'app le remplace à l'usage.
 | Persistance | `localStorage` + export/import JSON | pas de backend, pas de compte, hors-ligne |
 | Multi-appareils | gist privé GitHub, « le plus récent gagne » | seul stockage déjà possédé par le joueur ; l'hébergement statique interdit un backend |
 | Accès | build statique + PWA installable | consultable sur téléphone, y compris hors connexion |
-| Navigation | dashboard + Roadmap / Équipe / Ressources / Référence, + Journal | met l'action en avant tout en suivant la structure du guide |
+| Navigation | dashboard + Complétion / Équipe / Ressources / Journal, + Référence | la complétion a remplacé la roadmap : le guide est dépassé, seule la Battle Frontier en restait |
 | Engagement | progression visuelle + « prochaine action » calculée | retenu ; la gamification (badges, streaks) a été écartée |
 
 TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec TypeScript 7.
 
 ## Règles de travail sur ce projet
 
-- **Ne jamais renommer un `id` de tâche existant** (`phase-<n>.<m>`, `mon-<slug>-<n>`,
-  `ready-<slug>-<key>`). Les libellés peuvent changer librement ; les ids sont le contrat avec les
-  sauvegardes déjà écrites. **Depuis la v2, cela vaut aussi pour les ids de PNJ et de quête**, persistés
-  sous les clés préfixées `npc:<id>`, `quest:<id>` et `goal:<id>` — le préfixe évite une collision réelle
-  (`objets-pouvoir` est à la fois un consommable et une quête ; `portal-purge` est à la fois une quête
-  et le nom d'une section de complétion).
-- **La complétion post-game vit à part de la roadmap, et ça n'est pas négociable.**
-  `app/data/completion.ts` couvre ce que le guide n'inventorie pas (Black Trainer Card, Prints des
-  quatre bâtiments, légendaires des portails, Mega Stones, Game Corner) et ce qu'il mentionne sans le
-  rendre cochable (§9.1 les ramassages gratuits, §2.4 les talents cachés, §0.1 et §6.7-C les deux
-  tests). Ce sont des **ressources**, comme les PNJ et les quêtes : pas de `requires`, pas de poids,
-  jamais dans « prochaines actions », et comptées par `useProgress().completion` — **jamais** par
-  `overall`. Les fondre dans la roadmap ferait chuter d'un coup l'avancement d'une partie en cours.
-  Le champ `source` de chaque objectif est **obligatoire** et `pnpm validate` le vérifie : hors du
-  guide, rien ne s'y écrit qui n'ait été lu sur romhackdex ou unboundwiki. Ne jamais y recopier une
-  tâche qui existe déjà ailleurs — l'accès à la Frontier est `phase-5.4`, l'échange Hard Stones → Gems
-  est `quest:as-hard-as-they-come`, le farm est `phase-2.1` à `2.7`.
-- **Passer par `pnpm new:npc` / `new:quest` / `new:task` / `new:goal`** pour ajouter du contenu : les scripts
-  impriment le squelette avec la bonne convention d'id et refusent un id déjà pris.
+- **Ne jamais renommer un `id` existant.** Les libellés peuvent changer librement ; les ids sont le
+  contrat avec les sauvegardes déjà écrites. Cela vaut pour les tâches (`phase-<n>.<m>`,
+  `mon-<slug>-<n>`, `ready-<slug>-<key>`) **et pour toutes les ressources**, persistées sous une clé
+  préfixée : `npc:`, `goal:`, `mission:`, `tutor:`, `raid:`, `cell:`, `item:`. Le préfixe évite des
+  collisions réelles — `objets-pouvoir` est à la fois un consommable et l'ancien lot de quêtes,
+  `portal-purge` est à la fois la mission `#050` et le nom d'une section de complétion. Deux ids
+  n'ont plus le droit d'exister : `phase-0.x` à `phase-4.x` (roadmap du guide, retirée) et `quest:`
+  (`quests.ts` absorbé par `missions.ts`) — des sauvegardes les portent encore, **ne jamais les
+  réattribuer à autre chose**.
+- **La progression se mesure sur deux axes, et les fondre est interdit.**
+  `overall` compte ce qui est *actionnable* et ordonné — les tâches de la Battle Frontier
+  (`app/data/phases.ts`) et celles des fiches Pokémon actives. Elles ont des `requires`, un poids, et
+  alimentent « prochaines actions ». `completion` compte la *collection* : objectifs éditoriaux
+  (`completion.ts`), missions, PNJ, move tutors, raid dens, Zygarde Cells, objets clés. Ces
+  entrées-là n'ont ni dépendances ni ordre et n'entrent **jamais** dans « prochaines actions ».
+  Verser l'une dans l'autre ferait chuter d'un coup l'avancement d'une partie en cours — c'est la
+  raison d'origine du cloisonnement, et elle n'a pas changé.
+- **Le champ `source` est obligatoire sur toute entrée de complétion**, et `pnpm validate` le vérifie :
+  soit une section du guide (`§9.1`), soit l'URL consultée. Rien ne s'y écrit qui n'ait été lu sur
+  romhackdex ou unboundwiki. Ne jamais y recopier une entrée qui existe déjà ailleurs — l'accès à la
+  Frontier est `phase-5.4`, l'échange Hard Stones → Gems est la mission `#010`.
+- **Missions, tutors, collectibles et objets clés sont des fichiers _générés_.** Le cycle est
+  `pnpm scrape:wiki <missions|collectibles|tutors|items|all>`, puis relecture, puis `pnpm check`.
+  Corriger `app/data/missions.ts` à la main, c'est perdre la correction à la régénération suivante :
+  une donnée fausse se corrige dans le parseur (`scripts/lib/scrape-<nom>.mjs`) ou se signale au
+  wiki. Chaque module de catégorie exporte `scrape({ fresh })` et **doit** contrôler son compte
+  d'entrées avec `expectCount()` — un parseur cassé ne lève pas, il rend moins d'entrées, et sans ce
+  garde-fou une régénération remplacerait 84 missions par trois en silence. Les pages sont mises en
+  cache dans `.cache/wiki/` ; `--fresh` l'ignore.
+- **Passer par `pnpm new:npc` / `new:task` / `new:goal`** pour ajouter du contenu écrit à la main : les
+  scripts impriment le squelette avec la bonne convention d'id et refusent un id déjà pris.
 - **Une fiche Pokémon ne s'écrit pas à la main.** Une fiche par fichier dans `app/data/pokemon/<slug>.ts`,
   assemblées par un `index.ts` **généré** — ne pas éditer la liste du barrel, la régénérer. Le cycle est :
   `pnpm new:pokemon <Nom>` (squelette JSON) → rédaction selon `docs/fiche-pokemon.md` → `pnpm
@@ -89,11 +103,46 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   le reste du contenu, la règle tient à la relecture, il n'y a pas de contrôle automatique. La
   colonne `fr` de `natures.ts` reste néanmoins nécessaire — `toNatureEn()` et `matchesNature()` s'en
   servent pour relire les natures saisies en français dans les sauvegardes antérieures.
-- **Ne pas deviner de données Pokémon.** Le guide est la source de référence. Là où il est muet, les
-  données factuelles (stats, types, talents, learnset, obtention) se prennent sur
-  **romhackdex.net/unbound** ou **unboundwiki.com**, et les décisions de build s'en déduisent
-  explicitement. Ce qui reste invérifiable garde `incomplete: true` et l'UI affiche « fiche à
-  compléter » — voir Sceptile. On ne comble pas un trou par une supposition.
+- **Ne rien deviner : deux références, deux périmètres.** Le guide donne les *décisions de build*
+  (pourquoi ce Pokémon, ce rôle), mais plus les *faits*. Ceux-ci se lisent, jamais ne s'inventent, et
+  l'autorité dépend de ce qu'on cherche :
+  - **[romhackdex.net/unbound](https://romhackdex.net/unbound/)** — seule autorité sur les **données
+    Pokémon** : stats, types, talents, learnset (TM, niveau, Move Relearner, tuteur), obtention,
+    localisation sauvage, effets d'objets. Chemins `/pokedex/<slug>/`, `/moves/`, `/abilities/`,
+    `/locations/`, `/items/`.
+  - **[unboundwiki.com](https://unboundwiki.com/)** — autorité sur le **contenu de monde et de
+    progression**, c'est-à-dire tout ce que romhackdex ne couvre pas : missions (`/missions/`), lieux
+    (`/locations/`), PNJ à service (`/misc-info/useful-npcs/`), move tutors
+    (`/misc-info/move-tutors/`), raid dens (`/raid-dens/`), collectibles (`/items/zygarde-cells/`),
+    objets clés (`/items/key-items/`), Mega Stones (`/mega-stones/`), Black Trainer Card, Battle
+    Frontier, événements quotidiens et Game Corner (`/extras/`).
+
+  ⚠️ **L'avertissement sur unboundwiki tient toujours, mais seulement sur son hors-périmètre** : sur
+  une *donnée Pokémon*, il a été pris à recopier des valeurs du jeu officiel divergentes d'Unbound
+  (talent caché de Dusknoir, relecture 2026-08), donc toute donnée Pokémon lue là-bas se confirme sur
+  romhackdex. Ne pas étendre ce doute au contenu de monde, où il est la seule source et où il s'est
+  montré fiable et régulier.
+
+  Ce qui reste invérifiable garde `incomplete: true` et l'UI affiche « fiche à compléter » — voir
+  Sceptile. On ne comble pas un trou par une supposition.
+
+  ⚠️ **romhackdex bloque `WebFetch`** (403, anti-bot) — passer par `curl` avec un
+  `User-Agent` de navigateur (`curl -s -A "Mozilla/5.0 ..." -L <url>`) pour le lire depuis Claude Code.
+  **La même précaution vaut pour unboundwiki** : `curl` avec un User-Agent de navigateur est la voie
+  vérifiée (c'est ce que fait `scripts/lib/wiki.mjs`). Le wiki est un WordPress dont le sitemap
+  énumère les 1 500 pages : `sitemap_index.xml` → `page-sitemap.xml` et `wiki-sitemap1..8.xml`.
+  Deux pièges rencontrés en le parsant, à ressortir avant d'écrire un parseur : les titres de section
+  sont des `<h3>` là où on attend des `<h2>`, et **le balisage des tables d'info est invalide**
+  (`<tr>` non fermés, `<td>` refermé par un `</th>`) — lire les cellules jusqu'à la balise de cellule
+  suivante, jamais se fier aux lignes.
+  Le tableau des capacités liste, pour chaque section (Level Up / TM / HM / Tutor / Egg Moves), la
+  **seule** vraie source d'acquisition : une capacité listée uniquement en Tutor ou en Egg Moves
+  n'est **pas** proposée par le Move Relearner, qui ne reteache que les capacités de niveau oubliées
+  — erreur trouvée sur plusieurs fiches en 2026-08 (Iron Head d'Excadrill, Pain Split de Rotom-Wash,
+  Dragon Dance de Tyranitar, Roost de Togekiss/Gliscor, Psyshock de Slowbro).
+  [ydarissep.github.io/Unbound-Pokedex](https://ydarissep.github.io/Unbound-Pokedex/) n'est **pas**
+  utilisable comme référence automatisée : c'est un outil client-side qui parse une ROM importée
+  dans le navigateur, sans données statiques accessibles par `WebFetch` ou `curl`.
 - **Ne jamais référencer un composant par son nom dans `:is`.** `:is="'NuxtLink'"` ne résout pas : Vue
   rend un élément littéral `<nuxtlink>`, donc aucun `<a>` et aucune navigation — sans la moindre erreur.
   Importer le composant depuis `#components` (voir `AppCard.vue`). `pnpm smoke` échoue désormais sur
@@ -129,8 +178,15 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   `pnpm smoke:offline` sur le build de production quand on touche à la PWA ou aux icônes. L'app étant un
   SPA, ni `typecheck` ni `generate` ne détectent une erreur de rendu : seul le test navigateur le fait.
 - Ce document et le README sont écrits au fil de l'eau et maintenus à jour.
-- Utiliser des modèles plus légers pour les tâches mécaniques (transcription de tables, application
-  d'un motif déjà établi), en relisant systématiquement leur sortie avant intégration.
+- **Sonnet et Haiku au maximum ; Opus est réservé à l'orchestration et aux tâches les plus
+  complexes.** C'est le défaut, pas une suggestion. Relèvent de Sonnet/Haiku : écrire un parseur de
+  table une fois le motif établi, transcrire des données, appliquer un motif connu à N fichiers,
+  toute tâche dont la sortie est *falsifiable* — un contrôle de compte, un test, un typecheck.
+  Restent sur Opus : la conception du modèle de données et des contrats d'id, tout ce qui peut faire
+  perdre une progression (migrations, purge, sync), les arbitrages entre sources qui se contredisent,
+  et **la relecture systématique de toute sortie déléguée avant intégration** — c'est la contrepartie
+  du délestage, pas une option. Déléguer sans garde-fou vérifiable ne fait pas gagner de temps : la
+  règle est de donner au sous-agent de quoi échouer bruyamment.
 - S'arrêter et me poser la question dès qu'une alternative technique intéressante apparaît, qu'un choix
   produit n'est pas couvert, ou que le guide est ambigu.
 
@@ -139,24 +195,27 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
 Il n'y a plus de fiche `incomplete`. Ce qui suit reste vrai **du guide**, pas de l'app : le garder
 en tête avant de « corriger » un écart entre les deux.
 
+Les phases 0 à 4 de sa roadmap ont été retirées de l'app en 2026-08 : la partie les avait dépassées.
+Ce qu'elles disaient de vrai n'a pas disparu pour autant — les décisions de build vivent dans les
+fiches Pokémon, les PNJ à service dans /ressources, et la Battle Frontier reste `phase-5.x`.
+
 - **§6 n'a de fiche ni pour Excadrill ni pour Rotom-Wash**, alors que §7.3 les place aux slots 2
   et 4. Les deux ont été complétées depuis les données Unbound ; le guide, lui, garde des fiches
   complètes pour Dusknoir et Zeraora, tous deux sortis de l'équipe.
 - **§7.3 assigne à Excadrill le Choice Band *et* Rapid Spin**, or l'objet verrouille sur la première
   capacité utilisée. La fiche assume la tension dans son build A et l'évite dans son build B — la
   note du build A le dit à l'écran, pas seulement dans le fichier.
-- **§5 phase 3 saute de 3.1 à 3.3** et ne couvre que Togekiss et Tyranitar. Les quatre autres membres
-  ont désormais leurs entrées `phase-3.4` à `3.7` — elles ne viennent pas du guide. Seul Excadrill y
-  est prioritaire, et parce que §4.1 justifie l'urgence du retrait de hazards ; les trois autres
-  suivent l'ordre des sections §6, faute d'un classement de ROI dans la source.
 - **Sceptile** n'avait pas de fiche : complétée depuis romhackdex. Au passage, **Mega Sceptile a
   *Technician* dans Unbound**, pas *Lightning Rod* comme dans le jeu officiel.
+- **§6.7-B proposait Dusknoir comme mule à objets pour son talent caché *Frisk*** — faux dans
+  Unbound, où son talent caché est **Iron Fist** (romhackdex, 2026-08). La fiche `mule-a-objets.ts`
+  ne recommande plus que **Banette**, qui a réellement *Frisk* (en talent 2, pas caché).
 - **§10.2 est périmé** : l'équipe de Frontier qu'il recommande met Zeraora en lead, alors que §6.5 et
   §7.3 le sortent de l'équipe. `phase-5.5` le signale plutôt que de recopier la contradiction.
 - **§10.1 n'était pas suivi** : l'accès à la Frontier (barrière au nord de Seaport City, Frontier
   Card) est devenu `phase-5.4`, et conditionne `phase-5.1`.
-- **Les tâches des fiches non actives ne comptent pas.** `trackedEntriesFor` ne suit que la roadmap
-  et les six actifs : les tâches ajoutées aux utilitaires §6.7 et aux sortants s'affichent sur leur
+- **Les tâches des fiches non actives ne comptent pas.** `trackedEntriesFor` ne suit que la Battle
+  Frontier et les six actifs : les tâches ajoutées aux utilitaires §6.7 et aux sortants s'affichent sur leur
   fiche mais n'entrent ni dans la progression ni dans « prochaines actions ». C'est volontaire —
   élargir ce périmètre changerait les pourcentages d'une sauvegarde en cours.
 

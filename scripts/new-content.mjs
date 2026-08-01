@@ -12,7 +12,6 @@
  * Usage :
  *   pnpm new:pokemon Lucario
  *   pnpm new:npc "Move Tutor de Dehara"
- *   pnpm new:quest "#042" "Chasse aux Ronflex"
  *   pnpm new:task phase-2          # tâche dans une phase existante
  *   pnpm new:goal portails "Regirock"
  */
@@ -112,26 +111,6 @@ switch (kind) {
     break
   }
 
-  case 'quest': {
-    const [code, name] = args
-    if (!code || !name) fail('usage : pnpm new:quest "<#code>" "<nom>"')
-    const id = slugify(name)
-
-    const { quests } = await loadData('quests.ts')
-    if (quests.some(quest => quest.id === id)) fail(`la quête « ${id} » existe déjà`)
-
-    block(`Quête ${code} « ${name} »`, 'app/data/quests.ts', `  {
-    id: '${id}',
-    code: '${code}',
-    name: '${name}',
-    location: '',
-    reward: '',
-    interest: 3, // 1 à 5
-  },`)
-    console.log(`\nClé de sauvegarde : quest:${id} — ne la renomme plus une fois cochée.`)
-    break
-  }
-
   case 'task': {
     const [phaseId] = args
     if (!phaseId) fail('usage : pnpm new:task <phase-id>  (ex. phase-2)')
@@ -195,9 +174,11 @@ switch (kind) {
     console.error(`Type inconnu : « ${kind ?? '(aucun)'} »\n`)
     console.error('  pnpm new:pokemon <nom>')
     console.error('  pnpm new:npc "<service>"')
-    console.error('  pnpm new:quest "<#code>" "<nom>"')
     console.error('  pnpm new:task <phase-id>')
     console.error('  pnpm new:goal "<section-id>" "<libellé>"')
+    console.error('')
+    console.error('Missions, tutors, collectibles et objets clés ne s\'écrivent pas ici :')
+    console.error('ils sont générés — pnpm scrape:wiki <missions|collectibles|tutors|items|all>')
     process.exit(1)
 }
 

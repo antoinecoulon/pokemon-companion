@@ -14,13 +14,14 @@ const baseUrl = process.argv[2] ?? 'http://localhost:3000'
 
 // `links` : préfixe de href dont la page doit contenir au moins un lien.
 const routes = [
-  { path: '/', expect: 'Progression globale', links: '/equipe/' },
-  { path: '/roadmap', expect: 'tâches' },
+  { path: '/', expect: 'Complétion', links: '/equipe/' },
+  // `/roadmap` ne rend plus rien : elle redirige vers `/completion`.
+  { path: '/roadmap', expect: 'Complétion' },
   { path: '/equipe', expect: null, links: '/equipe/' },
   { path: '/equipe/tyranitar', expect: 'Tyranitar' },
   { path: '/equipe/excadrill', expect: 'Excadrill' },
   { path: '/ressources', expect: null },
-  { path: '/completion', expect: 'Complétion post-game' },
+  { path: '/completion', expect: 'Complétion' },
   { path: '/reference', expect: null },
   { path: '/journal', expect: null },
 ]
@@ -102,17 +103,17 @@ const persistence = await browser.newContext({ viewport: { width: 1280, height: 
 const page = await openPage(persistence, 'persistance')
 
 /*
- * On cible la phase 5 par son ancre : ses trois tâches sont toutes décochées
- * dans le guide, et viser une case NOMMÉE plutôt qu'un compte global rend le
- * test indépendant de la phase que l'accordéon décide d'ouvrir — laquelle
- * change justement dès qu'on coche quelque chose.
+ * La Battle Frontier est rendue en clair en tête de /completion, hors de
+ * l'accordéon : ses tâches sont donc toujours dans le DOM, quel que soit le
+ * groupe que l'accordéon décide d'ouvrir. Viser une case NOMMÉE plutôt qu'un
+ * compte global garde le test stable quand on coche quelque chose.
  */
-const ANCHOR = '/roadmap#phase-5'
+const ANCHOR = '/completion'
 await page.goto(`${baseUrl}${ANCHOR}`, { waitUntil: 'networkidle' })
 
 const target = page.locator('button[role="checkbox"][data-state="unchecked"]').first()
 if (await target.count() === 0) {
-  failures.push('persistance — aucune case décochée trouvée sur /roadmap#phase-5')
+  failures.push('persistance — aucune case décochée trouvée sur /completion')
 }
 else {
   const label = await target.getAttribute('aria-label')

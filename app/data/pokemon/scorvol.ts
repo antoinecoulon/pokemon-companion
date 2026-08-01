@@ -127,25 +127,22 @@ export default {
     {
       id: 'mon-scorvol-5',
       label: 'Purger les EV — baies au marché de **Fallshore City** (inutile s’il est fraîchement capturé)',
-      requires: ['phase-2.2'],
       done: false,
     },
     {
       id: 'mon-scorvol-6',
       label: 'Nature → **Impish** (Tehl Town, 50 000 $)',
-      requires: ['phase-1.1'],
       done: false,
     },
     {
       id: 'mon-scorvol-7',
       label: 'EV : Dresco, dresseur HP (Power Weight) + dresseur Defense (Power Belt)',
-      requires: ['mon-scorvol-5', 'phase-1.4'],
+      requires: ['mon-scorvol-5'],
       done: false,
     },
     {
       id: 'mon-scorvol-8',
       label: 'IV : Bottle Caps sur **HP et Defense**. **Ignore la SpA** ; l’Attack est secondaire (utile seulement pour *Earthquake*/*Facade*)',
-      requires: ['phase-2.4'],
       done: false,
     },
     {
@@ -156,7 +153,7 @@ export default {
     },
     {
       id: 'mon-scorvol-10',
-      label: 'Moveset : **Stealth Rock (TM)**, **Earthquake (TM)**, **Roost** et **Knock Off** via Move Relearner de Crater Town ou tuteurs de la Frontier',
+      label: 'Moveset : **Stealth Rock (TM)**, **Earthquake (TM)** et **Roost (TM51)** ; **Knock Off** via Move Relearner de Crater Town si oublié (déjà connu de niveau) ou tuteurs de la Frontier',
       done: false,
     },
     {

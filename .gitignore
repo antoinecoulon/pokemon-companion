@@ -7,6 +7,9 @@ dist
 # Dependencies
 node_modules
 
+# Cache des pages unboundwiki (pnpm scrape:wiki)
+.cache
+
 # Logs
 *.log
 logs

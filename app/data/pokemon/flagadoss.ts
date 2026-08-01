@@ -136,7 +136,6 @@ export default {
       id: 'mon-flagadoss-1',
       label: '**Obtenir un Slowpoke ou un Slowbro.** Le plus propre : **DexNav un Slowpoke** jusqu’à en trouver un **3★** (3 IV déjà à 31) — ça t’économise 3 Bottle Caps. Alternative : Repaire de Raid de la **Route 14 (4-5★)** pour un Slowbro direct.',
       priority: 1,
-      requires: ['phase-1.2'],
       done: true,
     },
     {
@@ -166,36 +165,32 @@ export default {
     {
       id: 'mon-flagadoss-5',
       label: 'Purger les EV parasites — baies au marché de **Fallshore City**',
-      requires: ['phase-2.2'],
       done: true,
     },
     {
       id: 'mon-flagadoss-6',
       label: 'Nature → **Bold** (Tehl Town, 50 000 $)',
-      requires: ['phase-1.1'],
       done: true,
     },
     {
       id: 'mon-flagadoss-7',
       label: 'EV : Dresco, dresseur HP (Power Weight) puis dresseur Defense (Power Belt), avec Macho Brace amélioré si tu ne fais qu’une stat à la fois',
-      requires: ['mon-flagadoss-5', 'phase-1.4'],
+      requires: ['mon-flagadoss-5'],
       done: true,
     },
     {
       id: 'mon-flagadoss-8',
       label: 'IV : Bottle Caps sur **HP et Defense** en priorité, puis SpD. **Ignore l’Attack et la Speed** — une Attack basse réduit les dégâts de *Foul Play*, et la Speed ne lui sert à rien',
-      requires: ['phase-2.4'],
       done: true,
     },
     {
       id: 'mon-flagadoss-9',
-      label: 'Moveset : **Scald (TM)**, **Slack Off** et **Psyshock** via le Move Relearner de **Crater Town** (Heart Scales) ou les tuteurs de la Battle Frontier',
+      label: 'Moveset : **Scald (TM)** et **Psyshock (TM104)** ; **Slack Off** via le Move Relearner de **Crater Town** (Heart Scales) si oublié',
       done: true,
     },
     {
       id: 'mon-flagadoss-10',
       label: 'Objet : **Leftovers** au Game Corner (5 000 jetons). ⚠️ Vérifie que Togekiss ou Rotom-Wash ne le porte pas déjà — certains formats de la Frontier interdisent les objets en double',
-      requires: ['phase-2.6'],
       done: false,
     },
     {

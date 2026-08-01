@@ -17,9 +17,12 @@ const { counters } = await loadData('counters.ts')
 const { readinessCriteria } = await loadData('readiness.ts')
 const { npcs } = await loadData('npcs.ts')
 const { battleItems, consumables } = await loadData('items.ts')
-const { quests } = await loadData('quests.ts')
 const { farmingTopics } = await loadData('farming.ts')
 const { completionSections } = await loadData('completion.ts')
+const { missions } = await loadData('missions.ts')
+const { tutors } = await loadData('tutors.ts')
+const { collectibleSets } = await loadData('collectibles.ts')
+const { keyItems } = await loadData('keyitems.ts')
 
 const errors = []
 const warnings = []
@@ -159,13 +162,26 @@ if (readinessCriteria.length !== 7) {
 /* --- 7. Ressources : ids uniques, et namespaces sans collision --------- */
 
 /*
- * Ces quatre fichiers n'étaient validés par rien jusqu'ici. Or les ids de PNJ et
- * de quête sont désormais persistés (`resources` dans la sauvegarde), donc ils
- * sont soumis au même contrat de durabilité que les ids de tâche.
+ * Tout id persisté est soumis au même contrat de durabilité que les ids de
+ * tâche. Avec sept catégories, la collision n'est plus une hypothèse : la
+ * mission `#050` s'appelle *Portal Purge*, et `portails` est aussi une section
+ * de complétion. Le contrôle porte donc sur la clé **préfixée**.
  */
 const resourceSets = [
   { name: 'npcs.ts', prefix: 'npc', entries: npcs, persisted: true },
-  { name: 'quests.ts', prefix: 'quest', entries: quests, persisted: true },
+  { name: 'missions.ts', prefix: 'mission', entries: missions, persisted: true },
+  { name: 'tutors.ts', prefix: 'tutor', entries: tutors, persisted: true },
+  { name: 'keyitems.ts', prefix: 'item', entries: keyItems, persisted: true },
+  /*
+   * Chaque set porte son propre préfixe (`cell:` ou `raid:`) : ils sont dans le
+   * même fichier mais forment deux namespaces distincts.
+   */
+  ...collectibleSets.map(set => ({
+    name: `collectibles.ts (${set.id})`,
+    prefix: set.prefix,
+    entries: set.entries,
+    persisted: true,
+  })),
   { name: 'items.ts (battleItems)', prefix: null, entries: battleItems, persisted: false },
   { name: 'items.ts (consumables)', prefix: null, entries: consumables, persisted: false },
   { name: 'farming.ts', prefix: null, entries: farmingTopics, persisted: false },
@@ -250,11 +266,74 @@ for (const section of completionSections) {
  * ce contrôle sur la source, comme pour les icônes de nuxt.config.ts.
  */
 const saveSource = await readFile(new URL('../app/composables/useSave.ts', import.meta.url), 'utf8')
-if (!saveSource.includes('completionGoalKeys')) {
-  errors.push(
-    'app/composables/useSave.ts n\'inscrit pas completionGoalKeys dans knownContent — '
-    + 'la purge effacerait tous les objectifs de complétion cochés',
-  )
+for (const keys of ['completionGoalKeys', 'missionKeys', 'tutorKeys', 'collectibleKeys', 'keyItemKeys']) {
+  if (!saveSource.includes(keys)) {
+    errors.push(
+      `app/composables/useSave.ts n'inscrit pas ${keys} dans knownContent — `
+      + 'la purge effacerait toutes les cases cochées de cette catégorie',
+    )
+  }
+}
+
+/* --- 7 ter. Contenu généré : sources et comptes ------------------------ */
+
+/*
+ * Mêmes exigences que pour les objectifs de complétion, sur les fichiers générés
+ * par `pnpm scrape:wiki` : un libellé, et une source vérifiable. Ici la source
+ * est forcément une URL — ces entrées ne viennent pas du guide.
+ */
+const wikiSets = [
+  { name: 'missions.ts', entries: missions },
+  { name: 'tutors.ts', entries: tutors },
+  { name: 'keyitems.ts', entries: keyItems },
+  ...collectibleSets.map(set => ({ name: `collectibles.ts (${set.id})`, entries: set.entries })),
+]
+
+for (const { name, entries } of wikiSets) {
+  for (const entry of entries) {
+    if (typeof entry.label !== 'string' || !entry.label.trim()) {
+      errors.push(`${name} : « ${entry.id} » n'a pas de libellé`)
+    }
+    if (typeof entry.source !== 'string' || !entry.source.startsWith('https://')) {
+      errors.push(`${name} : « ${entry.id} » n'a pas d'URL de source`)
+    }
+  }
+}
+
+/*
+ * Les comptes sont le dernier filet : `expectCount` protège la génération, mais
+ * un fichier tronqué à la main ou un mauvais merge passerait sans lui. Ces trois
+ * nombres sont affirmés par le wiki lui-même — 84 missions, 100 Zygarde Cells,
+ * 32 raid dens — et ne bougent pas sans que le jeu change.
+ */
+const expectedCounts = [
+  ['missions.ts', missions.length, 84],
+  ['tutors.ts', tutors.length, 29],
+  ['keyitems.ts', keyItems.length, 34],
+  ...collectibleSets.map(set => [
+    `collectibles.ts (${set.id})`,
+    set.entries.length,
+    set.prefix === 'cell' ? 100 : 32,
+  ]),
+]
+
+for (const [name, actual, expected] of expectedCounts) {
+  if (actual !== expected) {
+    errors.push(`${name} : ${actual} entrées, ${expected} attendues — régénérer avec pnpm scrape:wiki`)
+  }
+}
+
+/*
+ * Une mission dont l'objectif est vide est une case sans énoncé : cochable, mais
+ * illisible. C'est le symptôme exact d'un parseur cassé.
+ */
+for (const mission of missions) {
+  if (!mission.objective?.trim()) errors.push(`missions.ts : « #${mission.code} » n'a pas d'objectif`)
+  if (!/^\d{3}$/.test(mission.code)) errors.push(`missions.ts : code invalide « ${mission.code} »`)
+}
+
+for (const tutor of tutors) {
+  if (!tutor.moves?.length) errors.push(`tutors.ts : « ${tutor.id} » n'enseigne aucune capacité`)
 }
 
 /* --- 8. Les sprites déclarés existent sur le disque -------------------- */
@@ -386,12 +465,14 @@ console.log(
   `Contenu : ${phases.length} phases · ${allTasks.size} tâches · ${pokemon.length} fiches (${activeCount} actives)`,
 )
 console.log(
-  `Ressources : ${npcs.length} PNJ · ${quests.length} quêtes · `
+  `Ressources : ${npcs.length} PNJ · ${missions.length} missions · ${tutors.length} tutors · `
   + `${battleItems.length + consumables.length} objets · ${farmingTopics.length} rubriques de farm`,
 )
+const collectibleTotal = collectibleSets.reduce((total, set) => total + set.entries.length, 0)
 console.log(
-  `Complétion : ${completionSections.length} sections · `
-  + `${completionSections.reduce((total, section) => total + section.goals.length, 0)} objectifs`,
+  `Complétion : ${completionSections.reduce((total, section) => total + section.goals.length, 0)} objectifs · `
+  + `${missions.length} missions · ${keyItems.length} key items · ${tutors.length} tutors · `
+  + `${collectibleTotal} collectibles`,
 )
 
 for (const warning of warnings) console.warn(`  avertissement — ${warning}`)

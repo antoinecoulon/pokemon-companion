@@ -98,7 +98,7 @@ export default {
     {
       id: 'mon-tyranitar-2',
       label: 'Lire ses IV/EV actuels (PNJ Frontier)',
-      requires: ['mon-tyranitar-1', 'phase-0.0'],
+      requires: ['mon-tyranitar-1'],
       done: true,
     },
     {
@@ -110,7 +110,7 @@ export default {
     {
       id: 'mon-tyranitar-4',
       label: 'Changer la nature en **Adamant** (Tehl Town, 50 000 $)',
-      requires: ['mon-tyranitar-1', 'phase-1.1'],
+      requires: ['mon-tyranitar-1'],
       done: true,
     },
     {
@@ -121,18 +121,18 @@ export default {
     {
       id: 'mon-tyranitar-6',
       label: 'EV : Trainer House de Dresco, dresseur HP + dresseur Attack, avec Power Weight puis Power Bracer',
-      requires: ['mon-tyranitar-3', 'phase-1.4'],
+      requires: ['mon-tyranitar-3'],
       done: true,
     },
     {
       id: 'mon-tyranitar-7',
       label: 'IV : Bottle Caps sur **Attack, HP, Defense, SpD** — **ne gaspille pas de cap sur la SpA** (il ne l’utilise jamais). Speed uniquement pour le build B/C',
-      requires: ['mon-tyranitar-2', 'phase-2.4'],
+      requires: ['mon-tyranitar-2'],
       done: true,
     },
     {
       id: 'mon-tyranitar-8',
-      label: 'Moveset : TM *Earthquake* / *Rock Slide* ; **Crunch** et **Dragon Dance** via le Move Relearner de **Crater Town** (Heart Scales) si oubliés ; *Ice Punch* via tuteur',
+      label: 'Moveset : TM *Earthquake* / *Rock Slide* ; **Crunch** via le Move Relearner de **Crater Town** (Heart Scales) si oublié ; *Ice Punch* et **Dragon Dance** via les tuteurs de la Battle Frontier — le Move Relearner ne propose pas *Dragon Dance*',
       requires: ['mon-tyranitar-1'],
       done: true,
     },

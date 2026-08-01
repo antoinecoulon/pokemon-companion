@@ -82,7 +82,6 @@ export default {
     {
       id: 'mon-zeraora-2',
       label: 'Lire ses IV (PNJ Seaport ou Frontier) — un légendaire fraîchement capturé a souvent 3 IV garantis à 31, vérifie avant de gaspiller des caps',
-      requires: ['phase-0.0', 'phase-0.2'],
       done: false,
     },
     {
@@ -93,19 +92,17 @@ export default {
     {
       id: 'mon-zeraora-4',
       label: 'Nature → **Jolly** (Tehl Town, 50 000 $)',
-      requires: ['phase-1.1'],
       done: false,
     },
     {
       id: 'mon-zeraora-5',
       label: 'EV : Dresco, dresseur Attack (Power Bracer) + dresseur Speed (Power Anklet)',
-      requires: ['phase-1.4'],
       done: false,
     },
     {
       id: 'mon-zeraora-6',
       label: 'IV : Bottle Caps sur **Attack, Speed, HP** — **ignore la SpA** (mieux vaut la laisser basse)',
-      requires: ['mon-zeraora-2', 'phase-2.4'],
+      requires: ['mon-zeraora-2'],
       done: false,
     },
     {
@@ -116,7 +113,6 @@ export default {
     {
       id: 'mon-zeraora-8',
       label: 'Apprendre **Knock Off** chez le tuteur (Battle Frontier)',
-      requires: ['phase-0.1'],
       done: false,
     },
     {

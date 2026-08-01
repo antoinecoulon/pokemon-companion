@@ -115,32 +115,28 @@ export default {
     {
       id: 'mon-motisma-lavage-5',
       label: 'Purger les EV — inutile s\'il sort tout juste de la mission ; sinon baies au marché de **Fallshore City**',
-      requires: ['phase-2.2'],
     },
     {
       id: 'mon-motisma-lavage-6',
       label: 'Nature → **Bold** (Tehl Town, 50 000 $)',
-      requires: ['phase-1.1'],
     },
     {
       id: 'mon-motisma-lavage-7',
       label: 'EV : Dresco, dresseur HP (Power Weight) + dresseur Defense (Power Belt)',
-      requires: ['mon-motisma-lavage-5', 'phase-1.4'],
+      requires: ['mon-motisma-lavage-5'],
     },
     {
       id: 'mon-motisma-lavage-8',
       label: 'IV : Bottle Caps sur **HP, Defense, SpD, SpA** — **ignore l\'Attack**',
-      requires: ['phase-2.4'],
     },
     {
       id: 'mon-motisma-lavage-9',
-      label: 'Moveset : **Volt Switch (TM)**, **Thunderbolt (TM)** et **Will-O-Wisp (TM)** ; **Hydro Pump** et **Pain Split** via le Move Relearner de **Crater Town** (Heart Scales) ou les tuteurs de la Battle Frontier. ⚠️ *Hydro Pump* n\'existe que sous la forme Wash — apprends-le **après** le changement de forme',
+      label: 'Moveset : **Volt Switch (TM)**, **Thunderbolt (TM)** et **Will-O-Wisp (TM)**. ⚠️ **Pain Split n\'est pas un acquis de niveau** — il ne passe pas par le Move Relearner, uniquement par les **tuteurs de la Battle Frontier**. *Hydro Pump* n\'existe que sous la forme Wash ; le Pokédex Unbound ne documente pas comment il s\'acquiert (probablement automatique au changement de forme, comme dans les jeux officiels) — **à vérifier en jeu**, ne pas partir du principe qu\'un tuteur ou le Move Relearner le proposera',
       requires: ['mon-motisma-lavage-3'],
     },
     {
       id: 'mon-motisma-lavage-10',
       label: 'Objet : **Leftovers** au Game Corner (5 000 jetons). ⚠️ Vérifie que Togekiss ou Slowbro ne les porte pas déjà — certains formats de la Frontier interdisent les objets en double',
-      requires: ['phase-2.6'],
       ref: '§7.3',
     },
   ],

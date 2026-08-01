@@ -1,13 +1,17 @@
 import type { JournalEntry, PokemonProgress, PokemonStatus, ResourceKey, RosterOverride, SaveState, TaskId } from '~/data/types'
 import type { KnownContent } from '~/utils/prune'
+import { collectibleKeys } from '~/data/collectibles'
 import { completionGoalKeys } from '~/data/completion'
 import { counters } from '~/data/counters'
+import { keyItemKeys } from '~/data/keyitems'
+import { missionKeys } from '~/data/missions'
 import { npcs } from '~/data/npcs'
 import { phases } from '~/data/phases'
 import { pokemon } from '~/data/pokemon'
-import { quests } from '~/data/quests'
 import { readinessCriteria } from '~/data/readiness'
+import { tutorKeys } from '~/data/tutors'
 import { ROSTER_STATUSES, SAVE_VERSION, TEAM_SIZE } from '~/data/types'
+import { migrations } from '~/utils/migrations'
 import { findOrphans, pruneSave } from '~/utils/prune'
 
 const STORAGE_KEY = 'pokemon-companion:save'
@@ -37,16 +41,6 @@ export interface SaveBackup {
 }
 
 /**
- * Migrations, indexées par la version *d'origine* : `migrations[1]` transforme
- * une sauvegarde v1 en v2, à elle de poser le nouveau `version`.
- *
- * Vide tant que `SAVE_VERSION` vaut 1. Ajouter un simple champ n'en demande pas
- * — `normalize()` retombe sur le `{}` de `createEmptySave()`, voir `resources`
- * plus bas. Une migration ne sert qu'à *réinterpréter* de l'existant.
- */
-const migrations: Record<number, (save: Record<string, unknown>) => Record<string, unknown>> = {}
-
-/**
  * État initial des cases, tel que repris du guide markdown.
  *
  * `state.tasks` ne stocke QUE les choix explicites de l'utilisateur. Une tâche
@@ -73,10 +67,24 @@ const knownContent: KnownContent = {
     ...pokemon.flatMap(mon => readinessCriteria.map(criterion => `ready-${mon.slug}-${criterion.key}`)),
   ]),
   slugs: new Set(pokemon.map(mon => mon.slug)),
+  /*
+   * Toute catégorie de ressource persistée doit figurer ici, sans quoi la purge
+   * prendrait ses cases pour des orphelines et les effacerait. Le test de purge
+   * travaille sur un ensemble synthétique et ne peut pas voir un oubli : c'est
+   * `pnpm validate` qui relit la source de ce fichier pour vérifier que chaque
+   * tableau de clés y est bien inscrit.
+   *
+   * `quest:` n'y est plus — `quests.ts` a été absorbé par `missions.ts`, et
+   * `migrations[1]` reporte ces clés. Une sauvegarde v1 non migrée n'existe
+   * donc pas au moment où la purge tourne.
+   */
   resourceKeys: new Set([
     ...npcs.map(npc => `npc:${npc.id}`),
-    ...quests.map(quest => `quest:${quest.id}`),
     ...completionGoalKeys,
+    ...missionKeys,
+    ...tutorKeys,
+    ...collectibleKeys,
+    ...keyItemKeys,
   ]),
   counterIds: new Set(counters.map(counter => counter.id)),
 }

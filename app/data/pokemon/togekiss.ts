@@ -15,7 +15,7 @@ export default {
   abilities: [
     { name: 'Hustle' },
     { name: 'Serene Grace' },
-    { name: 'Competitive', hidden: true },
+    { name: 'Super Luck', hidden: true },
   ],
   targetAbility: 'Serene Grace',
   analysis: [
@@ -85,24 +85,22 @@ export default {
     {
       id: 'mon-togekiss-3',
       label: 'Nature → **Timid** (Tehl Town, 50 000 $)',
-      requires: ['phase-1.1'],
       done: true,
     },
     {
       id: 'mon-togekiss-4',
       label: 'EV : Dresco, dresseur HP (Power Weight) + dresseur Speed (Power Anklet)',
-      requires: ['mon-togekiss-2', 'phase-1.4'],
+      requires: ['mon-togekiss-2'],
       done: true,
     },
     {
       id: 'mon-togekiss-5',
       label: 'IV : Bottle Caps sur **HP, Speed, SpA, SpD** — **ignore l’Attack**',
-      requires: ['phase-2.4'],
       done: true,
     },
     {
       id: 'mon-togekiss-6',
-      label: 'Moveset : **Thunder Wave (TM73)**, **Roost** et **Nasty Plot** via Move Relearner de Crater Town (Heart Scales) ou tuteur Frontier',
+      label: 'Moveset : **Thunder Wave (TM73)** et **Roost (TM51)** ; **Nasty Plot** via les tuteurs de la Battle Frontier — ni l\'un ni l\'autre ne passe par le Move Relearner, aucun des trois n\'est un acquis de niveau',
       done: true,
     },
     {

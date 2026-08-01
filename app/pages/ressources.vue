@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { npcs } from '~/data/npcs'
 import { battleItems, battleItemsTip, consumables } from '~/data/items'
-import { quests, questsDisclaimer } from '~/data/quests'
 import { farmingTopics } from '~/data/farming'
 import type { ResourceKey } from '~/data/types'
 
@@ -10,9 +9,10 @@ useHead({ title: 'Ressources · Pokémon Companion' })
 const { isAcquired, setAcquired } = useSave()
 
 /*
- * Seuls les PNJ et les quêtes sont marquables : on les débloque une fois pour
- * toutes. Les objets de combat et les consommables, eux, se rachètent — une case
- * « acquis » n'y voudrait rien dire.
+ * Seuls les PNJ sont marquables ici : on les débloque une fois pour toutes. Les
+ * objets de combat et les consommables, eux, se rachètent — une case « acquis »
+ * n'y voudrait rien dire. Les quêtes ont quitté cette page : elles font partie
+ * des 84 missions, inventoriées dans /completion.
  */
 function toggle(key: ResourceKey, value: unknown) {
   setAcquired(key, Boolean(value))
@@ -42,10 +42,6 @@ const filteredNpcs = computed(() => {
 
 const pendingNpcs = computed(() => filteredNpcs.value.filter(npc => !isAcquired(`npc:${npc.id}`)))
 const acquiredNpcs = computed(() => filteredNpcs.value.filter(npc => isAcquired(`npc:${npc.id}`)))
-
-/* Quêtes postgame (§12) */
-const pendingQuests = computed(() => quests.filter(quest => !isAcquired(`quest:${quest.id}`)))
-const acquiredQuests = computed(() => quests.filter(quest => isAcquired(`quest:${quest.id}`)))
 
 /* Farming (§11) */
 const openFarming = ref<string[]>([])
@@ -222,85 +218,6 @@ const openFarming = ref<string[]>([])
           </tbody>
         </table>
       </div>
-    </SectionBlock>
-
-    <!-- Quêtes postgame -->
-    <SectionBlock
-      title="Quêtes postgame"
-      description="§12 — celles qui débloquent un service ou un objet, pas une simple récompense d’argent."
-    >
-      <div v-if="pendingQuests.length" class="grid sm:grid-cols-2 gap-4">
-        <AppCard
-          v-for="quest in pendingQuests"
-          :key="quest.id"
-          density="compact"
-          class="space-y-2"
-        >
-          <div class="flex items-start gap-3">
-            <UCheckbox
-              :model-value="isAcquired(`quest:${quest.id}`)"
-              :aria-label="`Marquer comme terminée : ${quest.name}`"
-              class="mt-0.5 shrink-0"
-              @update:model-value="toggle(`quest:${quest.id}`, $event)"
-            />
-            <div class="min-w-0 flex-1">
-              <span class="text-xs text-dimmed tabular-nums">{{ quest.code }}</span>
-              <h3 class="text-sm font-medium text-highlighted">
-                {{ quest.name }}
-              </h3>
-            </div>
-            <span
-              class="flex shrink-0 gap-0.5 pt-0.5"
-              role="img"
-              :aria-label="`Intérêt ${quest.interest} sur 5`"
-            >
-              <UIcon
-                v-for="star in 5"
-                :key="star"
-                name="i-lucide-star"
-                class="size-4"
-                :class="star <= quest.interest ? 'text-primary fill-current' : 'text-dimmed'"
-              />
-            </span>
-          </div>
-          <div class="pl-7 space-y-1.5">
-            <p class="text-xs text-toned">
-              {{ quest.location }}
-            </p>
-            <p class="text-[0.8125rem] leading-relaxed text-toned" v-html="formatInline(quest.reward)" />
-            <p v-if="quest.note" class="text-xs text-primary italic">
-              {{ quest.note }}
-            </p>
-          </div>
-        </AppCard>
-      </div>
-
-      <ResourceArchive
-        v-if="acquiredQuests.length"
-        :label="`Quêtes déjà faites (${acquiredQuests.length})`"
-      >
-        <li v-for="quest in acquiredQuests" :key="quest.id" class="flex items-start gap-3">
-          <UCheckbox
-            :model-value="isAcquired(`quest:${quest.id}`)"
-            :aria-label="`Marquer comme non terminée : ${quest.name}`"
-            class="mt-0.5 shrink-0"
-            @update:model-value="toggle(`quest:${quest.id}`, $event)"
-          />
-          <div class="min-w-0">
-            <p class="text-[0.8125rem] text-muted line-through decoration-1">
-              {{ quest.code }} · {{ quest.name }}
-            </p>
-            <p class="text-xs text-dimmed" v-html="formatInline(quest.reward)" />
-          </div>
-        </li>
-      </ResourceArchive>
-
-      <UAlert
-        color="info"
-        variant="subtle"
-        icon="i-lucide-info"
-        :description="questsDisclaimer"
-      />
     </SectionBlock>
 
     <!-- Farming endgame -->

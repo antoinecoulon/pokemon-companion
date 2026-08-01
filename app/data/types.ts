@@ -7,10 +7,19 @@ import type { PartialStats, StatKey, StatSpread } from '~/utils/stats'
  * ne référence le contenu que par id. Renommer un libellé est sans effet ;
  * changer un id perd la case cochée correspondante. Ils sont donc figés.
  *
- *   phase-<n>.<m>        tâche de la roadmap générale (§5)   ex. 'phase-1.4'
+ *   phase-<n>.<m>        tâche de la Battle Frontier (§10)   ex. 'phase-5.4'
  *   mon-<slug>-<n>       tâche d'une fiche Pokémon (§6)      ex. 'mon-tyranitar-4'
  *   ready-<slug>-<key>   case « Endgame Ready » (§13.2)      ex. 'ready-togekiss-level'
- *   goal:<id>            objectif de complétion post-game    ex. 'goal:dream-research-lab'
+ *   goal:<id>            objectif de complétion éditorial    ex. 'goal:dream-research-lab'
+ *   mission:<code>       mission du jeu, numérotation VO     ex. 'mission:050'
+ *   npc:<id>             PNJ à service                       ex. 'npc:move-relearner'
+ *   tutor:<id>           move tutor                          ex. 'tutor:blue-shard'
+ *   raid:<id>            raid den                            ex. 'raid:route-3'
+ *   cell:<code>          Zygarde Cell                        ex. 'cell:001'
+ *   item:<id>            objet unique ou clé                 ex. 'item:jade-orb'
+ *
+ * Les ids `phase-0.x` à `phase-4.x` ont existé (roadmap du guide, retirée) : ne
+ * jamais les réattribuer à autre chose, des sauvegardes les portent encore.
  * ------------------------------------------------------------------------- */
 
 export type TaskId = string
@@ -298,6 +307,82 @@ export interface CompletionSection {
 }
 
 /* ------------------------------------------------------------------------- *
+ * Contenu adossé au wiki
+ *
+ * Missions, move tutors, raid dens, Zygarde Cells, objets clés : tout ce que le
+ * guide n'inventorie pas et que romhackdex ne couvre pas. La référence est
+ * unboundwiki.com, et ces fichiers sont **générés** par `pnpm scrape:wiki` —
+ * les corriger à la main, c'est perdre la correction à la régénération
+ * suivante ; il faut corriger le scraper, ou le wiki.
+ *
+ * Comme les objectifs de complétion, ce sont des *ressources* : pas de
+ * `requires`, pas de poids, jamais dans « prochaines actions ». Elles comptent
+ * dans `useProgress().completion`, jamais dans `overall`.
+ * ------------------------------------------------------------------------- */
+
+/** Champs communs à toute entrée cochable adossée au wiki. */
+export interface WikiEntry {
+  /** Persisté sous `<préfixe>:<id>`. Ne se renomme jamais. */
+  id: string
+  label: string
+  location?: string
+  details?: string[]
+  /**
+   * URL de la page consultée. Requis, même exigence que `CompletionGoal.source`
+   * — une entrée sans source est une entrée qu'on ne peut plus vérifier.
+   */
+  source: string
+  /**
+   * Refaisable indéfiniment (raid den, événement quotidien, achat récurrent).
+   * Une entrée répétable cochée **reste affichée à sa place** : elle ne part pas
+   * dans l'archive et « Masquer ce qui est fait » ne la masque pas. Cocher y
+   * veut dire « déjà fait au moins une fois », pas « rayé de la liste ».
+   */
+  repeatable?: boolean
+}
+
+export interface Mission extends WikiEntry {
+  /**
+   * Numéro du jeu sur trois chiffres, '001' à '084'. C'est lui qui forme la clé
+   * `mission:<code>` — la numérotation du wiki est alphabétique et figée, donc
+   * stable, contrairement à un slug tiré du titre.
+   */
+  code: string
+  /** L'objectif tel que le wiki l'énonce, en VO — c'est une citation de source. */
+  objective: string
+  /** `Unlock Requirements` du wiki, une ligne par prérequis. */
+  unlocks?: string[]
+  reward?: string
+  /** Indisponible avant d'avoir battu la Ligue (27 missions sur 84). */
+  postGame?: boolean
+}
+
+export interface TutorMove {
+  name: string
+  /** Coût tel qu'affiché : '2 Blue Shards', '16 BP', 'Gratuit'… */
+  cost: string
+}
+
+export interface Tutor extends WikiEntry {
+  moves: TutorMove[]
+}
+
+/** Objet unique ou clé, avec son lieu de récupération. */
+export interface KeyItem extends WikiEntry {}
+
+/** Élément d'une collection énumérée : Zygarde Cell, raid den. */
+export interface Collectible extends WikiEntry {}
+
+export interface CollectibleSet {
+  id: string
+  title: string
+  description?: string
+  /** Préfixe de clé de sauvegarde des entrées : 'cell' ou 'raid'. */
+  prefix: 'cell' | 'raid'
+  entries: Collectible[]
+}
+
+/* ------------------------------------------------------------------------- *
  * Référence (§1–4, §10, §13)
  * ------------------------------------------------------------------------- */
 
@@ -376,16 +461,38 @@ export interface JournalEntry {
   body: string
 }
 
-export const SAVE_VERSION = 1
+/**
+ * v2 : `quests.ts` absorbé par `missions.ts`, les clés `quest:` reportées vers
+ * `mission:` par `migrations[1]` (voir `app/utils/migrations.ts`).
+ *
+ * Ne pas incrémenter pour un simple champ ajouté : `normalize()` retombe déjà
+ * sur le défaut de `createEmptySave()`. Une migration ne sert qu'à
+ * *réinterpréter* de l'existant.
+ */
+export const SAVE_VERSION = 2
 
 /**
  * Clé d'une ressource acquise : `<catégorie>:<id>`.
  *
- * Le préfixe n'est pas décoratif — `objets-pouvoir` existe à la fois comme id de
- * consommable (§9) et de quête (§12). Sans namespace, cocher l'un cocherait
- * l'autre.
+ * Le préfixe n'est pas décoratif — `objets-pouvoir` existait à la fois comme id
+ * de consommable (§9) et de quête (§12). Sans namespace, cocher l'un cocherait
+ * l'autre. Avec sept catégories, la collision n'est plus une hypothèse : `#050`
+ * *Portal Purge* est une mission, `portal-purge` était une quête, et
+ * `portails` est une section de complétion.
+ *
+ * `quest:` n'est plus produit par le contenu — `quests.ts` a été absorbé par
+ * `missions.ts` — mais reste dans le type : `migrations[1]` lit ces clés dans
+ * les sauvegardes antérieures pour les reporter vers `mission:`.
  */
-export type ResourceKey = `npc:${string}` | `quest:${string}` | `goal:${string}`
+export type ResourceKey =
+  | `npc:${string}`
+  | `quest:${string}`
+  | `goal:${string}`
+  | `mission:${string}`
+  | `tutor:${string}`
+  | `raid:${string}`
+  | `cell:${string}`
+  | `item:${string}`
 
 /**
  * Écart entre la composition du guide et celle réellement jouée.

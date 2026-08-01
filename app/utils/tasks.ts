@@ -4,13 +4,13 @@ import { pokemon } from '~/data/pokemon'
 
 export interface TaskEntry {
   task: Task
-  /** D'où vient la tâche : la roadmap générale (§5) ou une fiche (§6). */
+  /** D'où vient la tâche : la Battle Frontier (§10) ou une fiche (§6). */
   source: 'phase' | 'pokemon'
   phase?: Phase
   mon?: PokemonSheet
   /**
-   * Poids de tri. Les tâches de fiche valent 3 : l'optimisation Pokémon par
-   * Pokémon EST la phase 3 du guide.
+   * Poids de tri. Les tâches de fiche valent 3, la Frontier 5 : l'optimisation
+   * d'équipe passe avant, comme dans la numérotation d'origine du guide.
    */
   weight: number
   /** Rang dans son groupe d'origine, pour départager à priorité égale. */
@@ -30,7 +30,7 @@ export const taskEntries: TaskEntry[] = [
       weight: phase.number,
       order: index,
       originLabel: `Phase ${phase.number} · ${phase.title}`,
-      route: task.link ?? '/roadmap',
+      route: task.link ?? '/completion',
     })),
   ),
   ...pokemon.flatMap(mon =>
@@ -49,8 +49,8 @@ export const taskEntries: TaskEntry[] = [
 export const taskEntriesById = new Map(taskEntries.map(entry => [entry.task.id, entry]))
 
 /**
- * Périmètre de la progression globale et des prochaines actions : la roadmap
- * plus les six membres de la composition finale. Les fiches `retired` et
+ * Périmètre de la progression globale et des prochaines actions : la Battle
+ * Frontier plus les six membres de la composition finale. Les fiches `retired` et
  * `utility` restent consultables mais ne pèsent pas sur l'avancement — ce sont
  * des références, pas du travail restant.
  *

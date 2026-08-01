@@ -13,13 +13,13 @@ export default {
   bst: 525,
   abilities: [
     { name: 'Pressure' },
-    { name: 'Frisk', hidden: true },
+    { name: 'Iron Fist', hidden: true },
   ],
   preamble: [
     {
       kind: 'quote',
-      tone: 'info',
-      text: '**Décision prise :** Dusknoir quitte l’équipe de combat. Fiche conservée pour référence — et parce qu’il a une seconde vie comme **mule à objets** grâce à son talent caché *Frisk* (§6.7-B).',
+      tone: 'warning',
+      text: '**Correction (romhackdex.net/unbound) : Dusknoir n\'a pas Frisk.** Son talent caché dans Unbound est **Iron Fist**, pas *Frisk* — la piste « mule à objets » de §6.7-B, construite sur cette confusion, ne fonctionne pas avec lui. C\'est **Banette** qui porte réellement *Frisk*, et pas en talent caché (voir la fiche Mule à objets).',
     },
   ],
   analysis: [
@@ -107,7 +107,7 @@ export default {
     {
       id: 'mon-dusknoir-4',
       label: 'Nature → **Impish** (Tehl Town)',
-      requires: ['mon-dusknoir-1', 'phase-1.1'],
+      requires: ['mon-dusknoir-1'],
       done: false,
     },
     {
@@ -119,17 +119,16 @@ export default {
     {
       id: 'mon-dusknoir-6',
       label: 'IV : **investissement minimal** — Bottle Caps sur **HP et Defense** uniquement. Ne dépense pas 6 caps sur un Pokémon de rôle secondaire',
-      requires: ['phase-2.4'],
       done: false,
     },
     {
       id: 'mon-dusknoir-7',
-      label: 'Talent : **garder Pressure** (fait perdre 2 PP par attaque adverse — utile en combat d\’usure). *Frisk* n\’a d\’intérêt que pour le farm de Heart Scales',
+      label: 'Talent : **garder Pressure** (fait perdre 2 PP par attaque adverse — utile en combat d\’usure). Son talent caché est **Iron Fist**, pas *Frisk* — inutile pour ce build, et ça ne fait pas de lui un candidat pour la mule à objets (§6.7-B)',
       done: false,
     },
     {
       id: 'mon-dusknoir-8',
-      label: 'Moveset : *Will-O-Wisp* (TM), *Shadow Sneak* / *Pain Split* / *Ice Punch* via Move Relearner ou tuteur',
+      label: 'Moveset : *Will-O-Wisp* (TM) ; *Shadow Sneak* et *Ice Punch* via Move Relearner ou tuteur ; **Pain Split** via tuteur uniquement — pas un acquis de niveau',
       done: false,
     },
     {

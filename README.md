@@ -18,9 +18,9 @@ pnpm dev          # http://localhost:3000
 | Section | Contenu | Source dans le guide |
 | --- | --- | --- |
 | **Accueil** | Progression globale, 3–5 prochaines actions, compteurs de ressources | — |
-| **Roadmap** | Les 6 phases, leurs tâches cochables et leurs prérequis | §5 |
+| **Complétion** | La Battle Frontier en tâches ordonnées, puis tout ce qu’il reste à voir du jeu : 84 missions, Black Trainer Card, légendaires, Mega Stones, 34 Key Items, 29 move tutors, 100 Zygarde Cells, 32 raid dens — chaque entrée cochable et liée à sa page wiki | §10 + unboundwiki |
 | **Équipe** | Les 6 slots actifs en avant avec leur sprite, le reste dans un bandeau défilant, et la composition modifiable (échange, ordre, sortie) ; par fiche : analyse, builds, formulaire IV/EV, checklist « Endgame Ready » | §6, §7.3, §13.2 |
-| **Ressources** | PNJ, objets de combat, consommables, quêtes, farming — PNJ et quêtes cochables, les acquis descendant dans un repli | §8, §9, §11, §12 |
+| **Ressources** | PNJ, objets de combat, consommables, farming — les PNJ cochables, les acquis descendant dans un repli | §8, §9, §11 |
 | **Référence** | Mécaniques IV/EV/natures/talents, Battle Frontier, formules, natures, outils, glossaire | §1–4, §10, §13 |
 | **Journal** | Entrées horodatées à l’échelle de la partie | — |
 
@@ -56,9 +56,11 @@ valeur réelle.
 app/
 ├── data/            LE contenu du guide, migré en TypeScript
 │   ├── types.ts     types de contenu + modèle de sauvegarde
-│   ├── phases.ts    §5   — les 6 phases et leurs prérequis
+│   ├── phases.ts    §10  — la Battle Frontier, seul reste de la roadmap
 │   ├── pokemon/     §6, §7.3 — une fiche par fichier + index.ts généré
-│   ├── npcs.ts      §8   · items.ts §9 · quests.ts §12 · farming.ts §11
+│   ├── completion.ts     objectifs de complétion écrits à la main
+│   ├── missions.ts       ⚙ généré · tutors.ts ⚙ · collectibles.ts ⚙ · keyitems.ts ⚙
+│   ├── npcs.ts      §8   · items.ts §9 · farming.ts §11
 │   ├── mechanics.ts §1–4, §10, §13.0 · natures.ts §13.1 · glossary.ts §13.3
 │   ├── readiness.ts §13.2 — les 7 critères
 │   └── counters.ts  compteurs de ressources et leurs objectifs
@@ -89,10 +91,16 @@ Elles **n’écrivent rien** : on relit, on colle.
 
 | Contenu | Commande | Fichier | Convention d’id |
 | --- | --- | --- | --- |
-| Tâche de roadmap | `pnpm new:task phase-2` | `app/data/phases.ts` | `phase-<n>.<m>` |
+| Tâche de la Frontier | `pnpm new:task phase-5` | `app/data/phases.ts` | `phase-<n>.<m>` |
 | PNJ | `pnpm new:npc "Move Tutor"` | `app/data/npcs.ts` | kebab-case, persisté en `npc:<id>` |
-| Quête | `pnpm new:quest "#042" "Nom"` | `app/data/quests.ts` | kebab-case, persisté en `quest:<id>` |
 | Objectif de complétion | `pnpm new:goal portails "Nom"` | `app/data/completion.ts` | kebab-case, persisté en `goal:<id>` |
+
+**Missions, move tutors, collectibles et Key Items ne s’écrivent pas** : ils sont générés depuis
+unboundwiki par `pnpm scrape:wiki <missions|collectibles|tutors|items|all>`. Corriger le fichier à la
+main, c’est perdre la correction à la régénération suivante — une donnée fausse se corrige dans
+`scripts/lib/scrape-<nom>.mjs`, ou se signale au wiki. Chaque scraper vérifie son compte d’entrées
+(84 missions, 100 cells, 32 raid dens…) et échoue bruyamment plutôt que de rendre un fichier amputé.
+Les pages sont mises en cache dans `.cache/wiki/` ; `--fresh` l’ignore, `--dry-run` n’écrit rien.
 
 Pour le reste (objets, consommables, rubriques de farm, mécaniques, natures, glossaire), copie une
 entrée voisine : ces contenus ne sont pas persistés, leur id ne sert qu’à la clé de rendu.
@@ -100,26 +108,31 @@ entrée voisine : ces contenus ne sont pas persistés, leur id ne sert qu’à l
 **De la prose** (analyse, mécanique, farming) s’écrit en tableau de `Block` : `p`, `list`, `quote`,
 `table`, `code`. Le formatage inline supporte `**gras**`, `*italique*` et `` `code` ``.
 
-### Complétion post-game
+### Complétion
 
-`app/data/completion.ts` couvre ce que le guide ne couvre pas : le post-game du jeu lui-même (Black
-Trainer Card, Prints de la Frontier, légendaires des portails, Mega Stones, Game Corner) et ce que le
-guide mentionne sans le rendre cochable (les ramassages gratuits de §9.1, les accès aux talents cachés
-de §2.4, les deux tests de §0.1 et §6.7-C).
+La roadmap du guide a été retirée : ses phases 0 à 4 étaient faites, et seule la **Battle Frontier**
+en restait — elle est devenue la première section de `/completion`. Le reste de la page inventorie ce
+que le guide ne couvre pas, depuis unboundwiki : missions, légendaires, Mega Stones, Key Items, move
+tutors, Zygarde Cells, raid dens. `app/utils/completion.ts` aplatit ces cinq fichiers en une seule
+forme, pour que la page et le comptage n’aient qu’une liste à parcourir.
 
 Deux règles s’y appliquent, et `pnpm validate` les fait respecter :
 
 - **`source` est obligatoire** — une section du guide (`'§9.1'`) ou l’URL consultée. Hors du guide,
   rien ne s’écrit ici qui n’ait été lu sur `unboundwiki.com` ou `romhackdex.net` ; §12 a déjà perdu
   trois quêtes faute d’avoir pu les vérifier.
-- **La complétion ne compte pas dans la progression de la roadmap.** Elle a son propre pourcentage
-  (`useProgress().completion`). Ce sont des ressources, comme les PNJ et les quêtes : pas de
-  `requires`, pas de poids, jamais dans « prochaines actions ». Les fondre dans `overall` ferait
-  chuter d’un coup l’avancement d’une partie en cours.
+- **La progression se mesure sur deux axes, et les fondre est interdit.** `overall` compte ce qui est
+  *actionnable* et ordonné — la Frontier et les fiches des six actifs, avec leurs `requires`, qui
+  alimentent « prochaines actions ». `completion` compte la *collection*, qui n’a ni ordre ni
+  dépendances. Les additionner noierait six tâches sous trois cent cinquante cases et ferait chuter
+  d’un coup l’avancement d’une partie en cours.
+
+Une entrée marquée `repeatable` — raid den, move tutor — **reste affichée une fois cochée** : elle se
+refait indéfiniment, cocher y veut dire « déjà fait au moins une fois », pas « rayé de la liste ».
 
 > ⚠️ **Ne renomme jamais un `id` existant.** Un libellé peut changer librement ; changer un id perd la
-> case cochée correspondante dans les sauvegardes déjà écrites. Cela vaut aussi pour les ids de PNJ et
-> de quête depuis qu’ils sont persistés.
+> case cochée correspondante dans les sauvegardes déjà écrites. Cela vaut pour toutes les ressources
+> persistées : `npc:`, `goal:`, `mission:`, `tutor:`, `raid:`, `cell:`, `item:`.
 
 Après toute modification de contenu :
 
@@ -193,17 +206,22 @@ Un seul objet JSON dans `localStorage`, sous la clé `pokemon-companion:save` :
 - `roster` — l’écart entre la composition du guide (§7.3) et celle réellement jouée, par slug :
   `status` et `slot`. Vide tant qu’on n’a rien échangé — faire tourner un membre est la phase 4 du
   guide, pas une correction de contenu, donc ça n’a rien à faire dans `app/data/`
-- `resources` — PNJ débloqués et quêtes faites, sous des clés **préfixées** `npc:<id>` / `quest:<id>` ;
-  le préfixe n’est pas décoratif, `objets-pouvoir` existe à la fois comme id de consommable et de quête
+- `resources` — tout ce qui se coche hors tâches, sous des clés **préfixées** : `npc:`, `goal:`,
+  `mission:`, `tutor:`, `raid:`, `cell:`, `item:`. Le préfixe n’est pas décoratif — `portal-purge` est
+  à la fois la mission #050 et le nom d’une section de complétion
 - `counters`, `journal`, `version`, `updatedAt`
 
 `normalize()` reconstruit la sauvegarde champ par champ depuis `createEmptySave()` : un champ ajouté
 plus tard se remplit de sa valeur par défaut, sans bump de `SAVE_VERSION`. C’est ainsi que `resources`
 est apparu sans casser les sauvegardes v1.
 
-Une sauvegarde d’une version **antérieure** passe par `migrations`, indexé par la version d’origine —
-vide tant que `SAVE_VERSION` vaut 1, mais c’est là qu’une réinterprétation de l’existant s’écrit. Seule
-une version **postérieure** au code est refusée : la relire à la baisse perdrait ce qu’elle sait en trop.
+Une sauvegarde d’une version **antérieure** passe par `migrations` (`app/utils/migrations.ts`), indexé
+par la version d’origine. `SAVE_VERSION` vaut **2** : `migrations[1]` reporte les anciennes clés
+`quest:` vers `mission:`, puisque les six quêtes du guide font partie des 84 missions — et déplie le
+lot « objets-pouvoir » sur les cinq missions qui donnent un Power item. Ce code est le seul à
+*réécrire* une progression acquise, donc il vit hors du composable et `pnpm test:migration` le couvre :
+ne pas y toucher sans étendre le test. Seule une version **postérieure** au code est refusée : la
+relire à la baisse perdrait ce qu’elle sait en trop.
 
 ### Synchronisation entre appareils
 
@@ -263,11 +281,15 @@ est explicite et jamais automatique : une fiche peut aussi avoir disparu le temp
 Sans navigateur, sur le code :
 
 ```bash
-pnpm check          # = validate + test:stats + test:roster + test:fiche + typecheck
-pnpm validate       # ids uniques, requires résolus, aucun cycle, cohérence des fiches
+pnpm check          # = validate + test:stats + test:roster + test:fiche + test:sync
+                    #   + test:migration + typecheck
+pnpm validate       # ids uniques, requires résolus, aucun cycle, cohérence des fiches,
+                    # comptes du contenu généré (84/100/32) et sources renseignées
 pnpm test:stats     # logique EV/IV, y compris les cas limites de §2.2
 pnpm test:roster    # invariants de composition (six slots, pas de trou) et purge de sauvegarde
 pnpm test:fiche     # contrat de fiche : validateur, et aller-retour d’impression sur les 12 fiches
+pnpm test:sync      # décision de synchronisation, isolée du réseau
+pnpm test:migration # report des clés `quest:` vers `mission:`, y compris ses cas dégénérés
 ```
 
 Avec navigateur — **indispensable** : l’app est un SPA, le build ne prérend rien, donc ni `typecheck`

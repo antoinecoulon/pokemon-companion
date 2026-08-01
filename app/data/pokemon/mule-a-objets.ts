@@ -23,26 +23,19 @@ export default {
     },
     {
       kind: 'p',
-      text: '**Candidats :** **Banette** — *Frisk* + *Thief* + *Will-O-Wisp*, disponible tôt. **Duskull/Dusknoir** ou **Snorlax** peuvent aussi convenir selon leur talent dans Unbound.',
+      text: '**Le porteur : Banette.** *Frisk* est son **talent 2** (pas caché) — une simple **Ability Capsule** suffit si un exemplaire capturé a *Insomnia*. Il apprend aussi *Will-O-Wisp* (niveau 18) et *Thief* (TM46) nativement, donc rien à aller chercher ailleurs.',
     },
     {
       kind: 'quote',
-      tone: 'tip',
-      text: '**Ton Dusknoir sortant est un candidat naturel** : son talent caché est justement **Frisk**. Comme il quitte l’équipe de combat, tu peux lui appliquer une **Dream Mist** sans regret et le recycler en mule à objets. Ça lui donne une seconde vie utile au lieu de le laisser dormir en boîte.',
+      tone: 'warning',
+      text: '**Correction (romhackdex.net/unbound) : Dusknoir n\'a pas Frisk.** Le guide d\'origine le proposait comme mule recyclée en supposant que *Frisk* était son talent caché — c\'est **Iron Fist** dans Unbound (voir sa fiche). Il ne peut donc pas tenir ce rôle : Banette est la seule option ici.',
     },
   ],
   tasks: [
     {
       id: 'mon-mule-a-objets-1',
-      label: 'Choisir le porteur : **Dusknoir recyclé** (talent caché *Frisk*, il quitte l’équipe de toute façon) ou **Banette**, disponible plus tôt',
+      label: 'Capturer un **Banette** et vérifier son talent : **Insomnia** ou **Frisk**. Si *Insomnia* → **Ability Capsule** (Game Corner de Dehara) pour basculer sur *Frisk*',
       priority: 1,
-      link: '/equipe/dusknoir',
-      done: false,
-    },
-    {
-      id: 'mon-mule-a-objets-2',
-      label: 'Si Dusknoir : **Dream Mist** pour basculer sur *Frisk* — sans regret, puisqu’il ne combat plus',
-      requires: ['mon-mule-a-objets-1'],
       done: false,
     },
     {

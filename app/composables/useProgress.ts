@@ -1,5 +1,4 @@
 import type { PokemonSheet, ReadinessKey } from '~/data/types'
-import { completionSections } from '~/data/completion'
 import { matchesNature } from '~/data/natures'
 import { phases } from '~/data/phases'
 import { readinessCriteria } from '~/data/readiness'
@@ -19,27 +18,30 @@ export function useProgress() {
   const { isAcquired, isDone, progressFor, state } = useSave()
   const { active, activeSlugs } = useRoster()
 
-  /** Roadmap + fiches des 6 membres actifs. */
+  /** Battle Frontier + fiches des 6 membres actifs. */
   const overall = computed(() => {
     const tracked = trackedEntriesFor(activeSlugs.value)
     return ratio(tracked.filter(entry => isDone(entry.task.id)).length, tracked.length)
   })
 
   /*
-   * Complétion post-game, comptée à part et jamais fondue dans `overall` : la
-   * roadmap mesure l'avancement vers une équipe prête pour la Frontier, la
-   * complétion mesure ce qu'il reste à voir du jeu. Les mélanger ferait chuter
-   * d'un coup le pourcentage d'une partie déjà bien avancée.
+   * Complétion, comptée à part et jamais fondue dans `overall`.
+   *
+   * `overall` mesure ce qui est *actionnable* — la Frontier et l'optimisation
+   * de l'équipe, qui ont un ordre et des dépendances. `completion` mesure la
+   * *collection* : missions, tutors, collectibles, objets clés, objectifs
+   * éditoriaux, qui n'en ont aucun. Les mélanger noierait les six tâches de la
+   * Frontier sous trois cents cases et ferait chuter d'un coup le pourcentage
+   * d'une partie déjà bien avancée.
    */
-  const completion = computed(() => {
-    const goals = completionSections.flatMap(section => section.goals)
-    return ratio(goals.filter(goal => isAcquired(`goal:${goal.id}`)).length, goals.length)
-  })
+  const completion = computed(() =>
+    ratio(completionEntries.filter(entry => isAcquired(entry.key)).length, completionEntries.length),
+  )
 
   const byCompletionSection = computed(() =>
-    new Map(completionSections.map(section => [
-      section.id,
-      ratio(section.goals.filter(goal => isAcquired(`goal:${goal.id}`)).length, section.goals.length),
+    new Map(completionGroups.map(group => [
+      group.id,
+      ratio(group.entries.filter(entry => isAcquired(entry.key)).length, group.entries.length),
     ])),
   )
 

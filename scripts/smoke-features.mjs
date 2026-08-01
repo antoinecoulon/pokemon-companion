@@ -194,9 +194,9 @@ await seeded.close()
 
 /*
  * Deux choses à prouver ici. D'abord que cocher retire l'entrée de la liste
- * active et la fait apparaître dans le repli. Ensuite que les namespaces `npc:`
- * et `quest:` ne se télescopent pas : sans préfixe, `objets-pouvoir` existe
- * comme id de consommable ET de quête.
+ * active et la fait apparaître dans le repli. Ensuite que les namespaces ne se
+ * télescopent pas : avec sept catégories persistées, `portal-purge` est à la
+ * fois la mission #050 et une section de complétion.
  */
 const resourcesContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } })
 const resourcesPage = await resourcesContext.newPage()
@@ -218,26 +218,48 @@ if (await resourcesPage.getByText(/PNJ déjà débloqués \(1\)/).count() === 0)
   failures.push('ressources — le repli « PNJ déjà débloqués (1) » n’apparaît pas')
 }
 
-// Une quête, pour vérifier que les deux namespaces sont indépendants.
-await resourcesPage.locator(`${CHECKBOX}[aria-label^="Marquer comme terminée"]`).first().click()
-await resourcesPage.waitForTimeout(600)
-if (await resourcesPage.getByText(/Quêtes déjà faites \(1\)/).count() === 0) {
-  failures.push('ressources — le repli des quêtes n’apparaît pas')
-}
-if (await resourcesPage.getByText(/PNJ déjà débloqués \(1\)/).count() === 0) {
-  failures.push('ressources — cocher une quête a perturbé le repli des PNJ (collision de clés ?)')
-}
-
 await resourcesPage.reload({ waitUntil: 'networkidle' })
 await resourcesPage.waitForTimeout(900)
 if (await resourcesPage.getByText(/PNJ déjà débloqués \(1\)/).count() === 0) {
   failures.push('ressources — l’état acquis ne survit pas au rechargement')
 }
 
+/*
+ * Une mission, cochée dans l'autre page, pour prouver que les namespaces sont
+ * indépendants : `npc:` et `mission:` vivent dans le même objet `resources`, et
+ * sans préfixe une collision d'id décocherait l'un en cochant l'autre.
+ *
+ * La recherche sert d'accès : à ~350 entrées réparties en groupes repliés,
+ * c'est le chemin réel vers une mission — et ça vérifie au passage qu'elle
+ * ouvre bien les groupes qui ont un résultat.
+ */
+await resourcesPage.goto(`${baseUrl}/completion`, { waitUntil: 'networkidle' })
+await resourcesPage.waitForTimeout(600)
+await resourcesPage.getByPlaceholder(/Chercher une mission/).fill('Abandonment Issues')
+await resourcesPage.waitForTimeout(600)
+
+const missionBox = resourcesPage.locator(`${CHECKBOX}[aria-label*="Abandonment Issues"]`).first()
+if (await missionBox.count() === 0) {
+  failures.push('complétion — la recherche ne remonte pas la mission #005')
+}
+else {
+  await missionBox.click()
+  await resourcesPage.waitForTimeout(600)
+}
+
 const stored = await resourcesPage.evaluate(() =>
   JSON.parse(localStorage.getItem('pokemon-companion:save') ?? '{}').resources ?? {})
+
+if (!stored['npc:advanced-stat-scanner']) {
+  failures.push('complétion — cocher une mission a perdu le PNJ coché (collision de clés ?)')
+}
+if (!stored['mission:005']) {
+  failures.push('complétion — la mission #005 n’a pas été persistée sous « mission:005 »')
+}
 for (const key of Object.keys(stored)) {
-  if (!/^(npc|quest):/.test(key)) failures.push(`ressources — clé persistée sans namespace : « ${key} »`)
+  if (!/^(npc|goal|mission|tutor|raid|cell|item):/.test(key)) {
+    failures.push(`ressources — clé persistée sans namespace connu : « ${key} »`)
+  }
 }
 
 await resourcesContext.close()
@@ -335,7 +357,7 @@ await pruneContext.addInitScript(() => {
   localStorage.setItem('pokemon-companion:save', JSON.stringify({
     version: 1,
     tasks: {
-      'phase-1.1': true,
+      'phase-5.4': true,
       'ready-tyranitar-ivs': true,
       'mon-disparu-3': true,
     },
@@ -374,7 +396,7 @@ const after = await prunePage.evaluate(() =>
   JSON.parse(localStorage.getItem('pokemon-companion:save') ?? '{}'))
 
 for (const [label, present] of [
-  ['tâche de roadmap cochée', after.tasks?.['phase-1.1']],
+  ['tâche de la Frontier cochée', after.tasks?.['phase-5.4']],
   ['case « Endgame Ready » cochée', after.tasks?.['ready-tyranitar-ivs']],
   ['compteur renseigné', after.counters?.money === 4200],
   ['progression saisie', after.pokemon?.tyranitar?.ivs?.atk === 31],
@@ -414,7 +436,7 @@ const backupContext = await browser.newContext({ viewport: { width: 1280, height
 // Version supérieure à celle du code : cas d'un déploiement revenu en arrière.
 const doomedSave = JSON.stringify({
   version: 99,
-  tasks: { 'phase-1.1': true },
+  tasks: { 'phase-5.4': true },
   pokemon: {},
   counters: { money: 123456 },
   resources: {},
@@ -490,7 +512,7 @@ const intactContext = await browser.newContext({ viewport: { width: 1280, height
 await intactContext.addInitScript(() => {
   localStorage.setItem('pokemon-companion:save', JSON.stringify({
     version: 1,
-    tasks: { 'phase-1.1': true },
+    tasks: { 'phase-5.4': true },
     pokemon: {},
     counters: {},
     resources: {},

@@ -15,7 +15,7 @@ import { chromium } from 'playwright'
 
 const baseUrl = process.argv[2] ?? 'http://localhost:3100'
 
-const routes = ['/', '/roadmap', '/equipe', '/equipe/tyranitar', '/ressources', '/completion', '/reference', '/journal']
+const routes = ['/', '/completion', '/equipe', '/equipe/tyranitar', '/ressources', '/reference', '/journal']
 
 const problems = []
 const browser = await chromium.launch()

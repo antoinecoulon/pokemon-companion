@@ -44,11 +44,13 @@ export const completionSections: CompletionSection[] = [
       },
       {
         id: 'carte-noire-missions',
-        label: 'Terminer **toutes les missions** du jeu',
+        label: 'Terminer **les 84 missions** du jeu',
         details: [
-          'Le guide n’en retient que six (§12), celles qui servent l’optimisation — voir Ressources. Les autres n’ont pas de valeur pour l’équipe, seulement pour la carte.',
+          'Les 84 sont inventoriées et cochables une à une dans la section **Missions** — c’est la case qui les résume.',
+          '**27 d’entre elles** ne s’ouvrent qu’après la Ligue.',
+          'Battre **Aklove** dans les Depths of the Ruins of Void (deuxième générique) fait afficher à l’écran des missions la position de celles qui restent.',
         ],
-        source: `${WIKI}/extras/black-trainer-card/`,
+        source: `${WIKI}/missions/`,
       },
       {
         id: 'carte-noire-pokedex',
@@ -141,7 +143,7 @@ export const completionSections: CompletionSection[] = [
     id: 'portails',
     title: 'Portal Purge — les légendaires des portails',
     description:
-      'La mission #050 ouvre vingt rencontres à travers la carte. Ressources ne la coche qu’une fois, pour la Mega Stone du starter ; voici ce qu’elle donne réellement. L’heure compte : plusieurs n’apparaissent que de jour ou que de nuit.',
+      'La mission **#050** ouvre ces rencontres à travers la carte — elle est cochable en une fois dans la liste des missions ; voici ce qu’elle donne réellement. L’heure compte : plusieurs n’apparaissent que de jour ou que de nuit. ⚠️ Le wiki se contredit : la fiche de la mission annonce **25** Portal Pokémon, sa liste des légendaires n’en énumère que **23** — les 23 vérifiés sont ici, les deux autres restent à identifier en jeu.',
     goals: [
       { id: 'portail-blacephalon', label: '**Blacephalon**', location: 'Magnolia Fields — la nuit', source: `${WIKI}/extras/legendary-pokemon/` },
       { id: 'portail-celesteela', label: '**Celesteela**', location: 'Crater Town — la nuit', source: `${WIKI}/extras/legendary-pokemon/` },
@@ -166,7 +168,20 @@ export const completionSections: CompletionSection[] = [
       },
       { id: 'portail-ho-oh', label: '**Ho-Oh**', location: 'Ruins of Void', source: `${WIKI}/extras/legendary-pokemon/` },
       { id: 'portail-lugia', label: '**Lugia**', location: 'Ruins of Void', source: `${WIKI}/extras/legendary-pokemon/` },
-      { id: 'portail-lunala', label: '**Lunala**', location: 'Route 12 — la plage', source: `${WIKI}/extras/legendary-pokemon/` },
+      {
+        id: 'portail-lunala',
+        label: '**Lunala**',
+        details: ['S’obtient aussi en faisant évoluer **Cosmoem** de nuit — le portail n’est pas la seule voie.'],
+        location: 'Route 12 — la plage',
+        source: `${WIKI}/extras/legendary-pokemon/`,
+      },
+      {
+        id: 'portail-solgaleo',
+        label: '**Solgaleo**',
+        details: ['S’obtient aussi en faisant évoluer **Cosmoem** de jour.'],
+        location: 'Route 12 — la plage',
+        source: `${WIKI}/extras/legendary-pokemon/`,
+      },
       { id: 'portail-tapu-koko', label: '**Tapu Koko**', location: 'Route 11', source: `${WIKI}/extras/legendary-pokemon/` },
       { id: 'portail-tapu-lele', label: '**Tapu Lele**', location: 'Route 17', source: `${WIKI}/extras/legendary-pokemon/` },
       { id: 'portail-tapu-bulu', label: '**Tapu Bulu**', location: 'Route 9', source: `${WIKI}/extras/legendary-pokemon/` },
@@ -220,6 +235,14 @@ export const completionSections: CompletionSection[] = [
       {
         id: 'legendaire-entei-raikou',
         label: '**Entei** et **Raikou** — errants, après avoir interagi avec le portail du *Tomb of Borrius*',
+        details: ['Ce portail-là n’appartient pas à la mission #050 : les deux ne comptent pas dans les Portal Pokémon.'],
+        source: `${WIKI}/extras/legendary-pokemon/`,
+      },
+      {
+        id: 'legendaire-giratina',
+        label: '**Giratina** — par le portail de la **Rift Cave**',
+        details: ['Là encore un portail hors mission #050.'],
+        location: 'Distortion World',
         source: `${WIKI}/extras/legendary-pokemon/`,
       },
       {

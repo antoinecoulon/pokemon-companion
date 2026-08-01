@@ -6,15 +6,27 @@ const route = useRoute()
 const { app } = useRuntimeConfig()
 const logo = `${app.baseURL}/favicon.svg`.replace(/\/{2,}/g, '/')
 
+const { current } = useGame()
+
+const navItems = computed(() => current.value.content.nav)
+const primaryNavItems = computed(() => primaryOf(navItems.value))
+const secondaryNavItems = computed(() => secondaryOf(navItems.value))
+
+/*
+ * Le titre de la barre est celui de l'entrée de nav la plus spécifique qui
+ * préfixe la route : `/unbound/equipe/tyranitar` rend « Équipe ». C'est aussi
+ * pourquoi aucune page ne porte de <h1> — sauf la fiche d'un Pokémon, qui a
+ * besoin d'un titre propre.
+ */
 const currentLabel = computed(() => {
-  const match = navItems
-    .filter(item => item.to === '/' ? route.path === '/' : route.path.startsWith(item.to))
+  const match = navItems.value
+    .filter(item => isActive(item.to))
     .sort((a, b) => b.to.length - a.to.length)[0]
   return match?.label ?? 'Pokémon Companion'
 })
 
 function isActive(to: string) {
-  return to === '/' ? route.path === '/' : route.path.startsWith(to)
+  return route.path === to || route.path.startsWith(`${to}/`)
 }
 </script>
 
@@ -24,7 +36,7 @@ function isActive(to: string) {
     <aside
       class="hidden lg:flex fixed inset-y-0 left-0 w-64 flex-col border-r border-default bg-muted/40"
     >
-      <NuxtLink to="/" class="flex items-center gap-2.5 px-5 h-16 shrink-0">
+      <NuxtLink :to="current.basePath" class="flex items-center gap-2.5 px-5 h-16 shrink-0">
         <img :src="logo" alt="" class="size-7">
         <span class="font-semibold tracking-tight">Pokémon Companion</span>
       </NuxtLink>
@@ -44,9 +56,10 @@ function isActive(to: string) {
         </NuxtLink>
       </nav>
 
-      <div class="px-3 py-4 border-t border-default">
+      <div class="px-3 py-4 border-t border-default space-y-2">
+        <GameSwitcher />
         <p class="px-3 text-xs text-dimmed">
-          Pokémon Unbound · post-game
+          {{ current.label }} · {{ current.subtitle }}
         </p>
       </div>
     </aside>
@@ -77,6 +90,7 @@ function isActive(to: string) {
           variant="ghost"
           size="xs"
         />
+        <GameSwitcher compact />
         <SaveMenu />
         <UColorModeButton size="sm" />
       </div>

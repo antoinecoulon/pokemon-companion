@@ -1,33 +1,25 @@
 import type { JournalEntry, PokemonProgress, PokemonStatus, ResourceKey, RosterOverride, SaveState, TaskId } from '~/data/types'
-import type { KnownContent } from '~/utils/prune'
-import { collectibleKeys } from '~/data/collectibles'
-import { completionGoalKeys } from '~/data/completion'
-import { counters } from '~/data/counters'
-import { keyItemKeys } from '~/data/keyitems'
-import { missionKeys } from '~/data/missions'
-import { npcs } from '~/data/npcs'
-import { phases } from '~/data/phases'
-import { pokemon } from '~/data/pokemon'
-import { readinessCriteria } from '~/data/readiness'
-import { tutorKeys } from '~/data/tutors'
+import { games } from '~/data/games'
 import { ROSTER_STATUSES, SAVE_VERSION, TEAM_SIZE } from '~/data/types'
 import { migrations } from '~/utils/migrations'
 import { findOrphans, pruneSave } from '~/utils/prune'
 
-const STORAGE_KEY = 'pokemon-companion:save'
-
 /**
- * Copie de secours des octets qu'on s'apprête à perdre.
+ * Une sauvegarde par jeu, sous sa propre clé (voir `app/data/games.ts`).
  *
- * `normalize()` refuse ce qu'il ne reconnaît pas, et le premier `persist()` qui
- * suit réécrit `STORAGE_KEY` par-dessus : sans cette copie, une sauvegarde
- * illisible disparaît définitivement, en silence, à la première case cochée.
+ * Ce fichier, lui, n'a pas changé de nature : il opère toujours sur **un**
+ * `SaveState` à la fois. `normalize()`, `migrations`, `SAVE_VERSION`, la copie
+ * de secours et l'export/import ignorent complètement l'existence de plusieurs
+ * jeux — c'est tout l'intérêt d'avoir partitionné par clé plutôt que d'avoir
+ * enveloppé les sauvegardes dans un objet commun.
  *
- * Le contenu n'est jamais réinterprété — on garde la chaîne telle quelle, pour
- * pouvoir la rendre à l'utilisateur ou la relire plus tard, une fois la
- * migration manquante écrite.
+ * La copie de secours garde les octets qu'on s'apprête à perdre : `normalize()`
+ * refuse ce qu'il ne reconnaît pas, et le premier `persist()` qui suit réécrit
+ * la clé par-dessus. Sans elle, une sauvegarde illisible disparaît
+ * définitivement, en silence, à la première case cochée. Le contenu n'est jamais
+ * réinterprété — on garde la chaîne telle quelle, pour pouvoir la rendre à
+ * l'utilisateur ou la relire plus tard, une fois la migration manquante écrite.
  */
-const BACKUP_KEY = 'pokemon-companion:save:backup'
 
 export interface SaveBackup {
   /**
@@ -38,55 +30,6 @@ export interface SaveBackup {
   savedAt: string
   /** Le JSON d'origine, tel quel. */
   payload: string
-}
-
-/**
- * État initial des cases, tel que repris du guide markdown.
- *
- * `state.tasks` ne stocke QUE les choix explicites de l'utilisateur. Une tâche
- * absente retombe sur ce défaut : quand une nouvelle tâche est ajoutée au
- * contenu, son `done` est donc respecté sans avoir à migrer la sauvegarde.
- */
-const contentDefaults = new Map<TaskId, boolean>([
-  ...phases.flatMap(phase => phase.tasks.map(task => [task.id, task.done ?? false] as const)),
-  ...pokemon.flatMap(mon => (mon.tasks ?? []).map(task => [task.id, task.done ?? false] as const)),
-])
-
-/**
- * Tout ce que le contenu actuel peut légitimement voir stocké.
- *
- * Sert uniquement à la purge. Les cases « Endgame Ready » y figurent parce
- * qu'elles vivent dans `state.tasks` sans exister nulle part dans le contenu :
- * leur id est fabriqué à la volée par `useProgress` (`ready-<slug>-<key>`), donc
- * sans elles la purge les prendrait toutes pour des orphelines.
- */
-const knownContent: KnownContent = {
-  taskIds: new Set([
-    ...phases.flatMap(phase => phase.tasks.map(task => task.id)),
-    ...pokemon.flatMap(mon => (mon.tasks ?? []).map(task => task.id)),
-    ...pokemon.flatMap(mon => readinessCriteria.map(criterion => `ready-${mon.slug}-${criterion.key}`)),
-  ]),
-  slugs: new Set(pokemon.map(mon => mon.slug)),
-  /*
-   * Toute catégorie de ressource persistée doit figurer ici, sans quoi la purge
-   * prendrait ses cases pour des orphelines et les effacerait. Le test de purge
-   * travaille sur un ensemble synthétique et ne peut pas voir un oubli : c'est
-   * `pnpm validate` qui relit la source de ce fichier pour vérifier que chaque
-   * tableau de clés y est bien inscrit.
-   *
-   * `quest:` n'y est plus — `quests.ts` a été absorbé par `missions.ts`, et
-   * `migrations[1]` reporte ces clés. Une sauvegarde v1 non migrée n'existe
-   * donc pas au moment où la purge tourne.
-   */
-  resourceKeys: new Set([
-    ...npcs.map(npc => `npc:${npc.id}`),
-    ...completionGoalKeys,
-    ...missionKeys,
-    ...tutorKeys,
-    ...collectibleKeys,
-    ...keyItemKeys,
-  ]),
-  counterIds: new Set(counters.map(counter => counter.id)),
 }
 
 export function createEmptySave(): SaveState {
@@ -218,27 +161,73 @@ function normalize(raw: unknown): SaveState | null {
  * distante plus tard ne demandera de retoucher que ce fichier.
  */
 export function useSave() {
-  const state = useState<SaveState>('save', createEmptySave)
-  const ready = useState<boolean>('save-ready', () => false)
-  /**
-   * Horodatage tenu HORS de `state`.
+  const { current } = useGame()
+
+  /*
+   * Un jeu de refs par jeu, toutes créées ici, de façon synchrone.
    *
-   * Le plugin surveille `state` en profondeur ; si `persist()` écrivait
-   * `updatedAt` dedans, chaque écriture déclencherait le watcher, qui
-   * replanifierait une écriture — une boucle infinie d'accès au localStorage.
+   * `useState` est appelé pour *tous* les jeux à chaque appel du composable,
+   * et non pour le seul jeu actif : les appeler paresseusement depuis un
+   * `computed` sortirait du contexte de setup de Nuxt. Il y a deux jeux, la
+   * dépense est nulle, et l'état de chacun reste strictement cloisonné.
    */
-  const lastSavedAt = useState<string | null>('save-updated-at', () => null)
-  /** Copie de secours présente dans le stockage, s'il y en a une. */
-  const backup = useState<SaveBackup | null>('save-backup', () => null)
-  /** Vrai quand c'est *cette* session qui vient de rejeter une sauvegarde. */
-  const justRejected = useState<boolean>('save-just-rejected', () => false)
+  const buckets = new Map(
+    games.map(game => [game.id, {
+      state: useState<SaveState>(`save:${game.id}`, createEmptySave),
+      ready: useState<boolean>(`save-ready:${game.id}`, () => false),
+      /**
+       * Horodatage tenu HORS de `state`.
+       *
+       * Le plugin surveille `state` en profondeur ; si `persist()` écrivait
+       * `updatedAt` dedans, chaque écriture déclencherait le watcher, qui
+       * replanifierait une écriture — une boucle infinie d'accès au localStorage.
+       */
+      lastSavedAt: useState<string | null>(`save-updated-at:${game.id}`, () => null),
+      /** Copie de secours présente dans le stockage, s'il y en a une. */
+      backup: useState<SaveBackup | null>(`save-backup:${game.id}`, () => null),
+      /** Vrai quand c'est *cette* session qui vient de rejeter une sauvegarde. */
+      justRejected: useState<boolean>(`save-just-rejected:${game.id}`, () => false),
+    }] as const),
+  )
+
+  const bucket = () => buckets.get(current.value.id)!
+
+  /*
+   * Ces `computed` suivent le jeu actif. Le `set` est nécessaire : `importJson`
+   * et `reset` remplacent l'état entier, pas seulement ses champs.
+   */
+  const state = computed<SaveState>({
+    get: () => bucket().state.value,
+    set: (value) => { bucket().state.value = value },
+  })
+  const ready = computed({
+    get: () => bucket().ready.value,
+    set: (value) => { bucket().ready.value = value },
+  })
+  const lastSavedAt = computed({
+    get: () => bucket().lastSavedAt.value,
+    set: (value) => { bucket().lastSavedAt.value = value },
+  })
+  const backup = computed({
+    get: () => bucket().backup.value,
+    set: (value) => { bucket().backup.value = value },
+  })
+  const justRejected = computed({
+    get: () => bucket().justRejected.value,
+    set: (value) => { bucket().justRejected.value = value },
+  })
+
+  const STORAGE_KEY = computed(() => current.value.saveKey)
+  const BACKUP_KEY = computed(() => current.value.backupKey)
+  const contentDefaults = computed(() => current.value.contentDefaults)
+  const knownContent = computed(() => current.value.knownContent)
 
   /* --- Copie de secours ------------------------------------------------- */
 
   function writeBackup(payload: string, reason: SaveBackup['reason']) {
     const entry: SaveBackup = { reason, savedAt: new Date().toISOString(), payload }
     try {
-      localStorage.setItem(BACKUP_KEY, JSON.stringify(entry))
+      localStorage.setItem(BACKUP_KEY.value, JSON.stringify(entry))
       backup.value = entry
     }
     catch (error) {
@@ -250,7 +239,7 @@ export function useSave() {
 
   function readBackup(): SaveBackup | null {
     try {
-      const stored = localStorage.getItem(BACKUP_KEY)
+      const stored = localStorage.getItem(BACKUP_KEY.value)
       if (!stored) return null
       const parsed = JSON.parse(stored) as Partial<SaveBackup>
       if (typeof parsed?.payload !== 'string') return null
@@ -268,7 +257,7 @@ export function useSave() {
 
   function discardBackup() {
     try {
-      localStorage.removeItem(BACKUP_KEY)
+      localStorage.removeItem(BACKUP_KEY.value)
     }
     catch (error) {
       console.error('[save] suppression de la copie impossible', error)
@@ -305,7 +294,7 @@ export function useSave() {
     if (ready.value) return
     let stored: string | null = null
     try {
-      stored = localStorage.getItem(STORAGE_KEY)
+      stored = localStorage.getItem(STORAGE_KEY.value)
       if (stored) {
         const parsed = normalize(JSON.parse(stored))
         if (parsed) {
@@ -341,7 +330,7 @@ export function useSave() {
     if (!ready.value) return
     const payload = snapshot()
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+      localStorage.setItem(STORAGE_KEY.value, JSON.stringify(payload))
       lastSavedAt.value = payload.updatedAt
     }
     catch (error) {
@@ -352,7 +341,7 @@ export function useSave() {
   /* --- Tâches ---------------------------------------------------------- */
 
   function isDone(id: TaskId): boolean {
-    return state.value.tasks[id] ?? contentDefaults.get(id) ?? false
+    return state.value.tasks[id] ?? contentDefaults.value.get(id) ?? false
   }
 
   function setDone(id: TaskId, value: boolean) {
@@ -482,11 +471,11 @@ export function useSave() {
   /* --- Purge des clés mortes ------------------------------------------- */
 
   /** Ce que la purge supprimerait, sans rien supprimer. */
-  const orphans = computed(() => findOrphans(state.value, knownContent))
+  const orphans = computed(() => findOrphans(state.value, knownContent.value))
 
   function prune() {
     const report = orphans.value
-    state.value = pruneSave(state.value, knownContent)
+    state.value = pruneSave(state.value, knownContent.value)
     persist()
     return report
   }

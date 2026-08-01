@@ -207,12 +207,22 @@ export interface PokemonSheet {
  * Checklist « Endgame Ready » (§13.2)
  * ------------------------------------------------------------------------- */
 
+/**
+ * Union fermée, et volontairement commune aux deux jeux : une faute de frappe
+ * sur un nom de critère rendrait `undefined`, donc `met: false` — un critère
+ * durablement non rempli, sans la moindre erreur.
+ *
+ * Tous les jeux n'utilisent pas toutes les clés. Unbound n'a pas d'`innates`,
+ * et Elite Redux n'a pas d'`ivs` : les IV y sont à 31 par défaut, le critère
+ * n'aurait rien à vérifier.
+ */
 export type ReadinessKey
   = | 'level'
     | 'ivs'
     | 'evs'
     | 'nature'
     | 'ability'
+    | 'innates'
     | 'moves'
     | 'item'
 

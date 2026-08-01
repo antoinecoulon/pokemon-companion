@@ -1,5 +1,5 @@
 /**
- * Réécriture du barrel `app/data/pokemon/index.ts`.
+ * Réécriture du barrel `app/data/unbound/pokemon/index.ts`.
  *
  * Une fiche vit dans son propre module ; le barrel les assemble avec une liste
  * d'imports explicite — pas un glob : le typage et l'ordre de bundling doivent

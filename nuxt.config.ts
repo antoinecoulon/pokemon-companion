@@ -38,7 +38,7 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'description', content: 'Suivi du post-game de Pokémon Unbound' },
+        { name: 'description', content: 'Suivi de parties de hack ROMs Pokémon — Unbound, Elite Redux' },
         { name: 'theme-color', content: '#0f172a' },
       ],
       link: [
@@ -80,13 +80,14 @@ export default defineNuxtConfig({
       /*
        * `scan` ne lit que les templates : il voit `icon="i-lucide-star"` écrit en
        * dur dans un .vue, mais pas `:name="item.icon"` alimenté depuis un tableau
-       * TypeScript. Ces icônes-là, déclarées dans app/utils/navigation.ts et
-       * app/data/counters.ts, doivent donc être listées à la main — sinon elles
+       * TypeScript. Ces icônes-là — nav et compteurs de chaque jeu, déclarés
+       * dans app/data/<jeu>/, plus celles passées en prop au sélecteur de jeu —
+       * doivent donc être listées à la main : sinon elles
        * sont absentes du bundle et, avec `provider: 'none'`, ne s'affichent
        * nulle part. `scripts/validate-content.mjs` échoue si la liste dérive.
        */
       icons: [
-        // app/utils/navigation.ts
+        // nav des jeux — app/data/<jeu>/index.ts
         'lucide:house',
         'lucide:list-checks',
         'lucide:users',
@@ -94,7 +95,11 @@ export default defineNuxtConfig({
         'lucide:book-open',
         'lucide:notebook-pen',
         'lucide:trophy',
-        // app/data/counters.ts
+        // app/components/GameSwitcher.vue — passées en prop, donc non scannées
+        'lucide:gamepad-2',
+        'lucide:chevrons-up-down',
+        'lucide:check',
+        // compteurs — app/data/<jeu>/counters.ts
         'lucide:banknote',
         'lucide:ticket',
         'lucide:heart',
@@ -121,7 +126,7 @@ export default defineNuxtConfig({
     manifest: {
       name: 'Pokémon Companion',
       short_name: 'Companion',
-      description: 'Suivi du post-game de Pokémon Unbound',
+      description: 'Suivi de parties de hack ROMs Pokémon — Unbound, Elite Redux',
       lang: 'fr',
       start_url: baseURL,
       scope: baseURL,

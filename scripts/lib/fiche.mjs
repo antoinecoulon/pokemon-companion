@@ -447,7 +447,7 @@ function render(value, depth, keyOrder) {
   return `{\n${fields}\n${pad}}`
 }
 
-/** Module TypeScript complet d'une fiche, prêt à écrire dans `app/data/pokemon/`. */
+/** Module TypeScript complet d'une fiche, prêt à écrire dans `app/data/unbound/pokemon/`. */
 export function printFiche(fiche) {
   const ordered = {}
   for (const field of SHEET_FIELDS) {

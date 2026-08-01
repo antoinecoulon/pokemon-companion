@@ -23,15 +23,16 @@ function sortKey(a: TaskEntry, b: TaskEntry) {
 export function useNextActions(limit = 5) {
   const { isDone } = useSave()
   const { activeSlugs } = useRoster()
+  const { current } = useGame()
 
   const decorated = computed<ActionableTask[]>(() =>
-    trackedEntriesFor(activeSlugs.value)
+    trackedEntriesFor(current.value.taskEntries, activeSlugs.value)
       .filter(entry => !isDone(entry.task.id))
       .map(entry => ({
         ...entry,
         blockedBy: (entry.task.requires ?? [])
           .filter(id => !isDone(id))
-          .map(id => ({ id, label: taskLabelOf(id) })),
+          .map(id => ({ id, label: taskLabelOf(current.value.taskEntriesById, id) })),
       })),
   )
 

@@ -11,7 +11,7 @@
  */
 import { loadApp } from './lib/data.mjs'
 
-const { decideSync, emptyMarker, isPristineSave, markerAfter } = await loadApp('utils/sync.ts')
+const { decideSync, emptyMarker, isPristineSave, markerAfter, readMarkers } = await loadApp('utils/sync.ts')
 
 const failures = []
 let assertions = 0
@@ -105,6 +105,70 @@ check(
   'deux appareils remplis, jamais synchronisés',
   decideSync(filled(T2), filled(T1), emptyMarker()),
   { action: 'push', diverged: true, reason: 'Les deux appareils ont changé ; celui-ci est plus récent.' },
+)
+
+/* --- Marqueurs par jeu -------------------------------------------------- */
+
+/*
+ * Le multi-jeux a fait passer la configuration d'un `marker` unique à un
+ * marqueur par jeu. Un appareil déjà relié au gist porte l'ancienne forme : s'y
+ * tromper remettrait son marqueur à zéro, ce que `decideSync` lit comme « les
+ * deux côtés ont changé » — donc une divergence, donc un écrasement. C'est
+ * exactement le genre de perte silencieuse que ce fichier existe pour empêcher.
+ */
+const GAMES = ['unbound', 'elite-redux']
+const legacyMarker = { remoteUpdatedAt: T1, localUpdatedAt: T2 }
+
+check(
+  'config héritée : l’ancien marqueur est repris sur le jeu historique',
+  readMarkers({ marker: legacyMarker }, GAMES, 'unbound').unbound,
+  legacyMarker,
+)
+check(
+  'config héritée : le nouveau jeu part d’un marqueur vide',
+  readMarkers({ marker: legacyMarker }, GAMES, 'unbound')['elite-redux'],
+  emptyMarker(),
+)
+
+const perGame = {
+  markers: {
+    'unbound': { remoteUpdatedAt: T1, localUpdatedAt: T1 },
+    'elite-redux': { remoteUpdatedAt: T2, localUpdatedAt: T2 },
+  },
+}
+check('marqueurs par jeu : unbound relu tel quel', readMarkers(perGame, GAMES, 'unbound').unbound, perGame.markers.unbound)
+check('marqueurs par jeu : indépendants', readMarkers(perGame, GAMES, 'unbound')['elite-redux'], perGame.markers['elite-redux'])
+
+/*
+ * La forme nouvelle prime sur l'ancienne : une fois les marqueurs par jeu
+ * écrits, un `marker` résiduel ne doit plus rien décider.
+ */
+check(
+  'la forme par jeu prime sur le marqueur hérité',
+  readMarkers({ marker: legacyMarker, markers: { unbound: emptyMarker() } }, GAMES, 'unbound').unbound,
+  emptyMarker(),
+)
+
+check('config absente : tous les marqueurs sont vides', readMarkers(undefined, GAMES, 'unbound'), {
+  'unbound': emptyMarker(),
+  'elite-redux': emptyMarker(),
+})
+check('marqueur corrompu : ramené à vide plutôt que propagé', readMarkers({ markers: { unbound: { remoteUpdatedAt: 42 } } }, GAMES, 'unbound').unbound, emptyMarker())
+
+/*
+ * Le cas qui coûte : reprendre l'ancien marqueur évite la divergence. Sans la
+ * reprise, `decideSync` verrait deux côtés modifiés et écraserait un des deux.
+ */
+const inheritedMarker = markerAfter(filled(T1), filled(T1))
+check(
+  'marqueur hérité repris : pas de fausse divergence',
+  decideSync(filled(T1), filled(T1), readMarkers({ marker: inheritedMarker }, GAMES, 'unbound').unbound).action,
+  'none',
+)
+check(
+  'marqueur hérité perdu : divergence, donc écrasement',
+  decideSync(filled(T1), filled(T1), emptyMarker()).diverged,
+  true,
 )
 
 /* --- Rapport ------------------------------------------------------------ */

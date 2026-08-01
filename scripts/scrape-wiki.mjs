@@ -3,7 +3,7 @@
  *
  *   pnpm scrape:wiki <missions|collectibles|tutors|items|all> [--fresh] [--dry-run]
  *
- * Ces fichiers de `app/data/` sont **générés** : les corriger à la main, c'est
+ * Ces fichiers de `app/data/unbound/` sont **générés** : les corriger à la main, c'est
  * perdre la correction à la prochaine régénération. Une donnée fausse se corrige
  * ici (le parseur) ou là-bas (signaler l'erreur au wiki) — jamais dans la sortie.
  *
@@ -21,7 +21,7 @@
  * `--fresh` ignore le cache disque, `--dry-run` affiche sans écrire.
  */
 import { writeFile } from 'node:fs/promises'
-import { root } from './lib/data.mjs'
+import { UNBOUND_DIR } from './lib/data.mjs'
 import { scrape as scrapeMissions } from './lib/scrape-missions.mjs'
 import { scrape as scrapeCollectibles } from './lib/scrape-collectibles.mjs'
 import { scrape as scrapeTutors } from './lib/scrape-tutors.mjs'
@@ -68,8 +68,8 @@ for (const name of wanted) {
     console.log(`${output.split('\n').length} lignes (dry-run, rien écrit)`)
   }
   else {
-    await writeFile(`${root}app/data/${file}`, output, 'utf8')
-    console.log(`→ app/data/${file}`)
+    await writeFile(`${UNBOUND_DIR}${file}`, output, 'utf8')
+    console.log(`→ app/data/unbound/${file}`)
   }
 }
 

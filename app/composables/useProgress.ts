@@ -1,7 +1,5 @@
 import type { PokemonSheet, ReadinessKey } from '~/data/types'
 import { matchesNature } from '~/data/natures'
-import { phases } from '~/data/phases'
-import { readinessCriteria } from '~/data/readiness'
 
 export interface Ratio {
   done: number
@@ -17,10 +15,11 @@ function ratio(done: number, total: number): Ratio {
 export function useProgress() {
   const { isAcquired, isDone, progressFor, state } = useSave()
   const { active, activeSlugs } = useRoster()
+  const { current } = useGame()
 
-  /** Battle Frontier + fiches des 6 membres actifs. */
+  /** Les phases du jeu + les fiches des membres actifs. */
   const overall = computed(() => {
-    const tracked = trackedEntriesFor(activeSlugs.value)
+    const tracked = trackedEntriesFor(current.value.taskEntries, activeSlugs.value)
     return ratio(tracked.filter(entry => isDone(entry.task.id)).length, tracked.length)
   })
 
@@ -34,19 +33,20 @@ export function useProgress() {
    * Frontier sous trois cents cases et ferait chuter d'un coup le pourcentage
    * d'une partie déjà bien avancée.
    */
-  const completion = computed(() =>
-    ratio(completionEntries.filter(entry => isAcquired(entry.key)).length, completionEntries.length),
-  )
+  const completion = computed(() => {
+    const entries = current.value.completionEntries
+    return ratio(entries.filter(entry => isAcquired(entry.key)).length, entries.length)
+  })
 
   const byCompletionSection = computed(() =>
-    new Map(completionGroups.map(group => [
+    new Map(current.value.content.completionGroups.map(group => [
       group.id,
       ratio(group.entries.filter(entry => isAcquired(entry.key)).length, group.entries.length),
     ])),
   )
 
   const byPhase = computed(() =>
-    new Map(phases.map(phase => [
+    new Map(current.value.content.phases.map(phase => [
       phase.id,
       ratio(phase.tasks.filter(task => isDone(task.id)).length, phase.tasks.length),
     ])),
@@ -122,7 +122,7 @@ export function useProgress() {
       },
     }
 
-    const rows = readinessCriteria.map((criterion) => {
+    const rows = current.value.content.readinessCriteria.map((criterion) => {
       const computedResult = derived[criterion.key]
       return {
         ...criterion,

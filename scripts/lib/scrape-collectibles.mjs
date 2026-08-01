@@ -3,7 +3,7 @@
  *
  * Voir `scripts/scrape-wiki.mjs` pour le contrat : chaque module de catégorie
  * exporte `scrape({ fresh })` et renvoie le contenu complet du fichier
- * `app/data/*.ts` à écrire. Modelé sur `scrape-missions.mjs`.
+ * `app/data/unbound/*.ts` à écrire. Modelé sur `scrape-missions.mjs`.
  */
 import {
   WIKI,

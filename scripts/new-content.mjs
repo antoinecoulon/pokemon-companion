@@ -15,7 +15,7 @@
  *   pnpm new:task phase-2          # tâche dans une phase existante
  *   pnpm new:goal portails "Regirock"
  */
-import { loadData, loadPokemon } from './lib/data.mjs'
+import { loadUnbound, loadPokemon } from './lib/data.mjs'
 
 const [kind, ...args] = process.argv.slice(2)
 
@@ -97,10 +97,10 @@ switch (kind) {
     if (!service) fail('usage : pnpm new:npc "<service>"')
     const id = slugify(service)
 
-    const { npcs } = await loadData('npcs.ts')
+    const { npcs } = await loadUnbound('npcs.ts')
     if (npcs.some(npc => npc.id === id)) fail(`le PNJ « ${id} » existe déjà`)
 
-    block(`PNJ « ${service} »`, 'app/data/npcs.ts', `  {
+    block(`PNJ « ${service} »`, 'app/data/unbound/npcs.ts', `  {
     id: '${id}',
     service: '${service}',
     location: '',
@@ -115,7 +115,7 @@ switch (kind) {
     const [phaseId] = args
     if (!phaseId) fail('usage : pnpm new:task <phase-id>  (ex. phase-2)')
 
-    const { phases } = await loadData('phases.ts')
+    const { phases } = await loadUnbound('phases.ts')
     const phase = phases.find(item => item.id === phaseId)
     if (!phase) {
       fail(`phase « ${phaseId} » inconnue. Disponibles : ${phases.map(p => p.id).join(', ')}`)
@@ -126,7 +126,7 @@ switch (kind) {
       .filter(Number.isFinite)
     const next = Math.max(0, ...used) + 1
 
-    block(`Tâche dans « ${phase.title} »`, 'app/data/phases.ts', `      {
+    block(`Tâche dans « ${phase.title} »`, 'app/data/unbound/phases.ts', `      {
         id: '${phaseId}.${next}',
         label: '',
         // requires: ['phase-1.4'], // prérequis explicites du guide uniquement
@@ -143,7 +143,7 @@ switch (kind) {
     if (!sectionId || !label) fail('usage : pnpm new:goal "<section-id>" "<libellé>"')
     const id = slugify(label)
 
-    const { completionSections } = await loadData('completion.ts')
+    const { completionSections } = await loadUnbound('completion.ts')
     const section = completionSections.find(item => item.id === sectionId)
     if (!section) {
       fail(`section « ${sectionId} » inconnue. Disponibles : ${completionSections.map(s => s.id).join(', ')}`)
@@ -157,7 +157,7 @@ switch (kind) {
     const taken = completionSections.flatMap(item => item.goals).some(goal => goal.id === id)
     if (taken) fail(`l'objectif « ${id} » existe déjà`)
 
-    block(`Objectif « ${label} » dans « ${section.title} »`, 'app/data/completion.ts', `      {
+    block(`Objectif « ${label} » dans « ${section.title} »`, 'app/data/unbound/completion.ts', `      {
         id: '${id}',
         label: '${label}',
         // location: '',

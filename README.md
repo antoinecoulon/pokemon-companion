@@ -1,8 +1,14 @@
 # Pokémon Companion
 
-Application web de suivi du post-game de **Pokémon Unbound**. Elle remplace le guide markdown de
-996 lignes (`docs/`) par une interface où l’on coche sa progression, saisit les IV/EV réels de son
-équipe, et se fait dire quoi faire ensuite.
+Application web de suivi de mes parties de hack ROMs Pokémon. On y coche sa progression, on y saisit
+les IV/EV réels de son équipe, et l’app dit quoi faire ensuite.
+
+**Deux jeux suivis en parallèle**, chacun avec sa propre sauvegarde et ses propres sections :
+
+| Jeu | Racine | État |
+| --- | --- | --- |
+| **Pokémon Unbound** | `/unbound` | post-game, partie avancée. Remplace le guide markdown de 996 lignes archivé dans `docs/` |
+| **Pokémon Elite Redux** | `/elite-redux` | mode Elite, partie qui démarre. Doc de référence dans `docs/elite-redux/` |
 
 Mono-utilisateur, sans compte, sans backend : tout l’état vit dans le navigateur.
 
@@ -54,27 +60,56 @@ valeur réelle.
 
 ```
 app/
-├── data/            LE contenu du guide, migré en TypeScript
-│   ├── types.ts     types de contenu + modèle de sauvegarde
-│   ├── phases.ts    §10  — la Battle Frontier, seul reste de la roadmap
-│   ├── pokemon/     §6, §7.3 — une fiche par fichier + index.ts généré
-│   ├── completion.ts     objectifs de complétion écrits à la main
-│   ├── missions.ts       ⚙ généré · tutors.ts ⚙ · collectibles.ts ⚙ · keyitems.ts ⚙
-│   ├── npcs.ts      §8   · items.ts §9 · farming.ts §11
-│   ├── mechanics.ts §1–4, §10, §13.0 · natures.ts §13.1 · glossary.ts §13.3
-│   ├── readiness.ts §13.2 — les 7 critères
-│   └── counters.ts  compteurs de ressources et leurs objectifs
+├── data/
+│   ├── games.ts     LE registre des jeux — clés de sauvegarde, routes, dérivés
+│   ├── types.ts     types de contenu + modèle de sauvegarde (partagés)
+│   ├── natures.ts   les 25 natures (partagées : même notion dans tous les jeux)
+│   ├── unbound/     LE contenu du guide, migré en TypeScript
+│   │   ├── index.ts      assemble le GameContent d’Unbound
+│   │   ├── phases.ts     §10  — la Battle Frontier, seul reste de la roadmap
+│   │   ├── pokemon/      §6, §7.3 — une fiche par fichier + index.ts généré
+│   │   ├── completion.ts objectifs de complétion écrits à la main
+│   │   ├── missions.ts   ⚙ généré · tutors.ts ⚙ · collectibles.ts ⚙ · keyitems.ts ⚙
+│   │   ├── npcs.ts  §8   · items.ts §9 · farming.ts §11
+│   │   ├── mechanics.ts §1–4, §10, §13.0 · glossary.ts §13.3
+│   │   ├── readiness.ts §13.2 — les 7 critères
+│   │   └── counters.ts  compteurs de ressources et leurs objectifs
+│   └── elite-redux/ écrit à la main depuis docs/elite-redux/
+│       ├── index.ts      assemble le GameContent d’Elite Redux
+│       ├── phases.ts     les 4 phases : Débuter → Équipe → Compléter → Post-game
+│       ├── completion.ts Mega Stones, Primal Forms, starters, Adoption Center, Frontier
+│       ├── readiness.ts  pas d’IV (31 par défaut), un critère `innates` à la place
+│       └── counters.ts   BP et argent — ni Bottle Caps ni Heart Scales dans ce jeu
 ├── composables/
-│   ├── useSave.ts        seul point d’accès au localStorage
+│   ├── useGame.ts        jeu actif et bascule
+│   ├── useSave.ts        seul point d’accès au localStorage, une clé par jeu
 │   ├── useRoster.ts      composition jouée : statut et slot effectifs
 │   ├── useProgress.ts    ratios de progression + critères dérivés
 │   └── useNextActions.ts moteur de « prochaine action »
-├── components/      AppCard, SectionBlock, PokemonSprite, TaskItem, ContentBlocks, …
+├── middleware/
+│   └── game.global.ts    valide le jeu de la route, redirige les anciennes URLs
+├── components/      AppCard, SectionBlock, PokemonSprite, GameSwitcher, TaskItem, …
 └── pages/
-docs/                le guide markdown d’origine, archivé
+    ├── index.vue         redirige vers le dernier jeu ouvert
+    └── [game]/           toutes les pages, préfixées par le jeu
+docs/                le guide Unbound archivé + la doc de référence Elite Redux
 public/sprites/      sprites versionnés : home/ (fiches) et pixel/ (vignettes)
 scripts/             validation, tests de fumée, icônes, sprites, squelettes de contenu
 ```
+
+### Multi-jeux
+
+**Une clé `localStorage` par jeu**, pas un objet enveloppe. `pokemon-companion:save` reste *à l’octet
+près* la sauvegarde Unbound d’avant le multi-jeux : aucun bump de `SAVE_VERSION`, aucune migration,
+donc aucun risque sur la partie en cours. `normalize()`, la purge et `decideSync` continuent
+d’opérer sur **un** `SaveState`, sans rien savoir des autres jeux.
+
+Les **routes sont préfixées** (`/unbound/completion`) et la route est la source de vérité : le
+middleware en déduit le jeu actif. Les anciennes URLs y redirigent — des favoris PWA pointent encore
+dessus. Le jeu actif est mémorisé sous `pokemon-companion:game`, hors de toute sauvegarde.
+
+Conséquence à connaître : **les ids ne sont uniques que par jeu**. Deux sauvegardes ne se croisent
+jamais, donc Elite Redux réutilise librement `phase-1.x`.
 
 ### Contenu en TypeScript, pas en YAML
 
@@ -91,9 +126,9 @@ Elles **n’écrivent rien** : on relit, on colle.
 
 | Contenu | Commande | Fichier | Convention d’id |
 | --- | --- | --- | --- |
-| Tâche de la Frontier | `pnpm new:task phase-5` | `app/data/phases.ts` | `phase-<n>.<m>` |
-| PNJ | `pnpm new:npc "Move Tutor"` | `app/data/npcs.ts` | kebab-case, persisté en `npc:<id>` |
-| Objectif de complétion | `pnpm new:goal portails "Nom"` | `app/data/completion.ts` | kebab-case, persisté en `goal:<id>` |
+| Tâche de la Frontier | `pnpm new:task phase-5` | `app/data/unbound/phases.ts` | `phase-<n>.<m>` |
+| PNJ | `pnpm new:npc "Move Tutor"` | `app/data/unbound/npcs.ts` | kebab-case, persisté en `npc:<id>` |
+| Objectif de complétion | `pnpm new:goal portails "Nom"` | `app/data/unbound/completion.ts` | kebab-case, persisté en `goal:<id>` |
 
 **Missions, move tutors, collectibles et Key Items ne s’écrivent pas** : ils sont générés depuis
 unboundwiki par `pnpm scrape:wiki <missions|collectibles|tutors|items|all>`. Corriger le fichier à la
@@ -148,7 +183,7 @@ des icônes utilisées hors template** (voir plus bas).
 
 ### Fiches Pokémon
 
-Une fiche par fichier dans `app/data/pokemon/<slug>.ts`, assemblées par un `index.ts` **généré**. On ne
+Une fiche par fichier dans `app/data/unbound/pokemon/<slug>.ts`, assemblées par un `index.ts` **généré**. On ne
 les écrit pas à la main : elles sont rédigées en JSON — le contrat est dans
 [`docs/fiche-pokemon.md`](docs/fiche-pokemon.md), fait pour être collé dans un prompt — puis intégrées
 par un script qui valide tout avant d’écrire quoi que ce soit.
@@ -198,7 +233,8 @@ Trois composants portent toute la mise en page ; l’échelle d’espacement est
 
 ## Sauvegarde
 
-Un seul objet JSON dans `localStorage`, sous la clé `pokemon-companion:save` :
+Un objet JSON par jeu dans `localStorage` — `pokemon-companion:save` pour Unbound,
+`pokemon-companion:save:elite-redux` pour Elite Redux. Même forme dans les deux cas :
 
 - `tasks` — uniquement les choix explicites de l’utilisateur ; une tâche absente retombe sur le `done`
   du contenu, donc ajouter une tâche plus tard ne casse aucune sauvegarde
@@ -230,8 +266,15 @@ il n’y a pas de serveur où faire vivre un backend — le gist est un stockage
 privé, sans compte à créer ni service à payer.
 
 Menu Sauvegarde → *Synchronisation*, puis un token collé sur chaque appareil. Le gist est retrouvé
-par son nom de fichier, pas par son id : relier un second appareil ne demande donc rien d’autre que
+par ses noms de fichier, pas par son id : relier un second appareil ne demande donc rien d’autre que
 le token.
+
+**Un seul gist, un fichier par jeu.** Celui d’Unbound garde son nom d’origine
+(`pokemon-companion.json`), donc un gist déjà en place continue de fonctionner sans rien faire ; Elite
+Redux prend `pokemon-companion.elite-redux.json`. Chaque jeu a aussi son propre marqueur de synchro,
+et une configuration antérieure au multi-jeux voit son marqueur unique **repris sur Unbound** —
+le jeter ferait passer la synchro suivante pour une divergence, donc un écrasement. `sync()` ne
+traite que le jeu ouvert ; changer de jeu en relance une.
 
 Le token doit être **classic**, avec la portée **`gist` et rien d’autre**
 ([lien pré-rempli](https://github.com/settings/tokens/new?scopes=gist&description=Pok%C3%A9mon%20Companion)).
@@ -259,8 +302,9 @@ code qui peut faire perdre une progression. Deux points s’y jouent :
 ### Copie de secours
 
 Ce qui n’est pas relu n’est pas perdu. Avant d’abandonner une sauvegarde illisible, `hydrate()` en
-recopie les octets bruts sous `pokemon-companion:save:backup` — sans quoi le premier `persist()` venu
-les écraserait en silence, à la première case cochée. La remise à zéro passe par le même filet.
+recopie les octets bruts sous la clé de secours du jeu (`pokemon-companion:save:backup`, et
+`…:save:elite-redux:backup`) — sans quoi le premier `persist()` venu les écraserait en silence, à la
+première case cochée. La remise à zéro passe par le même filet.
 
 L’échec se voit à l’écran : alerte persistante au chargement, bouton du menu en `warning`, et une entrée
 pour retélécharger la copie. Elle réapparaît tant que la sauvegarde illisible est encore là — se taire
@@ -283,8 +327,10 @@ Sans navigateur, sur le code :
 ```bash
 pnpm check          # = validate + test:stats + test:roster + test:fiche + test:sync
                     #   + test:migration + typecheck
-pnpm validate       # ids uniques, requires résolus, aucun cycle, cohérence des fiches,
-                    # comptes du contenu généré (84/100/32) et sources renseignées
+pnpm validate       # pour chaque jeu : ids uniques, requires résolus, aucun cycle, sources
+                    # renseignées, nav cohérente avec les pages fournies, clés de contenu
+                    # toutes présentes dans knownContent (sinon la purge les effacerait) ;
+                    # pour Unbound : cohérence des fiches et comptes du généré (84/100/32)
 pnpm test:stats     # logique EV/IV, y compris les cas limites de §2.2
 pnpm test:roster    # invariants de composition (six slots, pas de trou) et purge de sauvegarde
 pnpm test:fiche     # contrat de fiche : validateur, et aller-retour d’impression sur les 12 fiches
@@ -297,9 +343,11 @@ ni `generate` ne peuvent détecter une erreur de rendu.
 
 ```bash
 pnpm dev            # dans un terminal
-pnpm smoke          # dans un autre : toutes les routes × 2 viewports (1280 et 375 px),
-                    # échoue sur toute erreur console, page vide ou débordement horizontal ;
-                    # vérifie aussi la persistance et l'aller-retour export/import
+pnpm smoke          # dans un autre : toutes les routes des deux jeux × 2 viewports
+                    # (1280 et 375 px), échoue sur toute erreur console, page vide ou
+                    # débordement horizontal ; vérifie le CLOISONNEMENT des sauvegardes
+                    # (cocher chez un jeu n'écrit pas chez l'autre), le sélecteur de jeu,
+                    # la persistance et l'aller-retour export/import
 pnpm smoke:features # critères « Endgame Ready » déduits, détection d'objet en double,
                     # CRUD du journal
 ```

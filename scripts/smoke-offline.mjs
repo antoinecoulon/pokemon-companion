@@ -15,7 +15,24 @@ import { chromium } from 'playwright'
 
 const baseUrl = process.argv[2] ?? 'http://localhost:3100'
 
-const routes = ['/', '/completion', '/equipe', '/equipe/tyranitar', '/ressources', '/reference', '/journal']
+/*
+ * Les deux jeux, plus la racine qui redirige vers le dernier ouvert. Toutes ces
+ * routes retombent sur le shell du SPA via `workbox.navigateFallback` : rien
+ * n'est prérendu, donc ce qui compte est que le shell soit servi et que l'app
+ * s'amorce hors connexion.
+ */
+const routes = [
+  '/',
+  '/unbound',
+  '/unbound/completion',
+  '/unbound/equipe',
+  '/unbound/equipe/tyranitar',
+  '/unbound/ressources',
+  '/unbound/reference',
+  '/unbound/journal',
+  '/elite-redux',
+  '/elite-redux/completion',
+]
 
 const problems = []
 const browser = await chromium.launch()
@@ -93,7 +110,7 @@ for (const route of routes) {
      * préfixe de baseURL. `naturalWidth` à 0 veut dire image non chargée : c'est
      * le seul contrôle qui distingue une image absente d'une balise présente.
      */
-    if (route === '/equipe') {
+    if (route === '/unbound/equipe') {
       const sprites = await page.evaluate(() =>
         [...document.querySelectorAll('img[alt^="Sprite de"]')]
           // Les variantes masquées par CSS ne sont jamais chargées : elles sont
@@ -104,9 +121,9 @@ for (const route of routes) {
             src: img.getAttribute('src'),
             loaded: img.complete && img.naturalWidth > 0,
           })))
-      if (!sprites.length) problems.push('/equipe — aucun sprite dans le document')
+      if (!sprites.length) problems.push('/unbound/equipe — aucun sprite dans le document')
       for (const { src, loaded } of sprites) {
-        if (!loaded) problems.push(`/equipe — sprite non chargé hors-ligne : ${src}`)
+        if (!loaded) problems.push(`/unbound/equipe — sprite non chargé hors-ligne : ${src}`)
       }
     }
 

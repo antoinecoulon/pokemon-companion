@@ -47,7 +47,7 @@ async function criterionMet(label) {
 
 /* --- 1. Fiche Tyranitar : les critères déduits ------------------------- */
 
-await page.goto(`${baseUrl}/equipe/tyranitar`, { waitUntil: 'networkidle' })
+await page.goto(`${baseUrl}/unbound/equipe/tyranitar`, { waitUntil: 'networkidle' })
 
 if (await criterionMet('Niveau 100')) {
   failures.push('fiche — « Niveau 100 » est rempli alors qu’aucun niveau n’est saisi')
@@ -91,7 +91,7 @@ if (!await criterionMet('Niveau 100')) {
 
 // Tyranitar porte désormais le Choice Band (build A). On le donne aussi à
 // Togekiss : §7.3 avertit que certains formats interdisent les objets doublons.
-await page.goto(`${baseUrl}/equipe/togekiss`, { waitUntil: 'networkidle' })
+await page.goto(`${baseUrl}/unbound/equipe/togekiss`, { waitUntil: 'networkidle' })
 
 const itemField = page.getByLabel('Objet tenu')
 await itemField.fill('Choice Band')
@@ -116,7 +116,7 @@ if (await page.getByText(/Objet en double dans l’équipe/).count() !== 0) {
 
 /* --- 3. Journal : ajouter, modifier, supprimer ------------------------- */
 
-await page.goto(`${baseUrl}/journal`, { waitUntil: 'networkidle' })
+await page.goto(`${baseUrl}/unbound/journal`, { waitUntil: 'networkidle' })
 
 await page.getByRole('button', { name: 'Nouvelle entrée' }).click()
 await page.getByLabel('Titre').fill('Run Battle Tower — 21 victoires')
@@ -182,7 +182,7 @@ await seeded.addInitScript(() => {
 
 const seededPage = await seeded.newPage()
 seededPage.on('pageerror', error => failures.push(`EV perdus — exception : ${error.message.split('\n')[0]}`))
-await seededPage.goto(`${baseUrl}/equipe/tyranitar`, { waitUntil: 'networkidle' })
+await seededPage.goto(`${baseUrl}/unbound/equipe/tyranitar`, { waitUntil: 'networkidle' })
 
 if (await seededPage.getByText(/2 EV perdus/).count() === 0) {
   failures.push('EV perdus — 252/252/6 importé ne déclenche pas l’avertissement')
@@ -203,7 +203,7 @@ const resourcesPage = await resourcesContext.newPage()
 resourcesPage.on('pageerror', error => failures.push(`ressources — exception : ${error.message.split('\n')[0]}`))
 
 const CHECKBOX = 'button[role="checkbox"]'
-await resourcesPage.goto(`${baseUrl}/ressources`, { waitUntil: 'networkidle' })
+await resourcesPage.goto(`${baseUrl}/unbound/ressources`, { waitUntil: 'networkidle' })
 await resourcesPage.waitForTimeout(600)
 
 const activeBefore = await resourcesPage.locator(`${CHECKBOX}[aria-label^="Marquer comme acquis"]`).count()
@@ -233,7 +233,7 @@ if (await resourcesPage.getByText(/PNJ déjà débloqués \(1\)/).count() === 0)
  * c'est le chemin réel vers une mission — et ça vérifie au passage qu'elle
  * ouvre bien les groupes qui ont un résultat.
  */
-await resourcesPage.goto(`${baseUrl}/completion`, { waitUntil: 'networkidle' })
+await resourcesPage.goto(`${baseUrl}/unbound/completion`, { waitUntil: 'networkidle' })
 await resourcesPage.waitForTimeout(600)
 await resourcesPage.getByPlaceholder(/Chercher une mission/).fill('Abandonment Issues')
 await resourcesPage.waitForTimeout(600)
@@ -278,7 +278,7 @@ rosterPage.on('pageerror', error => failures.push(`roster — exception : ${erro
 
 /** « 12 tâches sur 88 » → 88. */
 async function trackedTotal() {
-  await rosterPage.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
+  await rosterPage.goto(`${baseUrl}/unbound`, { waitUntil: 'networkidle' })
   await rosterPage.waitForTimeout(600)
   const text = await rosterPage.getByText(/tâches sur \d+/).first().innerText()
   return Number(text.match(/tâches sur (\d+)/)?.[1])
@@ -286,7 +286,7 @@ async function trackedTotal() {
 
 const totalBefore = await trackedTotal()
 
-await rosterPage.goto(`${baseUrl}/equipe`, { waitUntil: 'networkidle' })
+await rosterPage.goto(`${baseUrl}/unbound/equipe`, { waitUntil: 'networkidle' })
 await rosterPage.waitForTimeout(600)
 
 await rosterPage.getByRole('button', { name: 'Modifier' }).click()
@@ -309,7 +309,7 @@ if (await rosterPage.getByText(/Composition modifiée/).count() === 0) {
 }
 
 // Scopé aux cartes de la page : le tiroir reste monté et affiche les mêmes slots.
-const slotLabels = await rosterPage.locator('a[href^="/equipe/"] .tabular-nums')
+const slotLabels = await rosterPage.locator('a[href^="/unbound/equipe/"] .tabular-nums')
   .filter({ hasText: /^#\d$/ })
   .allInnerTexts()
 if (slotLabels.join(' ') !== '#1 #2 #3 #4 #5 #6') {
@@ -328,7 +328,7 @@ if (!(totalAfter < totalBefore)) {
 }
 
 // Retour à la composition du guide : le total doit revenir exactement.
-await rosterPage.goto(`${baseUrl}/equipe`, { waitUntil: 'networkidle' })
+await rosterPage.goto(`${baseUrl}/unbound/equipe`, { waitUntil: 'networkidle' })
 await rosterPage.waitForTimeout(600)
 await rosterPage.getByRole('button', { name: 'Revenir à celle du guide' }).click()
 await rosterPage.waitForTimeout(600)
@@ -375,7 +375,7 @@ await pruneContext.addInitScript(() => {
 
 const prunePage = await pruneContext.newPage()
 prunePage.on('pageerror', error => failures.push(`purge — exception : ${error.message.split('\n')[0]}`))
-await prunePage.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
+await prunePage.goto(`${baseUrl}/unbound`, { waitUntil: 'networkidle' })
 await prunePage.waitForTimeout(700)
 
 await prunePage.getByRole('button', { name: 'Gérer la sauvegarde' }).click()
@@ -451,7 +451,7 @@ await backupContext.addInitScript((payload) => {
 
 const backupPage = await backupContext.newPage()
 backupPage.on('pageerror', error => failures.push(`secours — exception : ${error.message.split('\n')[0]}`))
-await backupPage.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
+await backupPage.goto(`${baseUrl}/unbound`, { waitUntil: 'networkidle' })
 await backupPage.waitForTimeout(700)
 
 // L'échec doit se voir à l'écran, pas seulement dans la console.
@@ -524,7 +524,7 @@ await intactContext.addInitScript(() => {
 
 const intactPage = await intactContext.newPage()
 intactPage.on('pageerror', error => failures.push(`intact — exception : ${error.message.split('\n')[0]}`))
-await intactPage.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
+await intactPage.goto(`${baseUrl}/unbound`, { waitUntil: 'networkidle' })
 await intactPage.waitForTimeout(700)
 
 if (await intactPage.evaluate(() => localStorage.getItem('pokemon-companion:save:backup')) !== null) {
@@ -553,7 +553,7 @@ syncPage.on('request', (request) => {
 })
 syncPage.on('pageerror', error => failures.push(`synchro — exception : ${error.message.split('\n')[0]}`))
 
-await syncPage.goto(`${baseUrl}/`, { waitUntil: 'networkidle' })
+await syncPage.goto(`${baseUrl}/unbound`, { waitUntil: 'networkidle' })
 await syncPage.waitForTimeout(700)
 
 if (githubCalls.length) {

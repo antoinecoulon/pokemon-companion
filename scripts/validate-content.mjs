@@ -8,21 +8,29 @@
  * D'où ce script, à lancer avec `pnpm validate`.
  */
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { loadData, loadPokemon, root } from './lib/data.mjs'
+import { loadData, loadUnbound, loadPokemon, root } from './lib/data.mjs'
 import { TEAM_SIZE, validateFiche } from './lib/fiche.mjs'
 
-const { phases } = await loadData('phases.ts')
+/*
+ * Le registre est chargé pour contrôler ce qui est *dérivé* du contenu —
+ * `knownContent`, les entrées de tâche, les clés de complétion. Les fichiers de
+ * contenu Unbound restent chargés un par un juste en dessous : les contrôles
+ * d'ids, de sources et de comptes leur sont propres.
+ */
+const { games } = await loadData('games.ts')
+
+const { phases } = await loadUnbound('phases.ts')
 const { pokemon } = await loadPokemon()
-const { counters } = await loadData('counters.ts')
-const { readinessCriteria } = await loadData('readiness.ts')
-const { npcs } = await loadData('npcs.ts')
-const { battleItems, consumables } = await loadData('items.ts')
-const { farmingTopics } = await loadData('farming.ts')
-const { completionSections } = await loadData('completion.ts')
-const { missions } = await loadData('missions.ts')
-const { tutors } = await loadData('tutors.ts')
-const { collectibleSets } = await loadData('collectibles.ts')
-const { keyItems } = await loadData('keyitems.ts')
+const { counters } = await loadUnbound('counters.ts')
+const { readinessCriteria } = await loadUnbound('readiness.ts')
+const { npcs } = await loadUnbound('npcs.ts')
+const { battleItems, consumables } = await loadUnbound('items.ts')
+const { farmingTopics } = await loadUnbound('farming.ts')
+const { completionSections } = await loadUnbound('completion.ts')
+const { missions } = await loadUnbound('missions.ts')
+const { tutors } = await loadUnbound('tutors.ts')
+const { collectibleSets } = await loadUnbound('collectibles.ts')
+const { keyItems } = await loadUnbound('keyitems.ts')
 
 const errors = []
 const warnings = []
@@ -94,16 +102,41 @@ for (const [id, { task, origin }] of allTasks) {
 
 /* --- 4. Les liens internes pointent vers des routes connues ------------ */
 
-const slugs = new Set(pokemon.map(mon => mon.slug))
+/*
+ * Les `link` de tâche sont **relatifs à la racine du jeu** : c'est
+ * `buildTaskEntries` qui les préfixe (`/unbound/equipe/…`). Écrire un lien déjà
+ * préfixé produirait `/unbound/unbound/…`, donc un 404.
+ */
 const staticRoutes = new Set(['/', '/roadmap', '/equipe', '/ressources', '/reference', '/journal', '/completion'])
 
-for (const [id, { task }] of allTasks) {
-  if (!task.link) continue
-  const isSheet = task.link.startsWith('/equipe/') && slugs.has(task.link.slice('/equipe/'.length))
-  if (!staticRoutes.has(task.link) && !isSheet) {
-    errors.push(`« ${id} » pointe vers « ${task.link} », qui n'est pas une route connue`)
+for (const game of games) {
+  const gameSlugs = new Set(game.content.pokemon.map(mon => mon.slug))
+  for (const phase of game.content.phases) {
+    for (const task of phase.tasks) {
+      if (!task.link) continue
+      if (task.link.startsWith(game.basePath)) {
+        errors.push(`${game.id} : « ${task.id} » a un lien déjà préfixé (« ${task.link} ») — il doit être relatif à la racine du jeu`)
+        continue
+      }
+      const isSheet = task.link.startsWith('/equipe/') && gameSlugs.has(task.link.slice('/equipe/'.length))
+      if (!staticRoutes.has(task.link) && !isSheet) {
+        errors.push(`${game.id} : « ${task.id} » pointe vers « ${task.link} », qui n'est pas une route connue`)
+      }
+      /*
+       * Une page facultative non fournie répond 404 : y envoyer une tâche
+       * enverrait le joueur dans le mur.
+       */
+      if (task.link === '/reference' && !game.content.reference) {
+        errors.push(`${game.id} : « ${task.id} » pointe vers /reference, que ce jeu ne fournit pas`)
+      }
+      if (task.link === '/ressources' && !game.content.resources) {
+        errors.push(`${game.id} : « ${task.id} » pointe vers /ressources, que ce jeu ne fournit pas`)
+      }
+    }
   }
 }
+
+const slugs = new Set(pokemon.map(mon => mon.slug))
 
 /* --- 5. Cohérence des fiches ------------------------------------------- */
 
@@ -155,8 +188,35 @@ if (JSON.stringify([...slots].sort((a, b) => a - b)) !== JSON.stringify(expected
 if (new Set(counters.map(c => c.id)).size !== counters.length) {
   errors.push('ids de compteurs en doublon')
 }
+/*
+ * Le nombre de critères « Ready » dépend du jeu : Unbound en a 7 (§13.2), Elite
+ * Redux aussi mais pas les mêmes — pas d'IV (31 par défaut), un critère
+ * `innates` à la place. Ce qui doit rester vrai partout, c'est qu'il y en ait,
+ * qu'ils soient uniques et que leurs clés appartiennent à l'union fermée : une
+ * clé inventée rendrait `undefined`, donc `met: false`, donc un critère
+ * durablement non rempli sans la moindre erreur.
+ */
+const READINESS_KEYS = new Set(['level', 'ivs', 'evs', 'nature', 'ability', 'innates', 'moves', 'item'])
+
+for (const game of games) {
+  const criteria = game.content.readinessCriteria
+  if (!criteria.length) {
+    errors.push(`${game.id} : aucun critère « Ready » défini`)
+    continue
+  }
+  const keys = criteria.map(criterion => criterion.key)
+  if (new Set(keys).size !== keys.length) {
+    errors.push(`${game.id} : clés de critères « Ready » en doublon`)
+  }
+  for (const key of keys) {
+    if (!READINESS_KEYS.has(key)) {
+      errors.push(`${game.id} : critère « Ready » inconnu « ${key} » — absent de ReadinessKey`)
+    }
+  }
+}
+
 if (readinessCriteria.length !== 7) {
-  errors.push(`§13.2 définit 7 critères « Endgame Ready », ${readinessCriteria.length} trouvés`)
+  errors.push(`§13.2 définit 7 critères « Endgame Ready » pour Unbound, ${readinessCriteria.length} trouvés`)
 }
 
 /* --- 7. Ressources : ids uniques, et namespaces sans collision --------- */
@@ -259,19 +319,62 @@ for (const section of completionSections) {
 }
 
 /*
- * Le vrai piège n'est pas dans ce fichier : c'est d'ajouter une catégorie
- * persistée sans l'inscrire dans `knownContent`. La purge prendrait alors chaque
- * case cochée pour une orpheline et les effacerait toutes, en une fois. Le test
- * de purge travaille sur un ensemble synthétique et ne peut pas le voir — d'où
- * ce contrôle sur la source, comme pour les icônes de nuxt.config.ts.
+ * Le vrai piège n'est pas dans les fichiers de contenu : c'est d'ajouter une
+ * catégorie persistée sans qu'elle arrive jusqu'à `knownContent`. La purge
+ * prendrait alors chaque case cochée pour une orpheline et les effacerait
+ * toutes, en une fois. Le test de purge travaille sur un ensemble synthétique et
+ * ne peut pas le voir.
+ *
+ * Le contrôle portait avant sur la *source* de `useSave.ts` — il y cherchait les
+ * noms des tableaux de clés. Depuis que `knownContent` est construit par
+ * `defineGame()` à partir du `GameContent`, on vérifie la chose elle-même :
+ * chaque clé que le contenu d'un jeu sait produire doit être reconnue par le
+ * `knownContent` de ce jeu. C'est plus fort qu'un grep — ça reste vrai quelle
+ * que soit la façon dont le registre est écrit.
  */
-const saveSource = await readFile(new URL('../app/composables/useSave.ts', import.meta.url), 'utf8')
-for (const keys of ['completionGoalKeys', 'missionKeys', 'tutorKeys', 'collectibleKeys', 'keyItemKeys']) {
-  if (!saveSource.includes(keys)) {
-    errors.push(
-      `app/composables/useSave.ts n'inscrit pas ${keys} dans knownContent — `
-      + 'la purge effacerait toutes les cases cochées de cette catégorie',
-    )
+for (const game of games) {
+  const known = game.knownContent
+
+  for (const key of game.content.resourceKeys) {
+    if (!known.resourceKeys.has(key)) {
+      errors.push(
+        `${game.id} : la clé « ${key} » n'est pas dans knownContent — `
+        + 'la purge effacerait cette case si elle était cochée',
+      )
+      break
+    }
+  }
+
+  for (const entry of game.completionEntries) {
+    if (!known.resourceKeys.has(entry.key)) {
+      errors.push(
+        `${game.id} : l'entrée de complétion « ${entry.key} » n'est pas dans knownContent — `
+        + 'la purge effacerait cette case si elle était cochée',
+      )
+      break
+    }
+  }
+
+  for (const counter of game.content.counters) {
+    if (!known.counterIds.has(counter.id)) {
+      errors.push(`${game.id} : le compteur « ${counter.id} » n'est pas dans knownContent`)
+      break
+    }
+  }
+
+  /*
+   * Les cases « Ready » n'existent nulle part dans le contenu : leur id est
+   * fabriqué à la volée par `useProgress`. Les oublier dans `knownContent` les
+   * ferait toutes passer pour orphelines.
+   */
+  for (const mon of game.content.pokemon) {
+    const missing = game.content.readinessCriteria
+      .map(criterion => `ready-${mon.slug}-${criterion.key}`)
+      .find(id => !known.taskIds.has(id))
+    if (missing) {
+      errors.push(`${game.id} : la case de readiness « ${missing} » n'est pas dans knownContent`)
+      break
+    }
   }
 }
 
@@ -395,7 +498,7 @@ const declared = new Set(
 )
 
 /*
- * Parcours récursif : depuis que les fiches vivent dans `app/data/pokemon/`, un
+ * Parcours récursif : depuis que les fiches vivent dans `app/data/unbound/pokemon/`, un
  * `readdir` à plat ne les voyait plus, et une icône déclarée dans une fiche
  * serait passée sous le radar.
  */
@@ -459,6 +562,114 @@ for (const [name, path] of seen) {
 }
 
 /* --- Rapport ----------------------------------------------------------- */
+
+/* --- 11. Contrôles par jeu --------------------------------------------- */
+
+/*
+ * Les contrôles précédents portent sur le contenu Unbound, chargé fichier par
+ * fichier. Ceux-ci valent pour **tout** jeu du registre : sans eux, un contenu
+ * ajouté pour un second jeu ne serait vérifié par rien — un `requires` mort y
+ * bloquerait une tâche pour toujours, exactement comme chez Unbound.
+ */
+for (const game of games) {
+  const ids = new Map()
+  for (const phase of game.content.phases) {
+    for (const task of phase.tasks) {
+      if (ids.has(task.id)) {
+        errors.push(`${game.id} : id de tâche dupliqué « ${task.id} » (${ids.get(task.id)} et ${phase.id})`)
+      }
+      ids.set(task.id, phase.id)
+    }
+  }
+  for (const mon of game.content.pokemon) {
+    for (const task of mon.tasks ?? []) {
+      if (ids.has(task.id)) {
+        errors.push(`${game.id} : id de tâche dupliqué « ${task.id} » (${ids.get(task.id)} et fiche ${mon.slug})`)
+      }
+      ids.set(task.id, `fiche ${mon.slug}`)
+    }
+  }
+
+  for (const [id, origin] of ids) {
+    const task = game.taskEntriesById.get(id)?.task
+    if (typeof task?.label !== 'string' || !task.label.trim()) {
+      errors.push(`${game.id} : « ${id} » (${origin}) n'a pas de libellé`)
+    }
+    for (const dep of task?.requires ?? []) {
+      if (!ids.has(dep)) errors.push(`${game.id} : « ${id} » requiert « ${dep} », qui n'existe pas`)
+      if (dep === id) errors.push(`${game.id} : « ${id} » se requiert lui-même`)
+    }
+  }
+
+  /*
+   * Cycle de dépendances : une tâche prise dans un cycle n'est jamais
+   * actionnable, et rien à l'écran ne le dit.
+   */
+  const seen = new Map()
+  const walk = (id, trail) => {
+    if (seen.get(id) === 2) return
+    if (seen.get(id) === 1) {
+      errors.push(`${game.id} : cycle de dépendances — ${[...trail, id].join(' → ')}`)
+      return
+    }
+    seen.set(id, 1)
+    for (const dep of game.taskEntriesById.get(id)?.task.requires ?? []) {
+      if (ids.has(dep)) walk(dep, [...trail, id])
+    }
+    seen.set(id, 2)
+  }
+  for (const id of ids.keys()) walk(id, [])
+
+  /* Même exigence de source que pour Unbound : rien ne s'invente. */
+  const goalIds = new Set()
+  for (const entry of game.completionEntries) {
+    if (goalIds.has(entry.key)) errors.push(`${game.id} : clé de complétion dupliquée « ${entry.key} »`)
+    goalIds.add(entry.key)
+
+    if (typeof entry.label !== 'string' || !entry.label.trim()) {
+      errors.push(`${game.id} : l'entrée « ${entry.key} » n'a pas de libellé`)
+    }
+    if (typeof entry.source !== 'string' || !entry.source.trim()) {
+      errors.push(`${game.id} : « ${entry.key} » n'a pas de source — guide (« §x.y ») ou URL consultée`)
+    }
+    else if (!entry.source.startsWith('§') && !entry.source.startsWith('https://')) {
+      warnings.push(`${game.id} : la source de « ${entry.key} » n'est ni une section du guide ni une URL`)
+    }
+  }
+
+  /* Toute entrée de nav doit mener à une route que le jeu sert réellement. */
+  for (const item of game.content.nav) {
+    if (!item.to.startsWith(game.basePath)) {
+      errors.push(`${game.id} : l'entrée de nav « ${item.label} » (${item.to}) n'est pas préfixée par ${game.basePath}`)
+    }
+    const relative = item.to.slice(game.basePath.length) || '/'
+    if (relative === '/reference' && !game.content.reference) {
+      errors.push(`${game.id} : la nav propose /reference, que ce jeu ne fournit pas`)
+    }
+    if (relative === '/ressources' && !game.content.resources) {
+      errors.push(`${game.id} : la nav propose /ressources, que ce jeu ne fournit pas`)
+    }
+  }
+
+  /*
+   * La bottom-nav mobile est une grille de 5 colonnes : au-delà, les entrées
+   * débordent au lieu de se réorganiser.
+   */
+  const primary = game.content.nav.filter(item => item.primary)
+  if (primary.length > 5) {
+    errors.push(`${game.id} : ${primary.length} entrées de nav principales, la bottom-nav mobile en tient 5`)
+  }
+}
+
+/* --- Rapport ------------------------------------------------------------ */
+
+for (const game of games) {
+  const tasks = game.taskEntries.length
+  console.log(
+    `${game.label} : ${game.content.phases.length} phases · ${tasks} tâches · `
+    + `${game.content.pokemon.length} fiches · ${game.completionEntries.length} entrées de complétion`,
+  )
+}
 
 const activeCount = pokemon.filter(mon => mon.status === 'active').length
 console.log(

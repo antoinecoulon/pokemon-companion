@@ -12,10 +12,10 @@
  *
  * Usage : pnpm test:migration
  */
-import { loadApp, loadData } from './lib/data.mjs'
+import { loadApp, loadData, loadUnbound } from './lib/data.mjs'
 
 const { migrateV1ToV2, migrations } = await loadApp('utils/migrations.ts')
-const { missions } = await loadData('missions.ts')
+const { missions } = await loadUnbound('missions.ts')
 const { SAVE_VERSION } = await loadData('types.ts')
 
 const failures = []

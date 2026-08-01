@@ -15,7 +15,7 @@
  *   pnpm import:pokemon fiche.json --dry-run   # valide et affiche, n'écrit rien
  */
 import { readFile, writeFile } from 'node:fs/promises'
-import { POKEMON_DIR, loadData, loadPokemon } from './lib/data.mjs'
+import { POKEMON_DIR, loadUnbound, loadPokemon } from './lib/data.mjs'
 import { TEAM_SIZE, printFiche, validateFiche } from './lib/fiche.mjs'
 import { regenerateIndex } from './lib/pokemon-index.mjs'
 import { resolveSprite } from './lib/sprites.mjs'
@@ -55,7 +55,7 @@ if (fiche && typeof fiche === 'object' && !Array.isArray(fiche) && !fiche.slug) 
 /* --- 2. Validation ------------------------------------------------------- */
 
 const { pokemon } = await loadPokemon()
-const { phases } = await loadData('phases.ts')
+const { phases } = await loadUnbound('phases.ts')
 
 /*
  * En mode `--replace`, la fiche remplacée est retirée des ensembles de collision :
@@ -208,7 +208,7 @@ const { order } = await regenerateIndex({
   after: lastOfGroup ? { [fiche.slug]: lastOfGroup } : undefined,
 })
 
-console.log(`\nFiche écrite : app/data/pokemon/${fiche.slug}.ts`)
+console.log(`\nFiche écrite : app/data/unbound/pokemon/${fiche.slug}.ts`)
 console.log(`Barrel régénéré : ${order.length} fiches.`)
 console.log('\nÉtapes suivantes :')
 console.log('  pnpm sprites   # télécharge les images déclarées')

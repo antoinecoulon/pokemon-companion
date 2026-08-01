@@ -1,7 +1,6 @@
 /**
- * Hydrate la sauvegarde une seule fois au démarrage, puis écrit à chaque
- * changement avec un délai — cocher cinq cases d'affilée ne doit pas produire
- * cinq écritures.
+ * Hydrate la sauvegarde du jeu ouvert, puis écrit à chaque changement avec un
+ * délai — cocher cinq cases d'affilée ne doit pas produire cinq écritures.
  */
 export default defineNuxtPlugin({
   // Nommé pour que `sync.client.ts` puisse déclarer en dépendre : la
@@ -14,9 +13,21 @@ export default defineNuxtPlugin({
 })
 
 function setupSave() {
+  const { activeId, hydrate: hydrateGame } = useGame()
+
+  // Avant tout le reste : `useSave` lit le jeu actif pour choisir sa clé.
+  hydrateGame()
+
   const { state, hydrate, persist } = useSave()
 
   hydrate()
+
+  /*
+   * Chaque jeu a sa propre clé et son propre `ready` : passer d'un jeu à
+   * l'autre demande donc de relire le stockage du nouveau. `hydrate()` est
+   * idempotent — un jeu déjà lu ne l'est pas deux fois.
+   */
+  watch(activeId, () => hydrate())
 
   let timer: ReturnType<typeof setTimeout> | undefined
 

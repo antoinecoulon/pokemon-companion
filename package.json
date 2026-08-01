@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.33.0",
-  "description": "Companion de suivi du post-game de Pok\u00e9mon Unbound",
+  "description": "Companion de suivi de parties de hack ROMs Pok\u00e9mon",
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",

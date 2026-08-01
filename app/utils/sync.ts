@@ -105,3 +105,52 @@ export function decideSync(
 export function markerAfter(local: SaveState, remote: SaveState): SyncMarker {
   return { localUpdatedAt: local.updatedAt, remoteUpdatedAt: remote.updatedAt }
 }
+
+/* --- Marqueurs par jeu -------------------------------------------------- */
+
+/** Un marqueur par jeu suivi : chaque sauvegarde a son propre historique. */
+export type SyncMarkers = Record<string, SyncMarker>
+
+function readMarker(raw: unknown): SyncMarker {
+  const value = raw as Partial<SyncMarker> | undefined
+  return {
+    remoteUpdatedAt: typeof value?.remoteUpdatedAt === 'string' ? value.remoteUpdatedAt : null,
+    localUpdatedAt: typeof value?.localUpdatedAt === 'string' ? value.localUpdatedAt : null,
+  }
+}
+
+/**
+ * Relit les marqueurs de synchronisation, y compris à l'ancienne forme.
+ *
+ * Avant le multi-jeux, la configuration ne portait qu'un `marker`, celui de
+ * l'unique sauvegarde. Cet appareil-là a un historique réel avec le gist : le
+ * jeter remettrait les deux marqueurs à `null`, et `decideSync` traiterait alors
+ * les deux côtés comme modifiés — donc une **divergence**, donc un écrasement
+ * du perdant, à la première synchro suivant la mise à jour. D'où la reprise
+ * explicite de l'ancien marqueur sur le jeu historique.
+ *
+ * Tout jeu sans marqueur connu repart d'un marqueur vide, ce qui est exact : sa
+ * sauvegarde n'a jamais été synchronisée.
+ */
+export function readMarkers(
+  raw: unknown,
+  gameIds: readonly string[],
+  legacyGameId: string,
+): SyncMarkers {
+  const source = raw as { marker?: unknown, markers?: Record<string, unknown> } | undefined
+  const stored = source?.markers
+
+  const markers: SyncMarkers = {}
+  for (const id of gameIds) {
+    if (stored && typeof stored === 'object' && id in stored) {
+      markers[id] = readMarker(stored[id])
+    }
+    else if (id === legacyGameId && source?.marker) {
+      markers[id] = readMarker(source.marker)
+    }
+    else {
+      markers[id] = emptyMarker()
+    }
+  }
+  return markers
+}

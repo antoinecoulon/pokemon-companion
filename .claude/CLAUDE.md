@@ -1,6 +1,8 @@
 # Pokemon Companion
 
-Companion de suivi d'une partie de Pokémon Unbound (post-game).
+Companion de suivi de mes parties de hack ROMs Pokémon. **L'app est multi-jeux** : aujourd'hui
+**Pokémon Unbound** (post-game, partie avancée) et **Pokémon Elite Redux** (mode Elite, partie qui
+démarre).
 
 ## Contexte
 
@@ -32,6 +34,7 @@ progressé au-delà de ce qu'il couvre, et une relecture (2026-08) y a trouvé d
 | Multi-appareils | gist privé GitHub, « le plus récent gagne » | seul stockage déjà possédé par le joueur ; l'hébergement statique interdit un backend |
 | Accès | build statique + PWA installable | consultable sur téléphone, y compris hors connexion |
 | Navigation | dashboard + Complétion / Équipe / Ressources / Journal, + Référence | la complétion a remplacé la roadmap : le guide est dépassé, seule la Battle Frontier en restait |
+| Multi-jeux | **une clé `localStorage` par jeu**, routes préfixées `/<jeu>/…` | `pokemon-companion:save` reste à l'octet près la sauvegarde Unbound : aucun bump de `SAVE_VERSION`, aucune migration, donc aucun risque sur la partie en cours. Une URL veut toujours dire la même chose. |
 | Engagement | progression visuelle + « prochaine action » calculée | retenu ; la gamification (badges, streaks) a été écartée |
 
 TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec TypeScript 7.
@@ -44,24 +47,28 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   préfixée : `npc:`, `goal:`, `mission:`, `tutor:`, `raid:`, `cell:`, `item:`. Le préfixe évite des
   collisions réelles — `objets-pouvoir` est à la fois un consommable et l'ancien lot de quêtes,
   `portal-purge` est à la fois la mission `#050` et le nom d'une section de complétion. Deux ids
-  n'ont plus le droit d'exister : `phase-0.x` à `phase-4.x` (roadmap du guide, retirée) et `quest:`
-  (`quests.ts` absorbé par `missions.ts`) — des sauvegardes les portent encore, **ne jamais les
-  réattribuer à autre chose**.
+  n'ont plus le droit d'exister **chez Unbound** : `phase-0.x` à `phase-4.x` (roadmap du guide,
+  retirée) et `quest:` (`quests.ts` absorbé par `missions.ts`) — des sauvegardes les portent encore,
+  **ne jamais les réattribuer à autre chose**.
+  ⚠️ **Depuis le multi-jeux, les ids ne sont uniques que _par jeu_.** Chaque jeu a sa propre clé de
+  sauvegarde, donc les `phase-1.x` d'Elite Redux ne rencontrent jamais ceux, retirés, d'Unbound. La
+  réserve ci-dessus vaut donc pour Unbound et lui seul. À l'intérieur d'un jeu, la règle est
+  inchangée. `pnpm validate` contrôle l'unicité par jeu.
 - **La progression se mesure sur deux axes, et les fondre est interdit.**
-  `overall` compte ce qui est *actionnable* et ordonné — les tâches de la Battle Frontier
-  (`app/data/phases.ts`) et celles des fiches Pokémon actives. Elles ont des `requires`, un poids, et
+  `overall` compte ce qui est *actionnable* et ordonné — les tâches de phase
+  (`app/data/<jeu>/phases.ts`) et celles des fiches Pokémon actives. Elles ont des `requires`, un poids, et
   alimentent « prochaines actions ». `completion` compte la *collection* : objectifs éditoriaux
   (`completion.ts`), missions, PNJ, move tutors, raid dens, Zygarde Cells, objets clés. Ces
   entrées-là n'ont ni dépendances ni ordre et n'entrent **jamais** dans « prochaines actions ».
   Verser l'une dans l'autre ferait chuter d'un coup l'avancement d'une partie en cours — c'est la
   raison d'origine du cloisonnement, et elle n'a pas changé.
-- **Le champ `source` est obligatoire sur toute entrée de complétion**, et `pnpm validate` le vérifie :
-  soit une section du guide (`§9.1`), soit l'URL consultée. Rien ne s'y écrit qui n'ait été lu sur
-  romhackdex ou unboundwiki. Ne jamais y recopier une entrée qui existe déjà ailleurs — l'accès à la
+- **Le champ `source` est obligatoire sur toute entrée de complétion**, et `pnpm validate` le vérifie
+  **pour tous les jeux** : soit une section du guide (`§9.1`), soit l'URL consultée. Rien ne s'y écrit
+  qui n'ait été lu sur romhackdex, unboundwiki, ou — pour Elite Redux — le code ouvert du jeu. Ne jamais y recopier une entrée qui existe déjà ailleurs — l'accès à la
   Frontier est `phase-5.4`, l'échange Hard Stones → Gems est la mission `#010`.
 - **Missions, tutors, collectibles et objets clés sont des fichiers _générés_.** Le cycle est
   `pnpm scrape:wiki <missions|collectibles|tutors|items|all>`, puis relecture, puis `pnpm check`.
-  Corriger `app/data/missions.ts` à la main, c'est perdre la correction à la régénération suivante :
+  Corriger `app/data/unbound/missions.ts` à la main, c'est perdre la correction à la régénération suivante :
   une donnée fausse se corrige dans le parseur (`scripts/lib/scrape-<nom>.mjs`) ou se signale au
   wiki. Chaque module de catégorie exporte `scrape({ fresh })` et **doit** contrôler son compte
   d'entrées avec `expectCount()` — un parseur cassé ne lève pas, il rend moins d'entrées, et sans ce
@@ -69,7 +76,7 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   cache dans `.cache/wiki/` ; `--fresh` l'ignore.
 - **Passer par `pnpm new:npc` / `new:task` / `new:goal`** pour ajouter du contenu écrit à la main : les
   scripts impriment le squelette avec la bonne convention d'id et refusent un id déjà pris.
-- **Une fiche Pokémon ne s'écrit pas à la main.** Une fiche par fichier dans `app/data/pokemon/<slug>.ts`,
+- **Une fiche Pokémon ne s'écrit pas à la main.** Une fiche par fichier dans `app/data/unbound/pokemon/<slug>.ts`,
   assemblées par un `index.ts` **généré** — ne pas éditer la liste du barrel, la régénérer. Le cycle est :
   `pnpm new:pokemon <Nom>` (squelette JSON) → rédaction selon `docs/fiche-pokemon.md` → `pnpm
   import:pokemon <fichier> [--dry-run]` → `pnpm sprites` → `pnpm check`. Retrait : `pnpm rm:pokemon <slug>`.
@@ -244,3 +251,63 @@ fiches Pokémon, les PNJ à service dans /ressources, et la Battle Frontier rest
   aucune erreur, rien à l'écran. Toute icône hors template doit être listée dans
   `icon.clientBundle.icons` ; `pnpm validate` échoue sinon. Ne jamais tester une icône en comptant les
   balises `<svg>` : vérifier leur contenu.
+
+
+## Multi-jeux
+
+L'app suit plusieurs jeux. Tout part de **`app/data/games.ts`**, seul endroit qui les connaît.
+
+- **Une clé `localStorage` par jeu**, et c'est la décision structurante : `pokemon-companion:save`
+  **reste exactement** la sauvegarde Unbound d'avant le multi-jeux, `pokemon-companion:save:elite-redux`
+  est neuve. Conséquence voulue : `normalize()`, `migrations`, `SAVE_VERSION`, la purge et `decideSync`
+  n'ont pas été touchés — ils opèrent toujours sur **un** `SaveState`. Ne jamais remplacer ça par un
+  objet enveloppe : ça imposerait de migrer une partie en cours, exactement ce qu'on évite.
+  `saveKey` et `gistFile` d'Unbound ne se changent jamais.
+- **Le jeu actif vit sous `pokemon-companion:game`**, hors de tout `SaveState` — c'est une préférence
+  d'appareil, comme le token de sync. Jamais dans un export, jamais dans `knownContent`.
+- **Les routes sont préfixées** (`/unbound/completion`). La **route est la source de vérité** : le
+  middleware `app/middleware/game.global.ts` en déduit le jeu actif, et non l'inverse. Les anciennes
+  URLs (`/completion`, `/equipe`…) y redirigent vers Unbound — des favoris PWA et le précache du
+  service worker pointent encore dessus, et un 404 sur un hébergement statique ne se rattrape pas.
+- **Les `link` de tâche sont relatifs à la racine du jeu** (`/equipe/tyranitar`) : c'est
+  `buildTaskEntries` qui préfixe. Écrire un lien déjà préfixé donne `/unbound/unbound/…`, et
+  `pnpm validate` le refuse.
+- **Aucune constante de module ne doit dériver du contenu.** Le motif est partout le même : ce qui
+  était une constante (`taskEntries`, `completionGroups`, `knownContent`) est devenu une fonction du
+  `GameContent`, calculée une fois par jeu dans `defineGame()`. Une constante figerait le premier jeu
+  importé.
+- **`/ressources` et `/reference` sont facultatives.** Un jeu qui ne les fournit pas ne les met pas
+  dans sa `nav`, et la page répond **404** plutôt que de se rendre vide. `pnpm validate` refuse une
+  nav qui proposerait une page absente.
+- **Les scripts de contenu sont spécifiques à Unbound** (`scrape:wiki`, `new:*`, `import:pokemon`,
+  `rm:pokemon`, `sprites`) : ils visent unboundwiki et les conventions de son guide. Leur ajouter un
+  `--game` serait de l'abstraction prématurée — un autre jeu aura ses propres sources.
+- **La synchro garde un fichier de gist par jeu**, dans le même gist. Celui d'Unbound conserve son nom
+  d'origine (`pokemon-companion.json`), donc un gist déjà en place continue de fonctionner.
+  `SyncConfig.markers` est indexé par jeu, et `readMarkers()` **reprend l'ancien `marker` unique sur
+  Unbound** : le jeter ferait passer la première synchro suivante pour une divergence, donc un
+  écrasement. C'est testé par `pnpm test:sync`, et ça ne se touche pas sans étendre le test.
+- **Le test qui valide l'architecture est le cloisonnement**, dans `pnpm smoke` : cocher une case chez
+  un jeu ne doit rien écrire dans la sauvegarde de l'autre.
+
+### Pokémon Elite Redux
+
+Doc de référence hors-ligne dans **`docs/elite-redux/`** (description de la ROM, checklist de début
+de partie, sources). Le contenu de l'app en est tiré.
+
+- **Structure propre au jeu, et surtout pas un décalque d'Unbound** : quatre phases ordonnées
+  (Débuter → Construire une équipe → Compléter le jeu → Post-game) plus un axe complétion.
+- **Ce jeu n'a ni Zygarde Cells, ni Z-Crystals, ni missions numérotées, ni move tutors, ni raid
+  dens** — vérifié dans son code. Un système de quêtes existe dans le moteur (`src/quests.c`) mais
+  **n'est pas peuplé** : une seule quête réelle, le reste en `"Side Quest Name"`. Ne rien construire
+  dessus.
+- **Ses critères « Ready » diffèrent** : pas d'IV (31 par défaut dans ce jeu), et un critère
+  `innates` à la place — les 3 talents passifs se débloquent en cours de partie et changent le build.
+- **Difficulté et level caps sont deux réglages distincts.** Tous les sites tiers les confondent. En
+  caps Elite : 16 avant le premier badge, puis 23 · 36 · 45 · 50 · 55 · 60 · 70 · 80.
+- **Sources** : le jeu est open source, donc la donnée se lit dans le code plutôt que sur un wiki.
+  `Elite-Redux/eliteredux-source` (level caps dans `src/pokemon.c`, encounters, starters) et
+  `Elite-Redux/er-config` (`HelpArticles.textproto` = les articles d'aide affichés en jeu).
+  ⚠️ `wiki.elite-redux.com` est **hors service** et `dex.elite-redux.com` injoignable en CLI (à
+  ouvrir au navigateur). `eliteredux.net` et consorts sont des fermes SEO : ne jamais s'y fier ni y
+  télécharger le patch — le patcher officiel est `elite-redux.com`.

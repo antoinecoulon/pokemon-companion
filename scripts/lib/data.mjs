@@ -28,7 +28,24 @@ export function loadData(module) {
   return loadApp(`data/${module}`)
 }
 
-/** Le dossier d'une fiche par Pokémon, et son barrel généré. */
-export const POKEMON_DIR = `${root}app/data/pokemon/`
+/**
+ * Le contenu Unbound vit sous `app/data/unbound/` depuis que l'app est
+ * multi-jeux ; seuls `types.ts` et `natures.ts` restent partagés à la racine.
+ *
+ * Les scripts d'écriture (`import:pokemon`, `rm:pokemon`, `scrape:wiki`,
+ * `new:*`) sont **spécifiques à Unbound** — ils visent unboundwiki et les
+ * conventions de son guide. Leur donner un argument `--game` serait de
+ * l'abstraction prématurée : un second jeu qui aurait besoin d'un générateur
+ * aura ses propres sources, donc son propre script.
+ */
+export const UNBOUND_DIR = `${root}app/data/unbound/`
 
-export const loadPokemon = () => loadData('pokemon/index.ts')
+/** Importe un module de contenu Unbound, chemin relatif à `app/data/unbound/`. */
+export function loadUnbound(module) {
+  return loadData(`unbound/${module}`)
+}
+
+/** Le dossier d'une fiche par Pokémon, et son barrel généré. */
+export const POKEMON_DIR = `${UNBOUND_DIR}pokemon/`
+
+export const loadPokemon = () => loadUnbound('pokemon/index.ts')

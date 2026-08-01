@@ -17,7 +17,7 @@
  *   pnpm rm:pokemon lucario --force     # passe outre les références
  */
 import { readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
-import { POKEMON_DIR, loadData, loadPokemon, root } from './lib/data.mjs'
+import { POKEMON_DIR, loadUnbound, loadPokemon, root } from './lib/data.mjs'
 import { printFiche } from './lib/fiche.mjs'
 import { regenerateIndex } from './lib/pokemon-index.mjs'
 
@@ -35,7 +35,7 @@ function fail(message, details = []) {
 if (!slug) fail('usage : pnpm rm:pokemon <slug> [--dry-run] [--force]')
 
 const { pokemon } = await loadPokemon()
-const { phases } = await loadData('phases.ts')
+const { phases } = await loadUnbound('phases.ts')
 
 const target = pokemon.find(mon => mon.slug === slug)
 if (!target) {
@@ -127,7 +127,7 @@ const renumbered = remainingActive
   .filter(({ mon, slot }) => mon.slot !== slot)
 
 console.log(`Fiche « ${slug} » — ${target.name}, statut ${target.status}${target.slot ? `, slot ${target.slot}` : ''}.`)
-console.log(`  fichier   : app/data/pokemon/${slug}.ts`)
+console.log(`  fichier   : app/data/unbound/pokemon/${slug}.ts`)
 console.log(`  sprites   : ${spriteFiles.length ? spriteFiles.map(file => file.replace(root, '')).join(', ') : 'aucun'}`)
 console.log(`  tâches    : ${ownTaskIds.size}`)
 if (renumbered.length) {

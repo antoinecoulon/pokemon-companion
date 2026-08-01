@@ -1,20 +1,22 @@
 import type { PokemonSheet, PokemonStatus } from '~/data/types'
 import type { RosterEntry } from '~/utils/roster'
-import { pokemon } from '~/data/pokemon'
 import { activeEntries, resolveRoster, withDemoted, withMoved, withPromoted, withSwapped } from '~/utils/roster'
 
 /**
  * Source de vérité unique de la composition jouée.
  *
- * Les exports `activePokemon` / `retiredPokemon` / `utilityPokemon` de
- * `~/data/pokemon` restent le roster **du guide** : ils sont calculés à
- * l'import et ne peuvent pas réagir à un échange. Tout ce qui affiche ou compte
- * l'équipe passe donc par ici.
+ * Les exports `activePokemon` / `retiredPokemon` / `utilityPokemon` du barrel
+ * d'un jeu restent le roster **du contenu** : ils sont calculés à l'import et ne
+ * peuvent pas réagir à un échange. Tout ce qui affiche ou compte l'équipe passe
+ * donc par ici.
  */
 export function useRoster() {
   const { state, clearRoster, rosterModified } = useSave()
+  const { current } = useGame()
 
-  const entries = computed<RosterEntry[]>(() => resolveRoster(pokemon, state.value.roster))
+  const pokemon = computed(() => current.value.content.pokemon)
+
+  const entries = computed<RosterEntry[]>(() => resolveRoster(pokemon.value, state.value.roster))
 
   const active = computed(() => activeEntries(entries.value))
   const retired = computed(() => entries.value.filter(entry => entry.status === 'retired'))
@@ -62,12 +64,12 @@ export function useRoster() {
     modified: rosterModified,
     lastError: readonly(lastError),
 
-    promote: (slug: string) => apply(withPromoted(pokemon, state.value.roster, slug)),
+    promote: (slug: string) => apply(withPromoted(pokemon.value, state.value.roster, slug)),
     demote: (slug: string, status: Exclude<PokemonStatus, 'active'> = 'retired') =>
-      apply(withDemoted(pokemon, state.value.roster, slug, status)),
+      apply(withDemoted(pokemon.value, state.value.roster, slug, status)),
     swap: (incoming: string, outgoing: string) =>
-      apply(withSwapped(pokemon, state.value.roster, incoming, outgoing)),
-    move: (slug: string, delta: number) => apply(withMoved(pokemon, state.value.roster, slug, delta)),
+      apply(withSwapped(pokemon.value, state.value.roster, incoming, outgoing)),
+    move: (slug: string, delta: number) => apply(withMoved(pokemon.value, state.value.roster, slug, delta)),
     reset: clearRoster,
   }
 }

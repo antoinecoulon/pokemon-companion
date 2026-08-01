@@ -1,5 +1,6 @@
 export interface NavItem {
   label: string
+  /** Route absolue, préfixe de jeu compris (`/unbound/completion`). */
   to: string
   icon: string
   /**
@@ -10,29 +11,30 @@ export interface NavItem {
   primary: boolean
 }
 
+/** Une entrée telle qu'un jeu la déclare : `to` relatif à sa racine. */
+export type NavItemDef = Omit<NavItem, 'to'> & { to: string }
+
 /*
- * Toute icône listée ici doit aussi figurer dans `icon.clientBundle.icons` de
- * `nuxt.config.ts` : le scan de @nuxt/icon ne lit pas les fichiers .ts, et une
- * icône non déclarée rend un <svg> vide. `pnpm validate` échoue sinon.
+ * Toute icône utilisée par une nav de jeu doit aussi figurer dans
+ * `icon.clientBundle.icons` de `nuxt.config.ts` : le scan de @nuxt/icon ne lit
+ * pas les fichiers .ts, et une icône non déclarée rend un <svg> vide, sans la
+ * moindre erreur. `pnpm validate` échoue sinon.
  */
-export const navItems: NavItem[] = [
-  { label: 'Accueil', to: '/', icon: 'i-lucide-house', primary: true },
-  /*
-   * La complétion a pris la place de la roadmap : les phases 0 à 4 du guide
-   * étaient faites, seule la Battle Frontier en restait, et elle tient
-   * désormais dans une section de cette page. `/roadmap` reste routé et
-   * redirige — des liens et des favoris pointent encore dessus.
-   */
-  { label: 'Complétion', to: '/completion', icon: 'i-lucide-trophy', primary: true },
-  { label: 'Équipe', to: '/equipe', icon: 'i-lucide-users', primary: true },
-  { label: 'Ressources', to: '/ressources', icon: 'i-lucide-package', primary: true },
-  { label: 'Journal', to: '/journal', icon: 'i-lucide-notebook-pen', primary: true },
-  // Pages consultées ponctuellement : accessibles depuis la sidebar, le header
-  // mobile et les liens de tâches. La bottom-nav est pleine à 5 entrées — toute
-  // nouvelle page passe forcément par ici.
-  { label: 'Référence', to: '/reference', icon: 'i-lucide-book-open', primary: false },
-]
 
-export const primaryNavItems = navItems.filter(item => item.primary)
+/**
+ * Préfixe les routes d'un jeu.
+ *
+ * `to: '/'` devient `/unbound` et non `/unbound/` : le layout compare les routes
+ * par préfixe pour trouver le titre courant, et une barre finale ferait échouer
+ * la comparaison exacte sur l'accueil.
+ */
+export function navFor(basePath: string, items: NavItemDef[]): NavItem[] {
+  return items.map(item => ({
+    ...item,
+    to: item.to === '/' ? basePath : `${basePath}${item.to}`,
+  }))
+}
 
-export const secondaryNavItems = navItems.filter(item => !item.primary)
+export const primaryOf = (items: NavItem[]) => items.filter(item => item.primary)
+
+export const secondaryOf = (items: NavItem[]) => items.filter(item => !item.primary)

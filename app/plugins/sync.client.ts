@@ -14,10 +14,19 @@ export default defineNuxtPlugin({
   dependsOn: ['save'],
   setup() {
     const { state } = useSave()
+    const { activeId } = useGame()
     const { configured, load, sync } = useSync()
 
     load()
     if (configured.value) sync()
+
+    /*
+     * `sync()` ne traite que le jeu ouvert : sans ce déclencheur, la sauvegarde
+     * du second jeu ne partirait jamais tant qu'on n'y toucherait pas.
+     */
+    watch(activeId, () => {
+      if (configured.value) sync()
+    })
 
     /*
      * Délai plus long que celui de `save.client.ts` (400 ms) : l'écriture

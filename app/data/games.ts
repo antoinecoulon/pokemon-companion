@@ -1,0 +1,202 @@
+import type { CompletionEntry, CompletionGroup } from '~/utils/completion'
+import type { NavItem } from '~/utils/navigation'
+import type { KnownContent } from '~/utils/prune'
+import type { TaskEntry } from '~/utils/tasks'
+import type {
+  BattleItem,
+  Consumable,
+  CounterDef,
+  FarmingTopic,
+  GlossaryEntry,
+  Npc,
+  Phase,
+  PokemonSheet,
+  ReadinessCriterion,
+  ReferenceSection,
+  TaskId,
+  Tool,
+} from './types'
+import { buildTaskEntries } from '~/utils/tasks'
+import { eliteReduxContent } from './elite-redux'
+import { unboundContent } from './unbound'
+
+/**
+ * Registre des jeux suivis par l'app.
+ *
+ * ## Pourquoi une clé de sauvegarde par jeu
+ *
+ * Chaque jeu a sa propre clé `localStorage` et son propre `SaveState`, plutôt
+ * qu'un objet enveloppe qui les contiendrait tous. La raison est unique et
+ * suffit : `pokemon-companion:save` reste **exactement** la sauvegarde Unbound
+ * telle qu'elle existait avant le multi-jeux. Aucun bump de `SAVE_VERSION`,
+ * aucune migration, donc aucun risque sur une partie en cours — et tout le code
+ * qui peut faire perdre une progression (`normalize()`, `migrations`, la purge,
+ * `decideSync`) continue d'opérer sur un `SaveState` unique, sans être retouché.
+ *
+ * ## Ce que ça change pour les ids
+ *
+ * Les ids ne sont plus uniques globalement, seulement **par jeu** : deux
+ * sauvegardes distinctes ne se croisent jamais. Elite Redux peut donc utiliser
+ * `phase-1.x` sans entrer en conflit avec les `phase-1.x` retirés d'Unbound.
+ * La réserve d'ids documentée dans `CLAUDE.md` (`phase-0.x`..`phase-4.x`,
+ * `quest:`) vaut pour **Unbound et lui seul**.
+ *
+ * En revanche, à l'intérieur d'un jeu, la règle est inchangée : un id écrit dans
+ * une sauvegarde ne se renomme jamais.
+ */
+
+export type GameId = 'unbound' | 'elite-redux'
+
+/** Ce qu'un jeu doit fournir pour que la machinerie commune fonctionne. */
+export interface GameContent {
+  phases: Phase[]
+  pokemon: PokemonSheet[]
+  readinessCriteria: ReadinessCriterion[]
+  /** Groupes de complétion déjà assemblés, dans leur ordre éditorial. */
+  completionGroups: CompletionGroup[]
+  counters: CounterDef[]
+  /**
+   * Toutes les clés `<préfixe>:<id>` que ce jeu peut légitimement voir cochées,
+   * hors objectifs de complétion (déduits de `completionGroups`).
+   *
+   * Sert la purge : une catégorie oubliée ici verrait ses cases prises pour des
+   * orphelines et effacées.
+   */
+  resourceKeys: string[]
+  /** Entrées de navigation, routes relatives à la racine du jeu. */
+  nav: NavItem[]
+
+  /*
+   * Deux pages facultatives. Un jeu qui ne les fournit pas ne les met pas non
+   * plus dans sa `nav` ; la page répond alors 404 plutôt que de se rendre vide,
+   * pour qu'une URL tapée à la main dise la vérité.
+   */
+  reference?: {
+    mechanics: ReferenceSection[]
+    tools: Tool[]
+    glossary: GlossaryEntry[]
+  }
+  resources?: {
+    npcs: Npc[]
+    battleItems: BattleItem[]
+    battleItemsTip?: string
+    consumables: Consumable[]
+    farmingTopics: FarmingTopic[]
+  }
+}
+
+export interface Game {
+  id: GameId
+  /** Nom affiché, en VO comme le jeu l'écrit. */
+  label: string
+  /** Une ligne de contexte sous le nom, dans la barre latérale. */
+  subtitle: string
+  /** Préfixe de route, sans barre finale. */
+  basePath: string
+  /** Clé `localStorage` de la sauvegarde. Ne jamais la changer. */
+  saveKey: string
+  /** Clé de la copie de secours associée. */
+  backupKey: string
+  /** Nom du fichier dans le gist de synchronisation. Ne jamais le changer. */
+  gistFile: string
+  content: GameContent
+
+  /* --- Dérivés, calculés une fois à l'import ---------------------------- */
+  pokemonBySlug: Map<string, PokemonSheet>
+  taskEntries: TaskEntry[]
+  taskEntriesById: Map<TaskId, TaskEntry>
+  completionEntries: CompletionEntry[]
+  /**
+   * Défaut de chaque tâche. `state.tasks` ne stocke QUE les choix explicites de
+   * l'utilisateur : une tâche absente retombe ici, donc ajouter une tâche au
+   * contenu respecte son `done` sans migrer la sauvegarde.
+   */
+  contentDefaults: Map<TaskId, boolean>
+  knownContent: KnownContent
+}
+
+interface GameDef {
+  id: GameId
+  label: string
+  subtitle: string
+  saveKey: string
+  gistFile: string
+  content: GameContent
+}
+
+function defineGame(def: GameDef): Game {
+  const { content } = def
+  const basePath = `/${def.id}`
+  const taskEntries = buildTaskEntries(content.phases, content.pokemon, basePath)
+  const completionEntries = content.completionGroups.flatMap(group => group.entries)
+
+  return {
+    ...def,
+    basePath,
+    backupKey: `${def.saveKey}:backup`,
+    pokemonBySlug: new Map(content.pokemon.map(mon => [mon.slug, mon])),
+    taskEntries,
+    taskEntriesById: new Map(taskEntries.map(entry => [entry.task.id, entry])),
+    completionEntries,
+    contentDefaults: new Map(
+      taskEntries.map(entry => [entry.task.id, entry.task.done ?? false] as const),
+    ),
+    knownContent: {
+      taskIds: new Set([
+        ...taskEntries.map(entry => entry.task.id),
+        /*
+         * Les cases « Ready » vivent dans `state.tasks` sans exister nulle part
+         * dans le contenu : leur id est fabriqué à la volée par `useProgress`
+         * (`ready-<slug>-<key>`). Sans elles, la purge les prendrait toutes pour
+         * des orphelines.
+         */
+        ...content.pokemon.flatMap(mon =>
+          content.readinessCriteria.map(criterion => `ready-${mon.slug}-${criterion.key}`),
+        ),
+      ]),
+      slugs: new Set(content.pokemon.map(mon => mon.slug)),
+      resourceKeys: new Set([
+        ...content.resourceKeys,
+        ...completionEntries.map(entry => entry.key),
+      ]),
+      counterIds: new Set(content.counters.map(counter => counter.id)),
+    },
+  }
+}
+
+export const games: Game[] = [
+  defineGame({
+    id: 'unbound',
+    label: 'Pokémon Unbound',
+    subtitle: 'post-game',
+    /*
+     * Valeurs historiques, antérieures au multi-jeux. Les changer perdrait la
+     * sauvegarde en cours et le gist déjà en place.
+     */
+    saveKey: 'pokemon-companion:save',
+    gistFile: 'pokemon-companion.json',
+    content: unboundContent,
+  }),
+  defineGame({
+    id: 'elite-redux',
+    label: 'Pokémon Elite Redux',
+    subtitle: 'mode Elite',
+    saveKey: 'pokemon-companion:save:elite-redux',
+    gistFile: 'pokemon-companion.elite-redux.json',
+    content: eliteReduxContent,
+  }),
+]
+
+export const gamesById = new Map(games.map(game => [game.id, game]))
+
+/** Jeu servi quand aucun choix n'est enregistré, ou qu'il est illisible. */
+export const DEFAULT_GAME_ID: GameId = 'unbound'
+
+export const isGameId = (value: unknown): value is GameId =>
+  typeof value === 'string' && gamesById.has(value as GameId)
+
+export function gameById(id: GameId): Game {
+  const game = gamesById.get(id)
+  if (!game) throw new Error(`jeu inconnu : ${id}`)
+  return game
+}

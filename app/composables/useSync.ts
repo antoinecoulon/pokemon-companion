@@ -1,6 +1,7 @@
 import type { SaveState } from '~/data/types'
-import type { SyncMarker } from '~/utils/sync'
-import { decideSync, emptyMarker, markerAfter } from '~/utils/sync'
+import type { SyncMarkers } from '~/utils/sync'
+import { games } from '~/data/games'
+import { decideSync, markerAfter, readMarkers } from '~/utils/sync'
 
 /**
  * Synchronisation de la sauvegarde entre appareils, via un gist privé GitHub.
@@ -17,10 +18,25 @@ import { decideSync, emptyMarker, markerAfter } from '~/utils/sync'
  * La règle de conflit est « le plus récent gagne », décidée par `decideSync`
  * (voir `app/utils/sync.ts`, testé par `pnpm test:sync`). Le perdant d'une
  * divergence part en copie de secours avant d'être écrasé.
+ *
+ * ## Multi-jeux
+ *
+ * Un seul gist, mais **un fichier par jeu** — et un marqueur par jeu. Chaque
+ * sauvegarde garde donc son propre historique de synchronisation, et
+ * `decideSync` continue de raisonner sur une seule paire local/distant, sans
+ * rien savoir des autres jeux.
+ *
+ * Le fichier d'Unbound garde son nom d'origine : un gist déjà en place reste
+ * reconnu et continue de fonctionner sans intervention.
+ *
+ * `sync()` ne traite que le jeu ouvert. Synchroniser les deux d'un coup
+ * doublerait les appels réseau à chaque ouverture pour une sauvegarde qu'on ne
+ * regarde pas ; le plugin relance donc une synchro à chaque bascule de jeu.
  */
 
 const CONFIG_KEY = 'pokemon-companion:sync'
-const GIST_FILENAME = 'pokemon-companion.json'
+/** Nom du fichier d'Unbound, antérieur au multi-jeux : sert à retrouver le gist. */
+const LEGACY_GIST_FILENAME = 'pokemon-companion.json'
 const GIST_DESCRIPTION = 'Pokémon Companion — sauvegarde (ne pas supprimer)'
 const API = 'https://api.github.com'
 
@@ -34,7 +50,8 @@ const API = 'https://api.github.com'
 interface SyncConfig {
   token: string
   gistId: string | null
-  marker: SyncMarker
+  /** Un marqueur par jeu : deux sauvegardes ne partagent pas leur historique. */
+  markers: SyncMarkers
 }
 
 export type SyncStatus = 'unconfigured' | 'idle' | 'syncing' | 'ok' | 'offline' | 'error'
@@ -51,10 +68,13 @@ function readConfig(): SyncConfig | null {
     return {
       token: parsed.token,
       gistId: typeof parsed.gistId === 'string' ? parsed.gistId : null,
-      marker: {
-        remoteUpdatedAt: typeof parsed.marker?.remoteUpdatedAt === 'string' ? parsed.marker.remoteUpdatedAt : null,
-        localUpdatedAt: typeof parsed.marker?.localUpdatedAt === 'string' ? parsed.marker.localUpdatedAt : null,
-      },
+      /*
+       * Reprend l'ancien `marker` unique sur Unbound quand la config date
+       * d'avant le multi-jeux. Le jeter ferait passer la première synchro
+       * suivante pour une divergence — donc un écrasement. Testé par
+       * `pnpm test:sync`.
+       */
+      markers: readMarkers(parsed, games.map(game => game.id), 'unbound'),
     }
   }
   catch {
@@ -64,6 +84,7 @@ function readConfig(): SyncConfig | null {
 
 export function useSync() {
   const { state, exportJson, importJson, parseSave, backupNow, persist } = useSave()
+  const { current } = useGame()
 
   const config = useState<SyncConfig | null>('sync-config', () => null)
   const status = useState<SyncStatus>('sync-status', () => 'unconfigured')
@@ -131,8 +152,15 @@ export function useSync() {
   async function findOrCreateGist(): Promise<string> {
     if (config.value?.gistId) return config.value.gistId
 
+    /*
+     * On cherche n'importe quel fichier de jeu connu, plus le nom historique :
+     * le gist a pu être créé par un autre jeu, ou avant le multi-jeux.
+     */
+    const known = new Set([LEGACY_GIST_FILENAME, ...games.map(game => game.gistFile)])
     const gists = await api<Gist[]>('/gists?per_page=100')
-    const found = gists.find(gist => gist.files && GIST_FILENAME in gist.files)
+    const found = gists.find(gist =>
+      gist.files && Object.keys(gist.files).some(name => known.has(name)),
+    )
     if (found) return found.id
 
     const created = await api<Gist>('/gists', {
@@ -140,7 +168,7 @@ export function useSync() {
       body: JSON.stringify({
         description: GIST_DESCRIPTION,
         public: false,
-        files: { [GIST_FILENAME]: { content: exportJson() } },
+        files: { [current.value.gistFile]: { content: exportJson() } },
       }),
     })
     return created.id
@@ -148,7 +176,8 @@ export function useSync() {
 
   async function fetchRemote(gistId: string): Promise<SaveState | null> {
     const gist = await api<Gist>(`/gists/${gistId}`)
-    const file = gist.files?.[GIST_FILENAME]
+    const file = gist.files?.[current.value.gistFile]
+    // Fichier absent : ce jeu n'a simplement jamais été envoyé sur ce gist.
     if (!file) return null
 
     /*
@@ -171,8 +200,13 @@ export function useSync() {
   async function pushTo(gistId: string, payload: string) {
     await api(`/gists/${gistId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ files: { [GIST_FILENAME]: { content: payload } } }),
+      body: JSON.stringify({ files: { [current.value.gistFile]: { content: payload } } }),
     })
+  }
+
+  /** Config mise à jour avec le seul marqueur du jeu ouvert. */
+  function withMarker(config: SyncConfig, marker: SyncMarkers[string]): SyncConfig {
+    return { ...config, markers: { ...config.markers, [current.value.id]: marker } }
   }
 
   /* --- Synchronisation -------------------------------------------------- */
@@ -207,7 +241,7 @@ export function useSync() {
       }
 
       const remote = await fetchRemote(gistId)
-      const decision = decideSync(state.value, remote, config.value!.marker)
+      const decision = decideSync(state.value, remote, config.value!.markers[current.value.id]!)
       lastOutcome.value = decision.reason
 
       if (decision.action === 'pull' && remote) {
@@ -218,7 +252,7 @@ export function useSync() {
         }
         const result = importJson(JSON.stringify(remote))
         if (!result.ok) throw new Error(result.error)
-        writeConfig({ ...config.value!, marker: markerAfter(state.value, remote) })
+        writeConfig(withMarker(config.value!, markerAfter(state.value, remote)))
       }
       else if (decision.action === 'push') {
         // On fige l'horodatage envoyé, sinon le marqueur ne correspondrait plus.
@@ -226,7 +260,7 @@ export function useSync() {
         const payload = exportJson()
         const sent = parseSave(payload)!
         await pushTo(gistId, payload)
-        writeConfig({ ...config.value!, marker: markerAfter(sent, sent) })
+        writeConfig(withMarker(config.value!, markerAfter(sent, sent)))
       }
 
       status.value = 'ok'
@@ -249,7 +283,7 @@ export function useSync() {
       status.value = 'error'
       return false
     }
-    writeConfig({ token: clean, gistId: null, marker: emptyMarker() })
+    writeConfig({ token: clean, gistId: null, markers: readMarkers(undefined, games.map(game => game.id), 'unbound') })
     const ok = await sync()
     // Un token refusé ne doit pas rester enregistré : il ferait échouer chaque
     // ouverture de l'app sans qu'on sache pourquoi.

@@ -9,12 +9,12 @@
  *
  * Usage : pnpm test:fiche
  */
-import { loadApp, loadData, loadPokemon, root } from './lib/data.mjs'
+import { POKEMON_DIR, loadApp, loadUnbound, loadPokemon } from './lib/data.mjs'
 import { printFiche, validateFiche } from './lib/fiche.mjs'
 import { writeFile, unlink } from 'node:fs/promises'
 
 const { pokemon } = await loadPokemon()
-const { phases } = await loadData('phases.ts')
+const { phases } = await loadUnbound('phases.ts')
 const phaseTaskIds = phases.flatMap(phase => phase.tasks.map(task => task.id))
 const failures = []
 
@@ -88,10 +88,10 @@ for (const mon of pokemon) {
  */
 for (const mon of pokemon) {
   const name = `_roundtrip-${mon.slug}.ts`
-  const scratch = `${root}app/data/pokemon/${name}`
+  const scratch = `${POKEMON_DIR}${name}`
   await writeFile(scratch, printFiche(mon))
   try {
-    const reread = (await loadApp(`data/pokemon/${name}`)).default
+    const reread = (await loadApp(`data/unbound/pokemon/${name}`)).default
     checkSame(`aller-retour « ${mon.slug} »`, reread, mon)
   }
   finally {

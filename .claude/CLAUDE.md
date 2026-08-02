@@ -359,11 +359,12 @@ le plus rapide à lever est le level cap avant Roxanne, qui doit afficher **16**
 
 ### Pokémon Emerald Seaglass
 
-Doc de référence hors-ligne dans **`docs/emerald-seaglass/`** (la ROM, checklist de début de partie,
-sources). Le contenu de l'app en est tiré — `01-la-rom.md` et `02-bien-debuter.md` sont transcrits
-dans `app/data/emerald-seaglass/{reference,phases,completion}.ts`, et le markdown reste l'archive de
-la démarche. Son README porte **dix points « à vérifier en jeu »** ; le plus important, et de loin,
-est le **chiffrage des soft level caps**, qu'aucune source ne publie.
+Doc de référence hors-ligne dans **`docs/emerald-seaglass/`**, qui contient aussi **la documentation
+officielle v3.0 elle-même** (PDF + patch notes). Le contenu écrit à la main en est tiré —
+`01-la-rom.md` et `02-bien-debuter.md` sont transcrits dans
+`app/data/emerald-seaglass/{reference,phases,completion}.ts`, et le markdown reste l'archive de la
+démarche. Son README porte **douze points « à vérifier en jeu »** ; le plus important, et de loin, est
+le **chiffrage des soft level caps**, qu'aucune source ne publie.
 
 - **C'est un Emerald *vanilla* côté trame et exploration** — même région, même histoire, même ordre
   des 8 badges de Hoenn. La doc de l'auteur écrit « This is *NOT* a "difficulty hack" » et ne promet
@@ -372,15 +373,38 @@ est le **chiffrage des soft level caps**, qu'aucune source ne publie.
   gen 1-3 intégralement capturable (421 entrées), et un confort de jeu qui supprime le grind. C'est
   aussi pourquoi il ne répond pas au reproche fait à Elite Redux sur l'histoire et l'exploration :
   c'est établi, ce n'est pas une déception à découvrir deux fois.
-- **Pas de code source public.** C'est l'écart décisif avec Elite Redux : rien ne s'extrait d'un
-  dépôt, donc **aucun script `gen:*` pour ce jeu**. La source primaire est un **PDF de 8 pages** de
-  l'auteur (**Nemo622**, they/them), et c'est tout.
-  ⚠️ **Ko-fi est derrière Cloudflare** : ni `WebFetch` ni `curl` ne passent, même avec un User-Agent
-  de navigateur. Le PDF se relit par le **mirror** `pokeharbor.com`, confirmé fidèle, avec
-  **`python3 scripts/read-seaglass-doc.py`** — c'est la voie à reprendre à chaque nouvelle version du
-  patch. Deux pièges y sont documentés : le PDF est en **polices Type0/CID** (une extraction naïve
-  rend une chaîne **vide**, sans erreur) et **chaque mot a son propre `BT…ET`** (aucun espace dans le
-  flux). Sans dépendance, faute de `pip` et de `poppler` ici.
+- **Pas de code source public — mais de la donnée quand même.** L'écart avec Elite Redux est réel :
+  rien ne s'extrait d'un dépôt. Mais « pas de code » ne voulait pas dire « rien à générer », et le
+  croire a coûté un tour : **`mrwalkthroughs.com/pokemon-emerald-seaglass/`** publie les **447 fiches
+  d'espèces telles qu'extraites de la ROM** (stats du hack *et* du jeu officiel côte à côte, talents
+  dont le caché, groupes d'œufs, évolutions, localisations) et les lieux des **68 TM/HM**. D'où
+  `pnpm gen:seaglass <pokedex|abilities|tms|all>`.
+  ⚠️ Ce site est un WordPress **derrière un filtre anti-bot** : 403 sans User-Agent de navigateur,
+  comme unboundwiki et romhackdex.
+- **La source primaire est la doc de l'auteur (**Nemo622**, they/them), et elle est _versionnée dans le
+  dépôt_** : `docs/emerald-seaglass/Pokemon Emerald Seaglass Documentation v3.0.pdf` + les patch notes.
+  Elle reste **l'autorité** : sur un conflit, c'est elle qui tranche. Se relit par
+  **`python3 scripts/read-seaglass-doc.py`** (défaut : le PDF local ; second argument = fichier de
+  sortie — il était codé en dur, et extraire un second PDF écrasait le premier en silence).
+  Deux pièges documentés dans le script : polices **Type0/CID** (une extraction naïve rend une chaîne
+  **vide**, sans erreur) et **un `BT…ET` par mot** (aucun espace dans le flux). Sans dépendance, faute
+  de `pip` et de `poppler` ici. ⚠️ **Ko-fi est derrière Cloudflare** : ni `WebFetch` ni `curl` ne
+  passent — raison pour laquelle le PDF est versionné plutôt que retéléchargé.
+- ⚠️ **Un mirror n'a pas de version, et celui-ci était périmé.** Le premier tour a lu le PDF sur le
+  mirror `pokeharbor.com`, **antérieur à la v3.0**, et en a publié : **14 types faux** (Blastoise
+  `Water/Steel`, Feraligatr `Water/Dark`, Typhlosion `Fire/Ground`, Meganium `Grass/Fairy`, Aggron
+  `Steel/Dragon`, Hypno `Psychic/Dark`, Ninjask, Huntail, Gorebyss, Ekans, Golduck, Seel, Electivire,
+  Magmortar), un **Battle Tent annoncé cassé** (`BAD EGG`) qui ne l'est plus, **19 cheat codes**
+  manquants, deux objets d'évolution et un objet clé absents. « Mirror confirmé fidèle » ne voulait
+  rien dire — fidèle à quoi. **Ne relire que le PDF versionné.**
+- **Le garde-fou de la génération est le recoupement contre la doc v3.0.** `crossCheckTypes()` compare
+  les types des 447 espèces à la table de dex du PDF local et **lève** au moindre écart : **413
+  espèces comparables, 413 accords**. Il attrape un parseur qui décale une colonne *et* un wiki qui
+  partirait sur un patch plus récent que la doc — cas où l'écart est réel et s'arbitre à la main. Il
+  contrôle aussi le **nombre de comparaisons**, sans quoi un recoupement muet passerait vert. Ne
+  jamais l'affaiblir ni l'entourer d'un `try`.
+  Les 447 espèces se comparent à 421 numérotées dans la doc : ce n'est pas une contradiction — la doc
+  s'arrête à Deoxys puis décrit les extras hors table, que le wiki numérote à partir de 422.
 - **Le patch ne se télécharge que sur Ko-fi.** `pokemonemeraldseaglass.com` s'annonce « Official Game
   Download » **sans être confirmé** comme le site de l'auteur ; avec `gbacodes.com`, `pokeharbor.com`,
   `pokehacks.net`, `pokepatched.com`, `ducumon.click`, `visualboyadvance.org`, `pokemon-roms.net` et
@@ -393,12 +417,23 @@ est le **chiffrage des soft level caps**, qu'aucune source ne publie.
   par deux, puis la réduit davantage : rien ne bloque, et le **Hard Mode** (livre sur le bureau de la
   chambre) les retire. D'où un critère `level` en `derived: false`, contrairement au « niveau 100 »
   d'Unbound. Pas de critère `innates` : c'est une particularité d'Elite Redux.
-- **Ni `encounters`, ni `abilities`, ni `resources`.** Les deux premiers n'ont rien à générer, et le
-  jeu embarque un Pokédex refait sur le modèle de HGSS qui fait mieux que toute transcription.
-  `/ressources` répond **404**, volontairement : les marchands (Happy Trainer Merchant Stand,
-  Pretty Petal, stands de pierres) sont documentés dans la référence, où ils informent, plutôt qu'en
-  cases `npc:` qui recopieraient une entrée existant déjà ailleurs.
-- **Deux gisements volontairement non exploités** : un **guide fan** (`jimineybillybob1/PokemonEmeraldSeaglassGuide`,
-  données en tableaux JS dans un `index.html` statique) serait le seul matériau automatisable, mais il
-  est **non officiel et à 0 star** — le retenir exigerait de le croiser avec le PDF. Et la **table des
-  421 entrées de dex** du PDF n'est pas transcrite : elle doublonnerait le Pokédex du jeu.
+- **Il fournit `pokedex`, `abilities` et `tms` ; il ne fournit ni `encounters`, ni `resources`.**
+  - **Pas d'`encounters`, et c'est dicté par la source, pas éditorial** : elle ne donne **ni niveaux,
+    ni taux, ni slots**, les trois champs qu'exige `EncounterZone` et que l'UI rend en colonnes. Les
+    remplir de zéros serait inventer de la donnée. Les localisations vivent donc sur les entrées du
+    Pokédex, qui est la forme que la source a réellement.
+  - **La section `pokedex` ne remplace pas le Pokédex du jeu**, refait sur le modèle de HGSS et
+    meilleur. Sa seule raison d'être est ce que l'écran ne peut pas montrer : **l'écart avec le jeu
+    officiel**, d'où `official` à côté de `seaglass` sur chaque stat. `pnpm validate` refuse une entrée
+    dont les stats officielles manquent — sans elles, la section n'a plus d'objet.
+  - `/ressources` répond **404**, volontairement : les marchands (Happy Trainer Merchant Stand,
+    Pretty Petal, stands de pierres) sont documentés dans la référence, où ils informent, plutôt qu'en
+    cases `npc:` qui recopieraient une entrée existant déjà ailleurs.
+- **Trois gisements volontairement non exploités.** Le **walkthrough en 30 parties** de mrwalkthroughs
+  (objets route par route, et **équipes des Gym Leaders**) : ne pas décalquer un walkthrough d'Emerald
+  vanilla, et ne pas embarquer les équipes de la Ligue avant d'avoir joué — même règle que le
+  `TrainerList` d'Elite Redux. Les **learnsets complets** des 447 fiches : 447 × ~25 capacités dans le
+  bundle d'un SPA installable, pour une donnée que le dex du jeu affiche déjà bien. Et le **guide fan**
+  (`jimineybillybob1/PokemonEmeraldSeaglassGuide`) est **écarté définitivement**, plus « en réserve » :
+  son README dit qu'il tire son dex de mrwalkthroughs et le reste du PDF, donc il est **dérivé de nos
+  deux sources** et en retard d'une génération.

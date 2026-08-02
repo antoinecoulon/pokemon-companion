@@ -269,25 +269,36 @@ Saisis en interagissant avec la **GameCube dans la chambre du joueur**.
 
 ---
 
-## 15. Known Issues (rapportés par l'auteur)
+## 15. Known Issues (rapportés par l'auteur, **liste v3.0**)
 
-**Problèmes majeurs :**
+**Problèmes importants :**
 
-- **Battle Tent désactivé** — les Pokémon de location deviennent des Bad Egg et d'autres choses
-  cassent. Le bâtiment est bloqué par un PNJ en attendant un correctif.
+- ⚠️ **Le DexNav peut totalement corrompre la partie** — « best to save before chaining ». L'auteur
+  n'arrive pas à le reproduire et le soupçonne plus fréquent dans les grottes. **C'est le seul bug
+  connu qui coûte une progression.**
+- **Scintillement graphique à chaque tour de combat** — semi-intentionnel : réinitialiser les
+  graphismes évite de nombreux freezes et bugs d'animation de capacité.
+- **Level Reset Bug** — le temps d'un combat, le niveau d'un Pokémon s'affiche plus bas ; il regagne
+  son niveau normal après le combat. Non reproductible de façon fiable.
+- Les combats de **Safari Zone se comportent comme des combats normaux**, involontairement.
 
 **Problèmes visuels :**
 
-- **Scintillement graphique à chaque tour de combat** — semi-intentionnel : réinitialiser les
-  graphismes évite de nombreux freezes et bugs d'animation de capacité.
-- Les bâtiments de la **Battle Frontier** utilisent en majorité des tiles Emerald vanilla, qui ne
-  correspondent pas à l'esthétique du reste du jeu.
+- L'**UI de la Safari Zone est buguée** — un PNJ en avertit désormais le joueur.
+- **Plantages sous MyBoy** : utiliser un émulateur recommandé sur le Discord.
 - Le texte du nombre de **PP est jaune** lors de l'apprentissage d'une nouvelle capacité.
+- Les **palettes de suiveur de Swinub et Piloswine** sont cassées — bug en amont, dans
+  `pokeemerald-expansion` ([issue 5147](https://github.com/rh-hideout/pokeemerald-expansion/issues/5147)).
 
 **Autres :**
 
 - La **physique du pinball** est loin d'être parfaite — l'auteur estime que ça fait partie du
-  charme.
+  charme. Si le minigame gèle, **`Start`** force la sortie.
+
+**Deux entrées ont disparu de la liste en v3.0**, ce qui vaut correction sans que les patch notes le
+disent : le **Battle Tent désactivé** (Pokémon de location transformés en `BAD EGG`, bâtiment bloqué
+par un PNJ) et les **tiles vanilla des bâtiments de la Battle Frontier**. À confirmer en jeu — voir le
+point 11 du [README](README.md).
 
 L'auteur mentionne un **canal Discord** pour signaler les bugs, en demandant de vérifier d'abord
 cette liste. Son URL n'a pas été vérifiée et n'est pas publiée ici.
@@ -298,4 +309,9 @@ cette liste. Son URL n'a pas été vérifiée et n'est pas publiée ici.
 
 Tiles principalement par **Zaebucca**, sprites Pokémon Gen 1-3/9 par **Egg**, **Nuukiie** et
 d'autres artistes crédités dans la doc officielle. Liste complète non reprise ici — voir le PDF
-source ou son mirror pour le détail complet des contributions.
+versionné dans ce dossier pour le détail complet des contributions.
+
+La v3.0 ajoute notamment les **sprites de Brendan et May** (overworld par **goncas**, combat par
+**Justin8964**), les sprites overworld des **Gym Leaders, du Conseil 4, de la Team Aqua/Magma et des
+Frontier Brains** (goncas), le **fond d'écran-titre** (hlf_dzn) et de nombreuses icônes d'objets
+(Glados11388).

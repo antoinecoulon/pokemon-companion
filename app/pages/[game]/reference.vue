@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { EncounterMethodId, ReferenceSection } from '~/data/types'
 import { natures } from '~/data/natures'
+import { STAT_KEYS, STAT_LABELS } from '~/utils/stats'
 
 const { current } = useGame()
 
@@ -113,6 +114,58 @@ const matchedSpecies = computed(() => {
 
 const speciesCount = computed(() => bySpecies.size)
 
+/*
+ * Pokédex d'espèces — fourni par Seaglass seul, dont la source publie la donnée
+ * par espèce plutôt que par zone.
+ *
+ * Rien n'est rendu tant qu'on n'a pas cherché : 447 fiches dépliées, c'est le
+ * même problème de DOM que les 142 zones ci-dessus.
+ */
+const pokedex = reference.pokedex ?? []
+const dexSearch = ref('')
+const DEX_LIMIT = 12
+
+const matchedDex = computed(() => {
+  const query = dexSearch.value.trim().toLowerCase()
+  if (query.length < 2) return []
+  return pokedex
+    .filter(entry =>
+      entry.name.toLowerCase().includes(query)
+      || entry.types.some(type => type.toLowerCase() === query)
+      || entry.locations.some(location => location.toLowerCase().includes(query)),
+    )
+    .slice(0, DEX_LIMIT)
+})
+
+const dexMatches = computed(() => {
+  const query = dexSearch.value.trim().toLowerCase()
+  if (query.length < 2) return 0
+  return pokedex.filter(entry =>
+    entry.name.toLowerCase().includes(query)
+    || entry.types.some(type => type.toLowerCase() === query)
+    || entry.locations.some(location => location.toLowerCase().includes(query)),
+  ).length
+})
+
+/** Les espèces dont une stat s'écarte du jeu officiel : ce que l'écran ne dit pas. */
+const retunedCount = computed(() =>
+  pokedex.filter(entry => STAT_KEYS.some(key => entry.stats[key].seaglass !== entry.stats[key].official)).length,
+)
+
+/* TM et HM : une seule table, courte, donc rendue entière et filtrable. */
+const tms = reference.tms ?? []
+const tmSearch = ref('')
+
+const filteredTms = computed(() => {
+  const query = tmSearch.value.trim().toLowerCase()
+  if (!query) return tms
+  return tms.filter(tm =>
+    tm.id.toLowerCase().includes(query)
+    || tm.move.toLowerCase().includes(query)
+    || tm.location.toLowerCase().includes(query),
+  )
+})
+
 /* Talents */
 const abilitySearch = ref('')
 const ABILITY_LIMIT = 60
@@ -224,6 +277,146 @@ const filteredNatures = computed(() => {
           </div>
         </template>
       </UAccordion>
+    </SectionBlock>
+
+    <!--
+      Pokédex d'espèces. La colonne « Officiel » est la raison d'être de la
+      section : c'est la seule chose que le Pokédex du jeu ne peut pas montrer.
+    -->
+    <SectionBlock
+      v-if="pokedex.length"
+      title="Pokédex"
+      :description="captions.pokedex"
+    >
+      <UInput
+        v-model="dexSearch"
+        icon="i-lucide-search"
+        placeholder="Une espèce (« Feraligatr »), un type (« Dark ») ou un lieu (« Fiery Path »)…"
+      />
+
+      <div v-for="entry in matchedDex" :key="entry.id" class="space-y-3">
+        <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <h3 class="text-sm font-semibold text-highlighted">
+            {{ entry.name }}
+          </h3>
+          <span class="text-xs text-dimmed tabular-nums">
+            #{{ String(entry.hoennDex).padStart(3, '0') }} · Nat. #{{ entry.nationalDex }}
+          </span>
+          <span class="text-xs text-toned">{{ entry.types.join(' / ') }}</span>
+        </div>
+
+        <p class="text-xs text-toned">
+          <span class="text-dimmed">Obtention :</span> {{ entry.locations.join(' · ') }}
+        </p>
+        <p v-if="entry.evolution" class="text-xs text-toned">
+          <span class="text-dimmed">Évolution :</span> {{ entry.evolution }}
+        </p>
+
+        <div class="table-scroll rounded-[var(--ui-radius)] border border-default">
+          <table class="w-full text-sm border-collapse">
+            <thead class="bg-muted">
+              <tr>
+                <th class="px-3 py-2 text-left font-medium text-highlighted">Stat</th>
+                <th class="px-3 py-2 text-right font-medium text-highlighted">Seaglass</th>
+                <th class="px-3 py-2 text-right font-medium text-highlighted">Officiel</th>
+                <th class="px-3 py-2 text-right font-medium text-highlighted">Écart</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="key in STAT_KEYS" :key="key" class="border-t border-default">
+                <td class="px-3 py-1.5 text-toned">
+                  {{ STAT_LABELS[key] }}
+                </td>
+                <td class="px-3 py-1.5 text-right text-highlighted tabular-nums">
+                  {{ entry.stats[key].seaglass }}
+                </td>
+                <td class="px-3 py-1.5 text-right text-dimmed tabular-nums">
+                  {{ entry.stats[key].official }}
+                </td>
+                <td
+                  class="px-3 py-1.5 text-right tabular-nums"
+                  :class="entry.stats[key].seaglass === entry.stats[key].official
+                    ? 'text-dimmed'
+                    : entry.stats[key].seaglass > entry.stats[key].official ? 'text-success' : 'text-error'"
+                >
+                  {{ entry.stats[key].seaglass === entry.stats[key].official
+                    ? '–'
+                    : (entry.stats[key].seaglass > entry.stats[key].official ? '+' : '')
+                      + (entry.stats[key].seaglass - entry.stats[key].official) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="space-y-1">
+          <p v-for="ability in entry.abilities" :key="ability.name" class="text-xs text-toned">
+            <span class="font-medium text-highlighted">{{ ability.name }}</span>
+            <UBadge v-if="ability.hidden" color="neutral" variant="subtle" size="sm" class="ml-1.5">
+              caché
+            </UBadge>
+            <span class="text-dimmed"> — {{ ability.description }}</span>
+          </p>
+        </div>
+
+        <p v-if="entry.eggGroups.length" class="text-xs text-dimmed">
+          Groupes d’œufs : {{ entry.eggGroups.join(', ') }}
+        </p>
+      </div>
+
+      <p v-if="dexSearch.trim().length >= 2 && !matchedDex.length" class="text-sm text-dimmed">
+        Aucune espèce ne correspond, sur les {{ pokedex.length }} du dex.
+      </p>
+      <p v-else-if="dexMatches > matchedDex.length" class="text-xs text-dimmed">
+        {{ dexMatches }} espèces correspondent, les {{ DEX_LIMIT }} premières sont affichées.
+      </p>
+      <p v-else-if="!dexSearch.trim()" class="text-sm text-dimmed">
+        {{ pokedex.length }} espèces, dont <strong>{{ retunedCount }}</strong> dont au moins une stat
+        s’écarte du jeu officiel. Cherche une espèce, un type ou un lieu ci-dessus.
+      </p>
+    </SectionBlock>
+
+    <!-- TM et HM, avec leurs lieux et leurs prérequis -->
+    <SectionBlock
+      v-if="tms.length"
+      title="TM et HM"
+      :description="captions.tms"
+    >
+      <UInput
+        v-model="tmSearch"
+        icon="i-lucide-search"
+        placeholder="Un numéro (« TM26 »), une capacité (« Earthquake ») ou un lieu…"
+      />
+      <div class="table-scroll rounded-[var(--ui-radius)] border border-default">
+        <table class="w-full text-sm border-collapse">
+          <thead class="bg-muted">
+            <tr>
+              <th class="px-3 py-2 text-left font-medium text-highlighted whitespace-nowrap">TM</th>
+              <th class="px-3 py-2 text-left font-medium text-highlighted">Capacité</th>
+              <th class="px-3 py-2 text-left font-medium text-highlighted">Où</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="tm in filteredTms" :key="tm.id" class="border-t border-default">
+              <td class="px-3 py-1.5 text-dimmed tabular-nums whitespace-nowrap">
+                {{ tm.id }}
+              </td>
+              <td class="px-3 py-1.5 text-highlighted">
+                {{ tm.move }}
+                <span v-if="tm.requires?.length" class="block text-[0.7rem] text-dimmed">
+                  demande {{ tm.requires.join(', ') }}
+                </span>
+              </td>
+              <td class="px-3 py-1.5 text-toned">
+                {{ tm.location }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p v-if="!filteredTms.length" class="text-sm text-dimmed">
+        Aucune TM ne correspond, sur les {{ tms.length }} du jeu.
+      </p>
     </SectionBlock>
 
     <!-- Encounters : fournis par les jeux au code ouvert -->

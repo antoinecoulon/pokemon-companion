@@ -55,7 +55,7 @@ export const phases: Phase[] = [
         details: [
           'C’est la seule source que la documentation désigne elle-même. Ne pas passer par les sites de téléchargement : ce sont des fermes SEO qui réhébergent le patch, et `pokemonemeraldseaglass.com` s’annonce « Official Game Download » sans être confirmé comme le site de l’auteur.',
           'Noter la version installée — c’est ce qui permettra de savoir si un écart avec cette app est une erreur de contenu ou un changement de version.',
-          '⚠️ La version **v3.0** (2024-09-21) n’est rapportée que par une source secondaire, jamais confirmée par l’auteur.',
+          'Le contenu de cette app est aligné sur la **v3.0**, dont la documentation et les patch notes sont versionnées dans `docs/emerald-seaglass/`. Signe visible qu’on y est bien : les protagonistes sont **Brendan et May**, et l’écran-titre a un nouveau fond.',
         ],
         link: '/reference#known-issues',
         key: true,
@@ -104,6 +104,7 @@ export const phases: Phase[] = [
           'Le DexNav vit dans le menu Start. Il dit combien d’espèces vivent dans la zone et permet de cibler celles déjà vues.',
           'Environ tous les 200 pas, il détecte un Pokémon ; **une fois sur deux c’est un Hidden Pokémon**, introuvable autrement.',
           '**Applin** est à Littleroot — l’un des trois easter eggs du jeu. Ses pommes d’évolution s’achètent à Pacifidlog.',
+          '⚠️ **Sauvegarder avant de chaîner** : l’auteur signale que le DexNav peut corrompre la partie, sans savoir le reproduire, et le soupçonne plus fréquent dans les grottes. C’est le seul bug connu qui coûte une progression.',
         ],
         requires: ['phase-1.3'],
         link: '/reference#dexnav',
@@ -272,6 +273,9 @@ export const phases: Phase[] = [
       {
         id: 'phase-2.3',
         label: '**Chaîner au DexNav** les espèces gardées : IV améliorés, egg moves rares, et meilleures chances de shiny.',
+        details: [
+          '⚠️ **Sauvegarder avant chaque chaîne.** Le chaînage au DexNav peut corrompre la partie — bug connu, non reproductible, plus fréquent dans les grottes selon l’auteur.',
+        ],
         requires: ['phase-2.1'],
         link: '/reference#dexnav',
         done: false,
@@ -378,7 +382,7 @@ export const phases: Phase[] = [
       {
         kind: 'quote',
         tone: 'warning',
-        text: 'La documentation de l’auteur **ne décrit pas le post-game**. Elle confirme seulement que la Battle Frontier existe — ses bâtiments sont cités dans les bugs connus — et que le **Battle Tent est désactivé** (Pokémon loués transformés en `BAD EGG`, entrée bloquée par un PNJ). Cette phase est donc courte à dessein : rien n’y a été recopié d’un walkthrough d’Emerald.',
+        text: 'La documentation de l’auteur **ne décrit pas le post-game**. Elle confirme seulement que la Battle Frontier existe — la v3.0 crédite des sprites de Frontier Brain. Cette phase est donc courte à dessein : rien n’y a été recopié d’un walkthrough d’Emerald.',
       },
     ],
     tasks: [
@@ -398,7 +402,7 @@ export const phases: Phase[] = [
         label: 'Explorer la **Battle Frontier** et **noter ce qu’on y trouve** : installations disponibles, conditions d’accès, récompenses.',
         details: [
           'Aucune de ces informations n’est documentée — c’est le plus gros trou à combler, et il se comble en jouant.',
-          '⚠️ Le **Battle Tent de Lilycove** est cassé dans cette version : ne pas y perdre de temps.',
+          'Au passage, confirmer que le **Battle Tent de Lilycove** fonctionne : il était cassé avant la v3.0, qui ne le liste plus dans ses bugs connus.',
         ],
         requires: ['phase-3.6'],
         link: '/reference#known-issues',

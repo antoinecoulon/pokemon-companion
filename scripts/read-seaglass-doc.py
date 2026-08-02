@@ -4,8 +4,18 @@ Emerald Seaglass n'a **pas de code source public** : sa seule source primaire es
 un PDF de 8 pages écrit par son auteur. Ce script en extrait le texte, et c'est
 la voie à reprendre à chaque nouvelle version du patch.
 
-    curl -s -A "Mozilla/5.0 …" -L -o .cache/seaglass/doc.pdf <mirror>
-    python3 scripts/read-seaglass-doc.py .cache/seaglass/doc.pdf
+La source est **le PDF versionné dans `docs/emerald-seaglass/`**, et c'est la
+valeur par défaut :
+
+    python3 scripts/read-seaglass-doc.py                     # v3.0 → .cache/seaglass/doc.txt
+    python3 scripts/read-seaglass-doc.py <pdf> <sortie.txt>  # comparer deux versions
+
+⚠️ **Ne pas relire un mirror en croyant lire la source.** Le mirror pokeharbor
+utilisé au premier tour était **antérieur à la v3.0** : il donnait 14 types faux
+(Feraligatr, Typhlosion, Meganium, Aggron, Hypno…) et annonçait un Battle Tent
+cassé qui ne l'est plus. Le chemin de sortie était par ailleurs codé en dur, si
+bien qu'extraire un second PDF écrasait le premier sans le dire — d'où le second
+argument.
 
 Deux pièges rencontrés, et la raison d'être de ce fichier :
 
@@ -23,11 +33,16 @@ cet environnement, et le sitemap d'un wiki n'existe pas ici pour compenser.
 Ce n'est pas un script de contenu — il ne génère rien dans `app/data/`, il ne
 fait que rendre la source lisible pour une transcription à la main.
 """
+import os
 import re
 import sys
 import zlib
 
-path = sys.argv[1] if len(sys.argv) > 1 else '.cache/seaglass/doc.pdf'
+DEFAULT_PDF = 'docs/emerald-seaglass/Pokemon Emerald Seaglass Documentation v3.0.pdf'
+DEFAULT_OUT = '.cache/seaglass/doc.txt'
+
+path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_PDF
+out_path = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_OUT
 data = open(path, 'rb').read()
 
 
@@ -146,5 +161,7 @@ text = ''.join(joined)
 text = re.sub(r'[ \t]+', ' ', text)
 text = re.sub(r'[ \t]+\n', '\n', text)
 text = re.sub(r'\n{3,}', '\n\n', text)
-open('.cache/seaglass/doc.txt', 'w').write(text)
+os.makedirs(os.path.dirname(out_path) or '.', exist_ok=True)
+open(out_path, 'w').write(text)
+print(f'{path} → {out_path}')
 print('polices:', list(fonts), '| flux de page:', len(pages), '| caractères:', len(text))

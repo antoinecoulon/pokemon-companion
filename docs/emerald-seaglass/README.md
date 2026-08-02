@@ -18,16 +18,22 @@ Emerald qui reste, question trame et exploration, l'Emerald vanilla. Seaglass, l
 (toutes les espèces Gen 1-3, cross-gen jusqu'à Gen 9, retypages), et une longue liste de conforts de
 jeu (EXP. Share party-wide, DexNav, minigames, Shiny Charm, HM sans emplacement de capacité…).
 
-Contrairement à Elite Redux, **Seaglass n'a pas de code source public** — rien à extraire, rien à
-scraper. La source primaire est un document unique : la documentation officielle de l'auteur
-(**Nemo622**, pseudonyme ; pronoms they/them faute d'information contraire), diffusée en PDF depuis
-sa page Ko-fi. Ce dossier retranscrit ce PDF (extrait en texte dans `.cache/seaglass/doc.txt`), en
-corrigeant silencieusement les artefacts de kerning de l'extraction (`V isit` → `Visit`, `T own` →
-`Town`, `Lv .` → `Lv.`, etc.) et en organisant le contenu par thème plutôt que dans l'ordre du PDF.
+Contrairement à Elite Redux, **Seaglass n'a pas de code source public**. La source primaire est la
+documentation officielle de l'auteur (**Nemo622**, pseudonyme ; pronoms they/them faute d'information
+contraire), **versionnée dans ce dossier** en v3.0 avec ses patch notes. Ce dossier la retranscrit
+(`python3 scripts/read-seaglass-doc.py` → `.cache/seaglass/doc.txt`), en corrigeant silencieusement
+les artefacts de kerning de l'extraction (`V isit` → `Visit`, `T own` → `Town`, `Lv .` → `Lv.`) et en
+organisant le contenu par thème plutôt que dans l'ordre du PDF.
 
-Le patch et l'original du document sont sur Ko-fi (<https://ko-fi.com/nemo622>, page patch
-<https://ko-fi.com/s/aabf18551d>) — voir [03-sources.md](03-sources.md) pour le détail des sources
-et leur fiabilité.
+**« Pas de code source » ne voulait pas dire « rien à générer ».** `mrwalkthroughs.com` publie les
+447 fiches d'espèces telles qu'extraites de la ROM — stats du hack **et** du jeu officiel côte à côte,
+talents dont le caché, évolutions, localisations — plus les lieux des 68 TM et HM. C'est désormais
+généré (`pnpm gen:seaglass`) et **recoupé automatiquement contre la doc officielle**, qui reste
+l'autorité : 413 espèces comparables, 413 accords.
+
+⚠️ **Le mirror pokeharbor utilisé au premier tour était antérieur à la v3.0**, et a produit 14 types
+faux, un Battle Tent annoncé cassé qui ne l'est plus, et plusieurs manques. Un mirror n'a pas de
+version — voir [03-sources.md](03-sources.md) pour le détail, et pour la fiabilité de chaque source.
 
 ## Dans quel ordre lire
 
@@ -65,9 +71,13 @@ aujourd'hui. **On ne les devine pas** — ils restent ouverts jusqu'à vérifica
    (Kyogre, Groudon, la Regi Trio, Rayquaza), dont la doc dit seulement qu'ils s'obtiennent « de la
    façon normale d'Emerald ». Et l'affirmation « mostly before Elite Four » pour l'ensemble des
    légendaires du Sailor de Mossdeep reste à vérifier cas par cas.
-6. **La version réellement installée et son changelog.** Une source secondaire non officielle
-   (`gbacodes.com`) rapporte la version **v3.0** et une dernière mise à jour au **2024-09-21** — non
-   confirmé à la source primaire, donc à vérifier au premier lancement (menu titre ou écran d'intro).
+   La v3.0 tranche en revanche un point qui était noté comme une contradiction : **le Lati rencontré
+   sur Southern Island est tiré au hasard**, et le tirage se réinitialise à chaque Elite Four battu —
+   sauvegarder avant d'aller sur l'île. Reste ouvert : savoir s'ils *errent* réellement en plus, comme
+   la table du dex le laisse entendre.
+6. ~~**La version réellement installée.**~~ **Résolu** : c'est la **v3.0**, confirmée à la source
+   primaire, dont le PDF et les patch notes sont versionnés ici. Signe visible en jeu : les
+   protagonistes sont **Brendan et May**, et l'écran-titre a un nouveau fond.
 7. **L'URL exacte de patching.** La doc dit « Visit this site to patch the rom » en référence à un
    lien hypertexte qui ne survit pas à l'extraction du PDF en texte. Le seul point d'entrée fiable
    identifié reste Ko-fi (voir [03-sources.md](03-sources.md)) : à confirmer que c'est bien là que
@@ -79,6 +89,17 @@ aujourd'hui. **On ne les devine pas** — ils restent ouverts jusqu'à vérifica
    gagner, objet à donner, ou simple dialogue ? La doc ne précise pas la condition.
 10. **Le canal Discord de l'auteur** est mentionné dans la section Known Issues, mais son URL
     d'invitation n'a pas été vérifiée : volontairement absente de cette doc.
+11. **Le Battle Tent de Lilycove fonctionne-t-il ?** Il était désactivé avant la v3.0 (Pokémon loués
+    transformés en `BAD EGG`, entrée bloquée par un PNJ). La v3.0 **a retiré cette entrée de ses
+    « Known Issues »**, ce qui vaut correction — mais l'auteur ne l'annonce pas explicitement dans ses
+    patch notes. À confirmer en y entrant. Même raisonnement pour les **tiles vanilla des bâtiments de
+    la Battle Frontier**, disparues de la même liste.
+12. **Les 14 espèces retypées en v3.0.** Le recoupement automatique les donne pour acquises depuis la
+    doc v3.0 — Blastoise `Water/Steel`, Feraligatr `Water/Dark`, Typhlosion `Fire/Ground`, Meganium
+    `Grass/Fairy`, Aggron `Steel/Dragon`, Hypno `Psychic/Dark`, Ninjask `Bug/Dark`, Huntail
+    `Water/Dragon`, Gorebyss `Water/Fairy`, Ekans, Golduck, Seel, Electivire, Magmortar. Un coup d'œil
+    au Pokédex du jeu sur deux ou trois d'entre elles suffirait à confirmer que la ROM installée est
+    bien la v3.0.
 
 ## Convention d'écriture
 

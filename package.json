@@ -14,6 +14,7 @@
     "validate": "node scripts/validate-content.mjs",
     "scrape:wiki": "node scripts/scrape-wiki.mjs",
     "gen:elite": "node scripts/gen-elite-redux.mjs",
+    "gen:seaglass": "node scripts/gen-seaglass.mjs",
     "check": "nuxt prepare && pnpm validate && pnpm test:stats && pnpm test:roster && pnpm test:fiche && pnpm test:sync && pnpm test:migration && pnpm typecheck",
     "smoke": "node scripts/smoke.mjs",
     "icons": "node scripts/make-icons.mjs",

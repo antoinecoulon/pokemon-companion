@@ -2,107 +2,125 @@
 
 ## Le principe
 
-Contrairement à Elite Redux, **Emerald Seaglass n'a pas de code source public.** Rien ne s'extrait
-d'un dépôt : la source primaire est un document unique, et quasi tout ce que dit ce dossier en
-vient. Ce qui n'est pas dans ce document n'entre pas dans ce dossier — il va dans la liste
-« à vérifier en jeu » du [README](README.md).
+Emerald Seaglass n'a **pas de code source public**. On en avait conclu qu'il n'y avait rien à
+générer : c'était vrai du *code*, et faux de la *donnée*. Deux sources se partagent le terrain, et la
+hiérarchie entre elles est ce qui compte :
+
+- **La documentation officielle de l'auteur** est l'**autorité**. Sur un désaccord, c'est elle qui
+  tranche, toujours.
+- **`mrwalkthroughs.com`** fournit la donnée Pokémon détaillée que la doc ne donne pas — et il est
+  **recoupé contre elle**, automatiquement, à chaque génération.
+
+Ce qui n'est dans aucune des deux n'entre pas dans ce dossier : ça va dans la liste « à vérifier en
+jeu » du [README](README.md).
 
 ---
 
-## Source primaire
-
-### La documentation officielle (PDF), par Nemo622
+## Source primaire : la documentation officielle v3.0
 
 | | |
 | --- | --- |
 | Autorité | **Totale** — c'est l'auteur qui décrit son propre hack |
-| Fiabilité | Haute, mais dense : plusieurs points restent volontairement vagues (soft level caps non chiffrés, « and more options », etc.) |
-| Original | Diffusé depuis Ko-fi : <https://ko-fi.com/nemo622> ; page patch <https://ko-fi.com/s/aabf18551d> |
-| Mirror utilisé pour cette doc | <https://www.pokeharbor.com/wp-content/uploads/2024/08/Pokemon-Emerald-Seaglass-Documentation.pdf> — **c'est un mirror**, pas la source de l'auteur |
-| Automatisable | Le PDF a été extrait en texte (`.cache/seaglass/doc.txt`), 8 pages. **Pas de branche stable ni d'API** — chaque relecture repasse par une extraction manuelle |
-| Piège rencontré | L'extraction texte introduit des artefacts de kerning (`V isit`, `Shar e`, `T own`, `dif ficulty`, `Cr oss-gen`, `Lv .`) — corrigés silencieusement dans ce dossier, jamais recopiés tels quels |
+| Version | **v3.0**, confirmée à la source primaire |
+| Où | **Versionnée dans ce dépôt** : `Pokemon Emerald Seaglass Documentation v3.0.pdf` (8 pages) et `PatchNotes_EmeraldSeaglass3.0.txt` |
+| Origine | Ko-fi : <https://ko-fi.com/nemo622> ; page patch <https://ko-fi.com/s/aabf18551d> |
+| Comment la relire | `python3 scripts/read-seaglass-doc.py` → `.cache/seaglass/doc.txt` |
+| Pièges d'extraction | Polices **Type0/CID** (une extraction naïve rend une chaîne **vide**, sans erreur) et **un `BT…ET` par mot** (aucun espace dans le flux). D'où le script, sans dépendance : ni `pip` ni `poppler` ici |
+| Artefacts résiduels | Le texte extrait garde du kerning (`V isit`, `T own`, `dif ficulty`, `Lv .`) — corrigé silencieusement à la transcription, jamais recopié tel quel |
 
-⚠️ **Ko-fi est derrière Cloudflare** : non lisible en `curl`/`WebFetch`, à ouvrir au navigateur pour
-toute vérification directe à la source (version installée, mise à jour du patch, changelog).
+⚠️ **Ko-fi est derrière Cloudflare** : ni `WebFetch` ni `curl` ne passent. C'est la raison pour
+laquelle le PDF est maintenant versionné dans le dépôt plutôt que retéléchargé.
 
----
+### ⚠️ Le mirror pokeharbor est périmé — ne plus le lire
 
-## Sources secondaires
+Le premier tour de ce dossier s'appuyait sur un mirror
+(`pokeharbor.com/wp-content/uploads/2024/08/…`), faute d'accès à Ko-fi. **Ce mirror est antérieur à la
+v3.0**, et il a produit de vraies erreurs, publiées dans l'app avant d'être corrigées :
 
-| Source | Autorité | Fiabilité | Automatisable |
-| --- | --- | --- | --- |
-| `gbacodes.com` | Aucune (ferme SEO) | Rapporte la version **v3.0** et une dernière mise à jour au **2024-09-21** — **non confirmé** à la source primaire | ⚠️ lisible en HTTP mais **à ne pas utiliser comme source de contenu**, seulement noté ici comme piste à confirmer |
-| `github.com/jimineybillybob1/PokemonEmeraldSeaglassGuide` | Guide fan **non officiel** | Inconnue — dépôt à **0 star**, jamais recoupé avec le PDF officiel | Oui — `index.html` statique avec des données en tableaux JS |
-| `romhackdex.net` | — | **Ne couvre pas ce jeu.** Vérifié : Seaglass n'y figure pas | N/A |
+- **14 types faux**, là où la v3.0 a retypé : Blastoise `Water/Steel`, Ekans `Poison/Dark`, Golduck
+  `Water/Psychic`, Seel `Water/Ice`, Hypno `Psychic/Dark`, Electivire `Electric/Fighting`, Magmortar
+  `Fire/Dark`, Meganium `Grass/Fairy`, Typhlosion `Fire/Ground`, Feraligatr `Water/Dark`, Ninjask
+  `Bug/Dark`, Aggron `Steel/Dragon`, Huntail `Water/Dragon`, Gorebyss `Water/Fairy` ;
+- un **Battle Tent annoncé cassé** (`BAD EGG`, entrée bloquée par un PNJ) qui ne l'est plus : la v3.0
+  a retiré cette entrée de ses « Known Issues » ;
+- **19 cheat codes manquants** (`GIMMENUGS!` et les 18 codes monotype) ;
+- deux objets d'évolution et un objet clé manquants (`Electirizer`, `Magmarizer`, `S.S. Tidal Ticket`) ;
+- la précision, ajoutée en v3.0, que **le Lati rencontré est tiré au hasard** et re-tiré à chaque
+  Elite Four battu.
 
----
-
-## La piste mise en réserve : le guide fan GitHub
-
-<https://github.com/jimineybillybob1/PokemonEmeraldSeaglassGuide> contient des données
-d'encounters/localisations dans un `index.html` statique, sous forme de tableaux JavaScript — donc
-techniquement parseable, sur le même principe qu'un futur `pnpm gen:seaglass`.
-
-**Écartée pour l'instant**, pour trois raisons :
-
-1. **Source non officielle** — c'est un guide de joueur, pas l'auteur du hack. Rien ne garantit
-   qu'il soit à jour avec la version installée, ni exempt d'erreurs.
-2. **0 star, aucun signal de fiabilité communautaire** — contrairement au wiki d'Unbound (fiable et
-   régulier sur son périmètre, malgré ses propres erreurs ponctuelles sur les données Pokémon) ou au
-   decomp d'Elite Redux (le code du jeu lui-même), ce dépôt n'a aucune traction qui permettrait de
-   lui accorder une confiance par défaut.
-3. **Exigerait un croisement systématique avec le PDF officiel** avant publication — exactement le
-   travail qui a été fait pour la table de level caps d'Elite Redux entre `er-config` et
-   `eliteredux-source`. Sans ce travail, une donnée extraite de ce guide serait au même niveau de
-   confiance qu'une information non sourcée.
-
-**Ce qu'il faudrait pour la retenir** : recouper au moins les points structurants (soft level caps,
-localisations d'objets clés, équipes de Gym Leaders si elles y figurent) avec le PDF officiel ou une
-vérification en jeu, et documenter les écarts trouvés — sur le modèle du tableau de conflit
-Roxanne/Brawly dans les sources d'Elite Redux. Tant que ce travail n'est pas fait, ce dépôt reste une
-piste, pas une source.
+**La leçon, et elle est générale : un mirror n'a pas de version.** Il sert le fichier qu'il a
+téléchargé un jour, sans dire lequel. « Confirmé fidèle » ne voulait donc rien dire — fidèle à quoi.
 
 ---
 
-## Les sites à ne jamais utiliser
+## Source de la donnée Pokémon : `mrwalkthroughs.com`
 
-Fermes SEO ou sites non confirmés, à ne jamais utiliser comme source de contenu **ni comme lieu de
-téléchargement du patch** :
+<https://mrwalkthroughs.com/pokemon-emerald-seaglass/>
 
-- `gbacodes.com`
-- `pokeharbor.com` (sert de mirror pour le PDF officiel, mais n'est pas une source de contenu en
-  soi et ne doit jamais être le lieu de téléchargement du patch)
-- `pokehacks.net`
-- `pokepatched.com`
-- `ducumon.click`
-- `visualboyadvance.org`
-- `pokemon-roms.net`
-- `gigachadgamers.com`
-- `pokemonemeraldseaglass.com` — se présente comme « Official Game Download » **sans être confirmé
-  comme site de l'auteur**. À traiter comme non fiable jusqu'à preuve du contraire.
+| | |
+| --- | --- |
+| Autorité | Tierce, mais **manifestement extraite de la ROM** — chaque fiche affiche la stat du hack *et* celle du jeu officiel, ce qu'aucune recopie à la main ne produirait |
+| Fiabilité | **Recoupée** : 413 espèces comparables avec la table de dex de la v3.0, **413 accords, zéro conflit** |
+| Périmètre retenu | `/pokedex/` (447 espèces : n° Hoenn et National, types, localisations, stats + écart, talents dont le caché, groupes d'œufs, évolutions) et `/tms-hms/` (68 TM et HM avec lieux et prérequis) |
+| Automatisable | **Oui**, et automatisé : `pnpm gen:seaglass <pokedex\|abilities\|tms\|all>` |
+| Piège | WordPress derrière un filtre anti-bot : **403 sans User-Agent de navigateur**, comme unboundwiki et romhackdex |
 
-**Le seul point d'entrée légitime pour le patch et la documentation reste Ko-fi**
-(<https://ko-fi.com/nemo622>, page patch <https://ko-fi.com/s/aabf18551d>).
+### Le garde-fou, et pourquoi il est central
+
+Se servir d'une source tierce n'est acceptable que parce qu'elle est **vérifiable**. À chaque
+génération, `crossCheckTypes()` compare les types des 447 espèces à la table de dex de la doc
+officielle et **lève** au moindre écart. Il attrape deux pannes distinctes :
+
+- un parseur qui décale une colonne — les types partiraient tous de travers ;
+- **un wiki qui suivrait un patch plus récent que la doc versionnée** : l'écart est alors réel et doit
+  être arbitré à la main, pas absorbé en silence.
+
+Un recoupement qui ne comparerait rien passerait vert, ce qui serait pire que pas de recoupement :
+d'où le contrôle du **nombre de comparaisons** (413), et non seulement du nombre de conflits.
+
+### Ce qui n'est délibérément pas exploité
+
+- **Le walkthrough en 30 parties** (`/part-1/` … `/part-30/`) : lieux des objets route par route, et
+  **les équipes des Gym Leaders**. Écarté pour deux raisons déjà actées — ne pas décalquer un
+  walkthrough d'Emerald vanilla, et ne pas embarquer les équipes de la Ligue avant d'avoir joué,
+  exactement comme le `TrainerList` d'Elite Redux.
+- **Les learnsets complets**, présents sur chaque fiche : 447 × ~25 capacités gonfleraient le bundle
+  d'un SPA installable pour une donnée que le Pokédex du jeu affiche déjà bien. À rouvrir si le besoin
+  se fait sentir manette en main.
+- **Les niveaux et taux de rencontre** : la source ne les publie pas. C'est pourquoi ce jeu a un
+  `pokedex` et **pas** d'`encounters` — remplir `EncounterZone` de zéros aurait été inventer de la
+  donnée.
+
+---
+
+## Sources écartées
+
+| Source | Verdict |
+| --- | --- |
+| `github.com/jimineybillybob1/PokemonEmeraldSeaglassGuide` | **Écarté, et non plus « en réserve »** : son propre README dit qu'il tire son dex et ses localisations de `mrwalkthroughs.com`, et le reste du PDF officiel. Il est donc **dérivé de nos deux sources**, sans les recouper — il n'apporte rien et ajoute une génération de retard. Dépôt non officiel, 0 star. |
+| `gbacodes.com` | Ferme SEO. C'est elle qui rapportait « v3.0, 2024-09-21 » — la version se trouve désormais confirmée à la source primaire, donc cette citation n'a plus lieu d'être. |
+| `romhackdex.net` | **Ne couvre pas ce jeu.** Vérifié. |
+| `wiki.elite-redux.com` & co. | Autre jeu, sans rapport. |
+
+### Les sites à ne jamais utiliser
+
+Fermes SEO ou sites non confirmés, ni comme source de contenu **ni comme lieu de téléchargement du
+patch** : `gbacodes.com`, `pokeharbor.com`, `pokehacks.net`, `pokepatched.com`, `ducumon.click`,
+`visualboyadvance.org`, `pokemon-roms.net`, `gigachadgamers.com`, et
+`pokemonemeraldseaglass.com` — qui s'annonce « Official Game Download » **sans être confirmé comme le
+site de l'auteur**.
+
+**Le seul point d'entrée légitime pour le patch reste Ko-fi** (<https://ko-fi.com/nemo622>).
 
 ---
 
 ## Le canal Discord
 
-L'auteur mentionne un canal Discord pour signaler les bugs (section Known Issues de la doc), mais
-son URL d'invitation n'a jamais été vérifiée dans le cadre de cette recherche. **Volontairement non
-publiée** dans ce dossier.
+L'auteur y renvoie pour les bugs (section Known Issues) et pour la liste des émulateurs recommandés,
+mais son URL d'invitation n'a jamais été vérifiée. **Volontairement non publiée** ici.
 
 ---
 
 ## Ce qui reste à vérifier en jeu
 
-Voir la liste complète et numérotée dans le [README](README.md). En résumé, les six trous les plus
-importants :
-
-- [ ] Les valeurs numériques des **soft level caps** (le plus important).
-- [ ] L'**ordre des 8 badges** (supposé vanilla, non confirmé explicitement par la doc).
-- [ ] Le déroulé de la **scène de choix du starter** à Littleroot.
-- [ ] Le contenu complet du **livre sur le bureau** (« and more options »).
-- [ ] Le **niveau de Mew** et des légendaires « classiques » (Kyogre, Groudon, Regi Trio, Rayquaza),
-      et si « mostly before Elite Four » se vérifie pour l'ensemble des légendaires du Sailor.
-- [ ] La **version réellement installée** et son changelog.
+Voir la liste complète et numérotée dans le [README](README.md).

@@ -200,8 +200,8 @@ export const mechanics: ReferenceSection[] = [
           },
           {
             kind: 'quote',
-            tone: 'warning',
-            text: 'Le **Battle Tent est désactivé** dans cette version : les Pokémon loués deviennent des **BAD EGG**. Un PNJ bloque l’entrée du bâtiment en attendant un correctif.',
+            tone: 'info',
+            text: 'Le Battle Tent était **désactivé** dans les versions antérieures — Pokémon loués transformés en `BAD EGG`, entrée bloquée par un PNJ. La **v3.0 a retiré ce bug de ses « Known Issues »** : il est donc corrigé, sauf preuve du contraire en jeu.',
           },
         ],
       },
@@ -244,6 +244,8 @@ export const mechanics: ReferenceSection[] = [
           '`Metal Coat` — Rusturf Tunnel et Abandoned Ship',
           '`Dubious Disc` — Team Aqua Hideout',
           '`Peat Block` — péninsule sud de Lilycove',
+          '`Electirizer` — New Mauville, **à la place de l’`Ultra Ball`** posée au sol *(v3.0)*',
+          '`Magmarizer` — Jagged Pass, **à la place du `Burn Heal`** posé au sol *(v3.0)*',
         ],
       },
       {
@@ -281,8 +283,17 @@ export const mechanics: ReferenceSection[] = [
       },
       {
         kind: 'quote',
+        tone: 'warning',
+        text: '**Latios ou Latias est tiré au hasard**, et le tirage se réinitialise à chaque Elite Four battu *(précision ajoutée en v3.0)*. Pour en viser un en particulier : **sauvegarder avant d’aller sur l’île**.',
+      },
+      {
+        kind: 'quote',
         tone: 'info',
         text: 'Les deux trios tirés au hasard — Raikou/Entei/Suicune et Articuno/Zapdos/Moltres — **se réinitialisent en battant à nouveau le Elite Four**. Rater le tirage n’est donc jamais définitif.',
+      },
+      {
+        kind: 'p',
+        text: 'Le **`S.S. Tidal Ticket`** vient du même Sailor, **après le 7e Gym** *(v3.0)*.',
       },
     ],
   },
@@ -324,6 +335,7 @@ export const mechanics: ReferenceSection[] = [
           ['`9RARECANDY`', '99 `Rare Candy`, à chaque saisie'],
           ['`MASTERBALL`', '99 `Master Ball`, à chaque saisie'],
           ['`WISHINGSTR`', '99 `Wishing Star` pour le Wishing Well'],
+          ['`GIMMENUGS!`', '99 `Nugget` — de l’argent illimité, en pratique *(v3.0)*'],
           ['`ILOVEKANTO` · `ILOVEJOHTO` · `ILOVEHOENN`', 'Les starters de la région, niveau 5'],
           ['`ILOVSPHEAL`', 'Spheal niveau 5, stats défensives optimisées — `Bouncy Bubble`, `Super Fang`, `Slack Off`, `Freeze Dry`. Starter alternatif'],
           ['`ILOVEAIPOM`', 'Aipom niveau 5 avec `Eviolite` — `Dizzy Punch`, `Karate Chop`, `Victory Dance`, `Bullet Punch`. L’auteur le dit lui-même très fort'],
@@ -331,6 +343,23 @@ export const mechanics: ReferenceSection[] = [
           ['`ILOVETINKA`', 'Tinkatink niveau 5 avec un `Nugget`'],
           ['`JUSTSHOWME`', 'Affiche tout le DexNav et autorise à chasser une espèce jamais rencontrée'],
         ],
+      },
+      {
+        kind: 'p',
+        text: '**Runs monotype** *(ajoutés en v3.0)* — chaque code donne **un** Pokémon de première évolution du type, tiré au hasard. Les 18 types y sont, avec un libellé fixé à 10 caractères, espace compris :',
+      },
+      {
+        kind: 'list',
+        items: [
+          '`MONO BUG` · `MONO DARK` · `MONO DRAGN` · `MONO ELECT` · `MONO FAIRY` · `MONO FIGHT`',
+          '`MONO FIRE` · `MONO FLYIN` · `MONO GHOST` · `MONO GRASS` · `MONO GROUN` · `MONO ICE`',
+          '`MONO NORML` · `MONO POISN` · `MONO PSYCH` · `MONO ROCK` · `MONO STEEL` · `MONO WATER`',
+        ],
+      },
+      {
+        kind: 'quote',
+        tone: 'tip',
+        text: 'Ces codes servent aussi à **démarrer avec un type inhabituel** sans attendre : c’est l’usage que l’auteur en donne, à côté du run monotype.',
       },
     ],
   },
@@ -341,17 +370,29 @@ export const mechanics: ReferenceSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Recensés par l’auteur. Les rencontrer n’est pas un signe de mauvais patch.',
+        text: 'Recensés par l’auteur, **liste de la v3.0**. Les rencontrer n’est pas un signe de mauvais patch.',
+      },
+      {
+        kind: 'quote',
+        tone: 'warning',
+        text: 'Le seul qui coûte une progression : **le DexNav peut corrompre la partie**. Sauvegarder avant de chaîner. L’auteur n’arrive pas à le reproduire, et le soupçonne plus fréquent dans les grottes.',
       },
       {
         kind: 'list',
         items: [
-          '**Battle Tent désactivé** : les Pokémon loués deviennent des **BAD EGG**. Un PNJ bloque l’entrée. C’est le seul problème majeur.',
           '**Scintillement graphique après chaque tour** de combat — **semi-intentionnel** : réinitialiser les graphismes évite des freezes et des animations cassées.',
-          'Les bâtiments de la **Battle Frontier** utilisent encore les tiles d’Emerald vanilla, qui jurent avec le reste.',
+          '**Level Reset Bug** : le temps d’un combat, le niveau d’un Pokémon s’affiche plus bas ; il regagne son niveau normal après. Non reproductible.',
+          'Les combats de **Safari Zone se comportent comme des combats normaux**, involontairement — et l’UI de la Safari Zone est buguée. Un PNJ en avertit désormais.',
+          '**Plantages sous MyBoy** : utiliser un émulateur recommandé.',
           'Le nombre de PP s’affiche en jaune à l’apprentissage d’une capacité.',
-          'Physique du flipper imparfaite.',
+          'Palettes de suiveur de **Swinub et Piloswine** cassées — bug en amont, dans `pokeemerald-expansion`.',
+          'Physique du flipper imparfaite. S’il gèle, **`Start`** force la sortie du minigame.',
         ],
+      },
+      {
+        kind: 'quote',
+        tone: 'info',
+        text: 'Deux entrées ont **disparu** de la liste en v3.0, donc corrigées : le Battle Tent désactivé (`BAD EGG`) et les tiles vanilla des bâtiments de la Battle Frontier.',
       },
     ],
   },
@@ -368,14 +409,19 @@ export const tools: Tool[] = [
     usage: 'La **seule** source légitime du patch et de la documentation, celle que la doc désigne elle-même. Page générale : `ko-fi.com/nemo622`. Fournir une ROM Emerald propre.',
   },
   {
-    name: 'Documentation officielle (mirror PDF)',
-    url: 'www.pokeharbor.com/wp-content/uploads/2024/08/Pokemon-Emerald-Seaglass-Documentation.pdf',
-    usage: 'Le PDF de l’auteur, 8 pages : les 421 entrées de dex avec types et localisations, objets d’évolution, quête des légendaires, minigames, codes, bugs connus. **C’est un mirror** — l’original est sur Ko-fi, illisible hors navigateur. Le mirror a été confirmé fidèle.',
+    name: 'Pokédex Seaglass — Mr. Walkthroughs',
+    url: 'mrwalkthroughs.com/pokemon-emerald-seaglass/pokedex/',
+    usage: 'Les **447 entrées** avec stats de base **et l’écart vs le jeu officiel**, talents dont le caché, groupes d’œufs, évolutions et localisations — manifestement extrait de la ROM. Recoupé contre la doc v3.0 : **413 types sur 413 identiques**. C’est la source de la section Pokédex de cette page. Voir aussi `/tms-hms/` pour les TM et HM.',
   },
   {
-    name: 'Guide fan (non officiel)',
-    url: 'github.com/jimineybillybob1/PokemonEmeraldSeaglassGuide',
-    usage: '⚠️ **Non officiel**, et rien n’y est vérifié. Page unique auto-contenue, données en tableaux JS — pratique à consulter, mais sur un désaccord c’est la doc de l’auteur qui tranche.',
+    name: 'Documentation officielle, v3.0',
+    url: 'ko-fi.com/s/aabf18551d',
+    usage: 'Le PDF de l’auteur, 8 pages : les 421 entrées de dex, objets d’évolution, quête des légendaires, minigames, codes, bugs connus. **Versionné dans le dépôt** (`docs/emerald-seaglass/`) et relu par `scripts/read-seaglass-doc.py` — c’est l’autorité en cas de conflit.',
+  },
+  {
+    name: '⚠️ Mirror pokeharbor — périmé',
+    url: 'www.pokeharbor.com/wp-content/uploads/2024/08/Pokemon-Emerald-Seaglass-Documentation.pdf',
+    usage: '**Antérieur à la v3.0, donc à ne plus lire.** Il donne 14 types faux (Feraligatr, Typhlosion, Meganium, Aggron, Hypno, Blastoise…), ignore les 19 codes ajoutés et annonce un Battle Tent cassé qui ne l’est plus. Conservé ici pour mémoire : c’est ce mirror qui a produit ces erreurs au premier tour.',
   },
   {
     name: 'Sites à ne pas utiliser',
@@ -424,6 +470,6 @@ export const glossary: GlossaryEntry[] = [
   },
   {
     term: 'BAD EGG',
-    definition: 'Œuf corrompu, symptôme du bug qui a fait désactiver le Battle Tent. Le bâtiment est bloqué par un PNJ pour l’éviter.',
+    definition: 'Œuf corrompu. Symptôme du bug qui avait fait désactiver le Battle Tent avant la v3.0 — la v3.0 ne le liste plus dans ses bugs connus.',
   },
 ]

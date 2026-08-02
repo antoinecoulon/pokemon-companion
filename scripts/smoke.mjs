@@ -293,7 +293,7 @@ await mobile.close()
 
   const unbound = await openPage(context, 'référence unbound')
   await unbound.goto(`${baseUrl}/unbound/reference`, { waitUntil: 'networkidle' })
-  for (const title of ['Où trouver quoi', 'Talents']) {
+  for (const title of ['Où trouver quoi', 'Talents', 'Pokédex', 'TM et HM']) {
     if (await unbound.locator('h2', { hasText: title }).count() > 0) {
       failures.push(`référence unbound — section « ${title} » rendue alors qu'Unbound ne la fournit pas`)
     }
@@ -302,12 +302,55 @@ await mobile.close()
     failures.push('référence unbound — la table des natures a disparu')
   }
 
+  /*
+   * Seaglass fournit `pokedex`, `abilities` et `tms` mais **pas** `encounters` :
+   * sa source ne publie ni niveaux, ni taux, ni slots. Les deux sens comptent —
+   * une section qui apparaît là où la donnée manque est aussi fautive qu'une
+   * section absente.
+   */
   const emerald = await openPage(context, 'référence emerald-seaglass')
   await emerald.goto(`${baseUrl}/emerald-seaglass/reference`, { waitUntil: 'networkidle' })
-  for (const title of ['Où trouver quoi', 'Talents']) {
-    if (await emerald.locator('h2', { hasText: title }).count() > 0) {
-      failures.push(`référence emerald-seaglass — section « ${title} » rendue alors qu'Emerald Seaglass ne la fournit pas`)
+  for (const title of ['Pokédex', 'Talents', 'TM et HM']) {
+    if (await emerald.locator('h2', { hasText: title }).count() === 0) {
+      failures.push(`référence emerald-seaglass — section « ${title} » absente`)
     }
+  }
+  if (await emerald.locator('h2', { hasText: 'Où trouver quoi' }).count() > 0) {
+    failures.push('référence emerald-seaglass — section « Où trouver quoi » rendue alors que la source ne donne ni niveaux ni taux')
+  }
+
+  /*
+   * La recherche d'espèce, et surtout la colonne « Officiel » : c'est la seule
+   * raison d'être de cette section. Un Pokédex qui n'afficherait que les stats du
+   * hack doublonnerait l'écran de jeu sans rien apporter.
+   */
+  const dexField = emerald.getByPlaceholder('Une espèce', { exact: false })
+  await dexField.fill('Feraligatr')
+  await emerald.waitForTimeout(400)
+  const dexText = await emerald.locator('body').innerText()
+  for (const needle of ['Feraligatr', 'Officiel', 'Écart']) {
+    if (!dexText.includes(needle)) {
+      failures.push(`référence emerald-seaglass — « ${needle} » absent après recherche d'espèce`)
+    }
+  }
+  /* Feraligatr est retypé Water/Dark en v3.0, et son Atk passe de 105 à 121. */
+  if (!dexText.includes('121') || !dexText.includes('105')) {
+    failures.push('référence emerald-seaglass — l’écart de stats de Feraligatr (121 vs 105) ne s’affiche pas')
+  }
+  if (await emerald.locator('h3', { hasText: 'Feraligatr' }).count() === 0) {
+    failures.push('référence emerald-seaglass — « Feraligatr » introuvable dans le Pokédex')
+  }
+
+  /* Les TM : un numéro, sa capacité, et le prérequis qui la conditionne. */
+  const tmField = emerald.getByPlaceholder('Un numéro', { exact: false })
+  await tmField.fill('Dragon Claw')
+  await emerald.waitForTimeout(400)
+  const tmText = await emerald.locator('body').innerText()
+  if (!tmText.includes('TM02') || !tmText.includes('Meteor Falls')) {
+    failures.push('référence emerald-seaglass — la recherche de TM ne renvoie pas TM02 / Meteor Falls')
+  }
+  if (!tmText.includes('Waterfall')) {
+    failures.push('référence emerald-seaglass — les prérequis d’une TM ne s’affichent pas')
   }
 
   await context.close()

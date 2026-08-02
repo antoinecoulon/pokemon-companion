@@ -41,7 +41,8 @@ export const completionSections: CompletionSection[] = [
         label: 'Latios et Latias — Southern Island',
         location: 'Southern Island, via l’`Eon Ticket`',
         details: [
-          '⚠️ La doc se contredit sur ce point : la section des légendaires les place sur Southern Island via l’`Eon Ticket`, mais la table du dex les donne « roaming after Elite Four ». Les deux peuvent coexister (l’un fixe, l’autre errant) — **à vérifier en jeu**.',
+          '**Lequel des deux apparaît est tiré au hasard**, et le tirage se réinitialise à chaque Elite Four battu *(v3.0)*. Pour en viser un précis : **sauvegarder avant d’aller sur l’île**.',
+          'La table du dex les donne par ailleurs « roaming after Elite Four ». La v3.0 explique le tirage mais pas s’ils errent réellement en plus de l’île — **reste à vérifier en jeu**.',
         ],
         source: DOC,
       },
@@ -250,6 +251,12 @@ export const completionSections: CompletionSection[] = [
         source: DOC,
       },
       {
+        id: 'ss-tidal-ticket',
+        label: '`S.S. Tidal Ticket`',
+        location: 'Le **Sailor au bandeau** de Mossdeep, après le **7e Gym** *(v3.0)*',
+        source: DOC,
+      },
+      {
         id: 'z-power-ring',
         label: '`Z-Power Ring` et Z-Crystals',
         location: 'DEVON Corporation, après avoir livré la lettre de Steven',
@@ -278,6 +285,8 @@ export const completionSections: CompletionSection[] = [
       { id: 'black-augurite', label: '`Black Augurite` — pour Kleavor', location: 'Route 119', source: DOC },
       { id: 'peat-block', label: '`Peat Block` — pour Ursaluna', location: 'Péninsule sud de Lilycove', source: DOC },
       { id: 'prism-scale', label: '`Prism Scale` — pour Milotic', location: 'Route 127. 140 de Beauty en concours reste l’autre voie', source: DOC },
+      { id: 'electirizer', label: '`Electirizer` — pour Electivire', location: 'New Mauville, **à la place de l’`Ultra Ball`** posée au sol *(ajouté en v3.0)*', source: DOC },
+      { id: 'magmarizer', label: '`Magmarizer` — pour Magmortar', location: 'Jagged Pass, **à la place du `Burn Heal`** posé au sol *(ajouté en v3.0)*', source: DOC },
       { id: 'pommes-applin', label: '`Tart Apple`, `Sweet Apple`, `Candy Apple`', location: 'Vendeur de pommes de Pacifidlog Town', source: DOC },
       { id: 'stand-sootopolis', label: '**Tous** les objets d’évolution, au même endroit', location: 'Stand de Sootopolis City, au nord du Pokémon Center', source: DOC },
     ],
@@ -316,23 +325,23 @@ export const completionSections: CompletionSection[] = [
     id: 'post-game',
     title: 'Post-game',
     description:
-      '⚠️ **Le plus incertain de cette page.** La doc de l’auteur ne décrit pas le post-game : elle confirme seulement que la Battle Frontier existe (ses bâtiments sont cités dans les bugs connus) et que le Battle Tent est cassé. Le reste est à découvrir en jeu — rien n’a été recopié d’un walkthrough d’Emerald.',
+      '⚠️ **Le plus incertain de cette page.** La doc de l’auteur ne décrit pas le post-game : elle confirme seulement que la Battle Frontier existe. Le reste est à découvrir en jeu — rien n’a été recopié d’un walkthrough d’Emerald.',
     goals: [
       {
         id: 'battle-frontier',
         label: '**Battle Frontier** — installations et conditions d’accès à relever en jeu',
         details: [
-          'Confirmé comme présent : l’auteur signale que ses bâtiments utilisent encore les tiles d’Emerald vanilla.',
+          'Confirmé comme présent : la v3.0 crédite des sprites de **Frontier Brain**, et les versions antérieures signalaient ses bâtiments dans les bugs connus.',
           'Ni la liste des installations ni les conditions d’accès ne sont documentées — à compléter au fil de la partie plutôt que devinées.',
         ],
         source: DOC,
       },
       {
         id: 'battle-tent-lilycove',
-        label: '**Battle Tent** de Lilycove — ⚠️ désactivé dans cette version',
+        label: '**Battle Tent** de Lilycove',
         details: [
-          'Les Pokémon loués deviennent des **BAD EGG** : l’auteur a fait bloquer l’entrée par un PNJ en attendant un correctif.',
-          'À rouvrir si une version ultérieure le corrige.',
+          'Déplacé de Verdanturf à Lilycove, en échange du Contest Hall parti dans l’autre sens.',
+          'Il était **désactivé** avant la v3.0 — Pokémon loués transformés en `BAD EGG`, entrée bloquée par un PNJ. La v3.0 ne liste plus ce bug : à considérer comme corrigé, et à confirmer en y entrant.',
         ],
         source: DOC,
         optional: true,
@@ -340,7 +349,7 @@ export const completionSections: CompletionSection[] = [
       {
         id: 'latios-latias-roaming',
         label: 'Latios/Latias **errants**, après le Elite Four',
-        details: ['La table du dex les décrit comme « roaming after Elite Four » — voir la contradiction notée dans la quête du Sailor.'],
+        details: ['La table du dex les décrit comme « roaming after Elite Four ». Rebattre le Elite Four **relance le tirage** de celui qui apparaît sur Southern Island *(v3.0)* — c’est la voie pour obtenir les deux.'],
         source: DOC,
         optional: true,
       },

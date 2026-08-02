@@ -1,0 +1,21 @@
+MAJOR CHANGES:
+- New Title Screen background by hlf_dzn
+- Protagonists are now Brendan and May!
+	- Sprites by goncas (Overworld Sprites) and Justin8964 (Battle Sprites)
+- New Overworld Sprites for Gym Leaders, Elite Four, Team Aqua/Magma, and other important NPCs! (All created by the amazing goncas in our Discord community!)
+- Reverted / updated some battle backgrounds
+- Many new item icons by Glados11388
+- NPC warning of possible Safari Zone bugs
+
+BALANCE CHANGES:
+- Light Ball works with Pichu, Raichu, and Spiky-Ear Pichu now
+	- Wild Pichu can also be found holding the Light Ball
+- Spinda now learns Superpower (lv. 45) and Fiery Dance (lv. 37) (also gave it +5 HP)
+- Aggron learns Dragon Dance (lv. 47)
+- Farfetch'd learns Victory Dance (lv. 45)
+- Tropius Special Attack +5
+- Seviper Speed buff, Zangoose HP buff
+- Drowzee and Hypno actually learn dark type moves now! lol
+
+BUG FIXES:
+- Removed Trainer name boxes to fix Pinball bug, sorry y'all

@@ -484,6 +484,72 @@ export interface AbilityEntry {
 }
 
 /* ------------------------------------------------------------------------- *
+ * Pokédex d'espèces
+ *
+ * Fourni par Emerald Seaglass seul. Ce jeu n'a pas de code source à lire, mais
+ * une source tierce en publie la donnée telle qu'extraite de la ROM — d'où ce
+ * jeu de données là où Elite Redux fournit plutôt `encounters`.
+ *
+ * ⚠️ **Ce n'est pas un substitut au Pokédex du jeu**, qui affiche mieux et à
+ * jour. Sa seule raison d'être est ce que l'écran ne peut pas montrer : **l'écart
+ * avec le jeu officiel**. D'où `official` à côté de `seaglass` sur chaque stat,
+ * et rien de ce que le dex embarqué rend déjà bien (learnsets complets).
+ *
+ * Rien ici n'est persisté : aucun id n'entre dans `knownContent`, donc une
+ * régénération ne peut pas faire perdre une progression.
+ * ------------------------------------------------------------------------- */
+
+/** Une stat de base, et sa valeur dans le jeu officiel pour situer l'écart. */
+export interface PokedexStat {
+  seaglass: number
+  official: number
+}
+
+export interface PokedexAbility {
+  name: string
+  description: string
+  /** Talent caché : le jeu ne le donne pas par défaut. */
+  hidden?: boolean
+}
+
+export interface PokedexEntry {
+  /** Slug de la source, et clé d'affichage. Non persisté. */
+  id: string
+  /** Nom VO, forme comprise : `Alolan Ninetales`. */
+  name: string
+  /** Numéro dans le dex régional de ce hack. Les extras commencent à 422. */
+  hoennDex: number
+  nationalDex: number
+  /** Types VO, tels que **ce hack** les donne — souvent retypés. */
+  types: string[]
+  /** Comment on l'obtient : lieux sauvages, évolution, événement. */
+  locations: string[]
+  stats: Record<StatKey, PokedexStat>
+  abilities: PokedexAbility[]
+  eggGroups: string[]
+  /** Méthode d'évolution qui y mène, quand il y en a une. */
+  evolution?: string
+}
+
+/* ------------------------------------------------------------------------- *
+ * TM et HM
+ *
+ * Le lieu d'une TM est de la donnée de progression, pas de la donnée Pokémon :
+ * c'est « où aller la chercher », et ça ne se coche pas — d'où une section de
+ * référence et non des entrées de complétion.
+ * ------------------------------------------------------------------------- */
+
+export interface TmEntry {
+  /** `TM01`, `HM07`. */
+  id: string
+  /** Nom VO de la capacité. */
+  move: string
+  location: string
+  /** Ce qu'il faut posséder pour l'atteindre : `Surf`, `Waterfall`. */
+  requires?: string[]
+}
+
+/* ------------------------------------------------------------------------- *
  * Compteurs de ressources
  * ------------------------------------------------------------------------- */
 

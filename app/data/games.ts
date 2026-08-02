@@ -13,10 +13,12 @@ import type {
   GlossaryEntry,
   Npc,
   Phase,
+  PokedexEntry,
   PokemonSheet,
   ReadinessCriterion,
   ReferenceSection,
   TaskId,
+  TmEntry,
   Tool,
 } from './types'
 import { buildTaskEntries } from '~/utils/tasks'
@@ -109,15 +111,23 @@ export interface GameContent {
      * ce qui n'a aucun sens pour un jeu qui n'a pas de guide numéroté.
      */
     descriptions?: Partial<Record<
-      'mechanics' | 'natures' | 'tools' | 'glossary' | 'encounters' | 'abilities',
+      'mechanics' | 'natures' | 'tools' | 'glossary' | 'encounters' | 'abilities' | 'pokedex' | 'tms',
       string
     >>
     /**
-     * Deux jeux de données générés depuis le code d'un jeu ouvert, facultatifs.
-     * Un jeu qui ne les fournit pas ne rend pas la section correspondante.
+     * Jeux de données **générés**, tous facultatifs. Un jeu qui ne les fournit
+     * pas ne rend pas la section correspondante.
+     *
+     * Le choix n'est pas éditorial mais dicté par ce que la source publie :
+     * Elite Redux a un code ouvert, donc des tables de rencontre complètes
+     * (taux, slots, niveaux) ; Seaglass n'a qu'un dex tiers, sans aucun de ces
+     * trois champs — d'où un `pokedex` et **pas** d'`encounters`, que remplir de
+     * zéros aurait été inventer de la donnée.
      */
     encounters?: EncounterZone[]
     abilities?: AbilityEntry[]
+    pokedex?: PokedexEntry[]
+    tms?: TmEntry[]
   }
   resources?: {
     npcs: Npc[]

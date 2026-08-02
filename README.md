@@ -83,10 +83,11 @@ app/
 │   │   ├── readiness.ts  pas d’IV (31 par défaut), un critère `innates` à la place
 │   │   └── counters.ts   BP et argent — ni Bottle Caps ni Heart Scales dans ce jeu
 │   └── emerald-seaglass/ écrit à la main depuis docs/emerald-seaglass/
-│       ├── index.ts      ni encounters, ni abilities, ni resources — rien à générer
+│       ├── index.ts      pas d’encounters (source sans niveaux ni taux) ni de resources
 │       ├── phases.ts     4 phases, dont une phase 1 détaillée : tout s’y rate
 │       ├── completion.ts légendaires du Sailor, easter eggs, minigames, Pokédex
 │       ├── reference.ts  soft level caps, DexNav, deux Shiny Charm, minigames
+│       ├── pokedex.ts    ⚙ généré · abilities.ts ⚙ · tms.ts ⚙ (pnpm gen:seaglass)
 │       ├── readiness.ts  les 7 critères, mais un `level` non déduit (caps souples)
 │       └── counters.ts   Wishing Stars, Pinball Points, Heart Scales, argent
 ├── composables/
@@ -173,6 +174,37 @@ une table terrestre a **12 slots, pas 12 espèces** (compter les espèces unique
 table valide pour tronquée) ; `hidden_mons` est à taux 0 et remplie de données de test, donc **ne se
 publie pas** ; et les formes régionales **partagent le nom de base** (`SPECIES_MEOWTH_GALARIAN` rend
 « Meowth »), d’où une table de suffixes fermée et un contrôle de libellés ambigus.
+
+### Emerald Seaglass — un générateur, et un recoupement obligatoire
+
+Ce jeu n’a **pas de code source public**, et on en avait conclu qu’il n’y avait rien à générer.
+C’était vrai du code et faux de la donnée : `mrwalkthroughs.com` publie les 447 fiches d’espèces
+telles qu’extraites de la ROM — stats du hack **et** du jeu officiel côte à côte — plus les lieux des
+68 TM et HM.
+
+```bash
+pnpm gen:seaglass <pokedex|abilities|tms|all> [--fresh] [--dry-run]
+```
+
+| Fichier généré | Source | Volume |
+| --- | --- | --- |
+| `pokedex.ts` | `/pokedex/` et les 447 fiches d’espèces | 447 espèces, dont **214** avec au moins une stat modifiée |
+| `abilities.ts` | agrégé depuis les mêmes fiches | 195 talents distincts |
+| `tms.ts` | `/tms-hms/` | 68 TM et HM, dont 14 à prérequis |
+
+**Le garde-fou est le recoupement contre la documentation officielle v3.0**, versionnée dans
+`docs/emerald-seaglass/` et relue par `python3 scripts/read-seaglass-doc.py`. Elle donne le type de
+421 espèces : `crossCheckTypes()` compare et **échoue** au moindre écart — 413 espèces comparables,
+413 accords. Il contrôle aussi le *nombre* de comparaisons, sans quoi un recoupement muet passerait
+vert. C’est ce qui autorise à se servir d’une source tierce : on vérifie au lieu de croire.
+
+⚠️ **Le mirror pokeharbor est périmé** (antérieur à la v3.0) : il donnait 14 types faux et un Battle
+Tent annoncé cassé qui ne l’est plus. Un mirror n’a pas de version — ne lire que le PDF versionné.
+
+Ce jeu **ne fournit pas d’`encounters`** : sa source ne publie ni niveaux, ni taux, ni slots, les
+trois champs qu’exige `EncounterZone`. Les remplir de zéros aurait été inventer de la donnée, donc les
+localisations vivent sur les entrées du Pokédex. Et la section Pokédex **ne remplace pas** celui du
+jeu, meilleur : elle existe pour l’**écart avec le jeu officiel**, que l’écran ne peut pas montrer.
 
 Pour le reste (objets, consommables, rubriques de farm, mécaniques, natures, glossaire), copie une
 entrée voisine : ces contenus ne sont pas persistés, leur id ne sert qu’à la clé de rendu.

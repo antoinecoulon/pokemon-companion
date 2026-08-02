@@ -149,8 +149,9 @@ EXP. Share + soft level cap.
 
 - Les **autres starters** (Fire à Lavaridge, Grass à la Flower Shop devant Petalburg Woods, Water
   au Open-Air Market de Slateport) ne s'obtiennent qu'**après Flannery**.
-- Le **Contest Hall** (Verdanturf) et le **Battle Tent** (Lilycove, actuellement désactivé) sont
-  accessibles dès qu'on les atteint, sans prérequis de badge signalé par la doc.
+- Le **Contest Hall** (Verdanturf) et le **Battle Tent** (Lilycove) sont accessibles dès qu'on les
+  atteint, sans prérequis de badge signalé par la doc. Le Battle Tent était désactivé avant la v3.0,
+  qui ne le liste plus dans ses bugs connus.
 - Le **second Shiny Charm** à Fortree City suppose d'avoir progressé jusque là.
 - La **storyline du Sailor de Mossdeep** (Latios/Latias, Mew, Ho-oh/Lugia, Deoxys, puis
   Celebi/Mewtwo/les trios) suppose d'avoir battu le gym de Mossdeep pour son premier maillon.

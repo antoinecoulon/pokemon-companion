@@ -8,7 +8,7 @@
  * D'où ce script, à lancer avec `pnpm validate`.
  */
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { loadData, loadUnbound, loadPokemon, root } from './lib/data.mjs'
+import { loadApp, loadData, loadUnbound, loadPokemon, root } from './lib/data.mjs'
 import { TEAM_SIZE, validateFiche } from './lib/fiche.mjs'
 
 /*
@@ -18,6 +18,9 @@ import { TEAM_SIZE, validateFiche } from './lib/fiche.mjs'
  * d'ids, de sources et de comptes leur sont propres.
  */
 const { games } = await loadData('games.ts')
+/* Listes fermées partagées, pour contrôler le Pokédex généré d'un jeu. */
+const { POKEMON_TYPES } = await loadData('types.ts')
+const { STAT_KEYS } = await loadApp('utils/stats.ts')
 
 const { phases } = await loadUnbound('phases.ts')
 const { pokemon } = await loadPokemon()
@@ -693,7 +696,7 @@ for (const game of games) {
    * jeu ouvert. Ils vivent dans `reference`, donc un jeu qui les fournit sans
    * fournir de référence les rendrait invisibles : la page répondrait 404.
    */
-  const { encounters = [], abilities = [] } = game.content.reference ?? {}
+  const { encounters = [], abilities = [], pokedex = [], tms = [] } = game.content.reference ?? {}
 
   const zoneIds = new Set()
   for (const zone of encounters) {
@@ -741,15 +744,67 @@ for (const game of games) {
   }
 
   /*
+   * Pokédex d'espèces. Les deux contrôles qui comptent : l'unicité des slugs
+   * (un doublon masquerait une espèce sans rien dire) et la **présence des
+   * stats officielles**, qui sont la seule raison d'être de cette section — une
+   * régénération qui les perdrait rendrait des colonnes d'écart toutes vides.
+   */
+  const dexSlugs = new Set()
+  const dexNames = new Set()
+  for (const entry of pokedex) {
+    if (dexSlugs.has(entry.id)) errors.push(`${game.id} : espèce dupliquée « ${entry.id} »`)
+    dexSlugs.add(entry.id)
+    /*
+     * Le nom est unique, le **numéro de dex ne l'est pas** : une forme régionale
+     * partage celui de sa forme de base — Alolan Meowth est #197 comme Meowth.
+     * Un contrôle d'unicité sur `hoennDex` était donc faux, et refusait les
+     * 16 formes d'Alola.
+     */
+    if (dexNames.has(entry.name)) errors.push(`${game.id} : deux espèces nommées « ${entry.name} »`)
+    dexNames.add(entry.name)
+    if (!Number.isInteger(entry.hoennDex) || entry.hoennDex < 1) {
+      errors.push(`${game.id} : « ${entry.name} » a un n° Hoenn invalide (${entry.hoennDex})`)
+    }
+    if (!entry.types.length) errors.push(`${game.id} : « ${entry.name} » n'a aucun type`)
+    for (const type of entry.types) {
+      if (!POKEMON_TYPES.includes(type)) {
+        errors.push(`${game.id} : « ${entry.name} » porte le type inconnu « ${type} »`)
+      }
+    }
+    if (!entry.abilities.length) errors.push(`${game.id} : « ${entry.name} » n'a aucun talent`)
+    for (const key of STAT_KEYS) {
+      const stat = entry.stats?.[key]
+      if (typeof stat?.seaglass !== 'number' || typeof stat?.official !== 'number') {
+        errors.push(`${game.id} : « ${entry.name} » n'a pas de stat ${key} complète (jeu + officiel)`)
+      }
+    }
+  }
+
+  /* TM : l'id est le seul repère, et un doublon y cacherait une entrée. */
+  const tmIds = new Set()
+  for (const tm of tms) {
+    if (tmIds.has(tm.id)) errors.push(`${game.id} : TM dupliquée « ${tm.id} »`)
+    tmIds.add(tm.id)
+    if (!tm.move?.trim()) errors.push(`${game.id} : ${tm.id} n'a pas de capacité`)
+    if (!tm.location?.trim()) errors.push(`${game.id} : ${tm.id} n'a pas de lieu`)
+  }
+
+  /*
    * Un chapeau de section sans sa section, ou l'inverse : les deux se voient à
    * l'écran (un blanc, ou une section muette) sans lever la moindre erreur.
    */
   const captions = game.content.reference?.descriptions ?? {}
-  if (captions.encounters && !encounters.length) {
-    errors.push(`${game.id} : un chapeau décrit les encounters, que ce jeu ne fournit pas`)
+  const provided = { encounters, abilities, pokedex, tms }
+  const captionLabels = {
+    encounters: 'les encounters',
+    abilities: 'les talents',
+    pokedex: 'le Pokédex',
+    tms: 'les TM',
   }
-  if (captions.abilities && !abilities.length) {
-    errors.push(`${game.id} : un chapeau décrit les talents, que ce jeu ne fournit pas`)
+  for (const [key, label] of Object.entries(captionLabels)) {
+    if (captions[key] && !provided[key].length) {
+      errors.push(`${game.id} : un chapeau décrit ${label}, que ce jeu ne fournit pas`)
+    }
   }
 }
 
@@ -757,17 +812,21 @@ for (const game of games) {
 
 for (const game of games) {
   const tasks = game.taskEntries.length
-  const { encounters = [], abilities = [] } = game.content.reference ?? {}
+  const { encounters = [], abilities = [], pokedex = [], tms = [] } = game.content.reference ?? {}
   /*
-   * Les deux jeux générés sont affichés quand ils existent : c'est là qu'une
+   * Les jeux générés sont affichés quand ils existent : c'est là qu'une
    * régénération amputée se verrait — 12 zones au lieu de 142 ne lève rien.
    */
-  const generated = encounters.length || abilities.length
-    ? ` · ${encounters.length} zones (${game.encountersBySpecies.size} espèces) · ${abilities.length} talents`
-    : ''
+  const generated = [
+    encounters.length ? `${encounters.length} zones (${game.encountersBySpecies.size} espèces)` : '',
+    pokedex.length ? `${pokedex.length} espèces au dex` : '',
+    abilities.length ? `${abilities.length} talents` : '',
+    tms.length ? `${tms.length} TM/HM` : '',
+  ].filter(Boolean)
+  const generatedLabel = generated.length ? ` · ${generated.join(' · ')}` : ''
   console.log(
     `${game.label} : ${game.content.phases.length} phases · ${tasks} tâches · `
-    + `${game.content.pokemon.length} fiches · ${game.completionEntries.length} entrées de complétion${generated}`,
+    + `${game.content.pokemon.length} fiches · ${game.completionEntries.length} entrées de complétion${generatedLabel}`,
   )
 }
 

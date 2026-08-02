@@ -152,6 +152,16 @@ export const unboundContent: GameContent = {
     ...collectibleKeys,
     ...keyItemKeys,
   ],
+  /*
+   * Les textes du dashboard, qui étaient écrits en dur dans le template —
+   * c'est-à-dire imposés à tous les jeux. Ceux-ci sont ceux d'origine.
+   */
+  dashboard: {
+    completionSummary: ' — missions, légendaires, tutors, objets clés et collectibles.',
+    overallLabel: 'Équipe & Frontier',
+    nextActionsHint: 'Une tâche n’apparaît ici que si tous ses prérequis sont cochés — pas d’EV avant le Macho Brace amélioré, pas de Bottle Caps avant d’avoir lu les IV.',
+    allDone: 'Tout est coché. Direction le Battle Frontier.',
+  },
   reference: {
     mechanics,
     tools,

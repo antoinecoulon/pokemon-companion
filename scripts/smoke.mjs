@@ -44,6 +44,13 @@ const routes = [
   { path: '/elite-redux/equipe', expect: null },
   { path: '/elite-redux/journal', expect: null },
   { path: '/elite-redux/reference', expect: 'Talents' },
+
+  // Emerald Seaglass
+  { path: '/emerald-seaglass', expect: 'Progression' },
+  { path: '/emerald-seaglass/completion', expect: 'Débuter' },
+  { path: '/emerald-seaglass/equipe', expect: null },
+  { path: '/emerald-seaglass/journal', expect: null },
+  { path: '/emerald-seaglass/reference', expect: 'DexNav' },
 ]
 
 const failures = []
@@ -165,6 +172,48 @@ await mobile.close()
   await context.close()
 }
 
+/* --- 1 bis, suite. Cloisonnement avec Emerald Seaglass ---------------- */
+
+/*
+ * Même test que ci-dessus, mais pour Emerald Seaglass : cocher là-bas ne doit
+ * toucher ni Unbound ni Elite Redux.
+ */
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+  const isolation = await openPage(context, 'cloisonnement emerald-seaglass')
+
+  await isolation.goto(`${baseUrl}/emerald-seaglass/completion`, { waitUntil: 'networkidle' })
+  const box = isolation.locator('button[role="checkbox"][data-state="unchecked"]').first()
+  if (await box.count() === 0) {
+    failures.push('cloisonnement emerald-seaglass — aucune case décochée sur /emerald-seaglass/completion')
+  }
+  else {
+    await box.click()
+    await isolation.waitForTimeout(700) // au-delà du debounce de 400 ms
+
+    const keys = await isolation.evaluate(() => ({
+      emerald: localStorage.getItem('pokemon-companion:save:emerald-seaglass'),
+      elite: localStorage.getItem('pokemon-companion:save:elite-redux'),
+      unbound: localStorage.getItem('pokemon-companion:save'),
+      game: localStorage.getItem('pokemon-companion:game'),
+    }))
+
+    if (!keys.emerald) {
+      failures.push('cloisonnement emerald-seaglass — rien écrit sous pokemon-companion:save:emerald-seaglass')
+    }
+    if (keys.elite) {
+      failures.push('cloisonnement emerald-seaglass — cocher chez Emerald Seaglass a écrit dans la sauvegarde Elite Redux')
+    }
+    if (keys.unbound) {
+      failures.push('cloisonnement emerald-seaglass — cocher chez Emerald Seaglass a écrit dans la sauvegarde Unbound')
+    }
+    if (keys.game !== 'emerald-seaglass') {
+      failures.push(`cloisonnement emerald-seaglass — le jeu actif devrait être « emerald-seaglass », trouvé « ${keys.game} »`)
+    }
+  }
+  await context.close()
+}
+
 /* --- 1 ter. Sélecteur de jeu ------------------------------------------ */
 
 /*
@@ -253,6 +302,92 @@ await mobile.close()
     failures.push('référence unbound — la table des natures a disparu')
   }
 
+  const emerald = await openPage(context, 'référence emerald-seaglass')
+  await emerald.goto(`${baseUrl}/emerald-seaglass/reference`, { waitUntil: 'networkidle' })
+  for (const title of ['Où trouver quoi', 'Talents']) {
+    if (await emerald.locator('h2', { hasText: title }).count() > 0) {
+      failures.push(`référence emerald-seaglass — section « ${title} » rendue alors qu'Emerald Seaglass ne la fournit pas`)
+    }
+  }
+
+  await context.close()
+}
+
+/* --- 1 quinquies. Une page non fournie répond 404 --------------------- */
+
+/*
+ * `/ressources` n'est fournie que par Unbound. Chez les deux autres, la page
+ * doit **répondre 404** plutôt que se rendre vide, pour qu'une URL tapée à la
+ * main dise la vérité — c'est ce que `createError` fait dans la page.
+ *
+ * Ce contrôle manquait : `pnpm validate` vérifie qu'un jeu ne *propose* pas dans
+ * sa nav une page qu'il ne fournit pas, mais rien ne vérifiait le comportement
+ * de l'URL elle-même. Une page qui se rendrait vide passait donc inaperçue.
+ *
+ * Pas de `openPage` ici : une erreur 404 délibérée écrit dans la console, et ce
+ * n'est pas un échec.
+ */
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+  const missing = await context.newPage()
+
+  for (const game of ['elite-redux', 'emerald-seaglass']) {
+    await missing.goto(`${baseUrl}/${game}/ressources`, { waitUntil: 'networkidle' })
+    const body = await missing.locator('body').innerText()
+    if (!body.includes('Page indisponible pour ce jeu')) {
+      failures.push(`404 ${game} — /ressources ne répond pas 404 alors que ce jeu ne la fournit pas`)
+    }
+  }
+
+  // Et l'inverse : chez Unbound, la page existe pour de bon.
+  await missing.goto(`${baseUrl}/unbound/ressources`, { waitUntil: 'networkidle' })
+  if ((await missing.locator('body').innerText()).includes('Page indisponible pour ce jeu')) {
+    failures.push('404 unbound — /ressources répond 404 alors qu’Unbound la fournit')
+  }
+
+  await context.close()
+}
+
+/* --- 1 sexies. Les liens de tâche sont préfixés par leur jeu ----------- */
+
+/*
+ * `task.link` est relatif à la racine du jeu (`/reference#dexnav`) et c'est
+ * `buildTaskEntries` qui le préfixe. La page de complétion passait la tâche
+ * brute à `TaskItem`, qui retombait donc sur le lien **non préfixé** : cliquer
+ * une tâche d'Elite Redux ou de Seaglass ouvrait `/reference#…`, une ancienne
+ * URL que le middleware redirige vers **Unbound**. Aucune erreur, juste le
+ * mauvais jeu — exactement le genre de panne muette que ce fichier traque.
+ *
+ * On vérifie aussi que l'ancre d'une **sous-section** existe pour de vrai dans
+ * le DOM : `pnpm validate` accepte ces ancres, mais seul le premier niveau est
+ * un panneau d'accordéon, et sans id sur les sous-sections le lien atterrissait
+ * en haut de page.
+ */
+{
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+  const page = await openPage(context, 'liens de tâche')
+  const prefixes = ['/unbound', '/elite-redux', '/emerald-seaglass']
+
+  for (const game of prefixes) {
+    await page.goto(`${baseUrl}${game}/completion`, { waitUntil: 'networkidle' })
+    const unprefixed = await page.evaluate(known =>
+      [...new Set(
+        [...document.querySelectorAll('a[href^="/"]')]
+          .map(a => a.getAttribute('href'))
+          .filter(href => !known.some(prefix => href.startsWith(prefix))),
+      )], prefixes)
+    if (unprefixed.length) {
+      failures.push(`liens de tâche ${game} — href non préfixé par le jeu : ${unprefixed.join(', ')}`)
+    }
+  }
+
+  /* Une ancre de sous-section doit exister une fois sa section dépliée. */
+  await page.goto(`${baseUrl}/emerald-seaglass/reference#scuba-safari`, { waitUntil: 'networkidle' })
+  await page.waitForTimeout(900)
+  if (await page.locator('#scuba-safari').count() === 0) {
+    failures.push('ancre de sous-section — « #scuba-safari » absente du DOM alors que validate l’accepte')
+  }
+
   await context.close()
 }
 
@@ -334,4 +469,4 @@ if (failures.length) {
   process.exit(1)
 }
 
-console.log(`${routes.length} routes × 2 viewports · cloisonnement des jeux · sélecteur · sections facultatives de référence · persistance · aller-retour export/import — tout passe.`)
+console.log(`${routes.length} routes × 2 viewports · cloisonnement des jeux · sélecteur · sections facultatives de référence · pages non fournies en 404 · liens de tâche préfixés · persistance · aller-retour export/import — tout passe.`)

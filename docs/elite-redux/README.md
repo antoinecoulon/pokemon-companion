@@ -2,9 +2,10 @@
 
 Doc de suivi personnel pour une partie de **Pokémon Elite Redux**, hack ROM de Pokémon Emerald.
 
-> **Hors périmètre de l'app.** Ce dossier est de la documentation lue hors ligne. Il n'alimente
-> pas le companion Unbound (`app/`, `scripts/`), qui reste consacré à Unbound. Rien ici n'est
-> importé, généré ou validé par `pnpm check`.
+> **Ce dossier est l'archive de la démarche, pas la source de vérité de l'app.** Écrit avant que
+> l'app ne suive plusieurs jeux, il annonçait rester « hors périmètre » — ce n'est plus vrai :
+> `app/data/elite-redux/reference.ts` est transcrit de `01-la-rom.md` et `02-bien-debuter.md`. Rien
+> ici n'est pour autant importé ni généré automatiquement, et `pnpm check` ne valide pas ce markdown.
 
 ## Hypothèses de cette doc
 

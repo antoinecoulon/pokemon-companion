@@ -38,6 +38,11 @@ const routes = [
    * ne sert à rien.
    */
   '/elite-redux/reference',
+  '/emerald-seaglass',
+  '/emerald-seaglass/completion',
+  '/emerald-seaglass/equipe',
+  '/emerald-seaglass/journal',
+  '/emerald-seaglass/reference',
 ]
 
 const problems = []

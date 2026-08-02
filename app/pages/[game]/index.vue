@@ -14,6 +14,22 @@ const { active } = useRoster()
  */
 const counters = computed(() => current.value.content.counters)
 
+/*
+ * Les textes qui nomment le contenu du jeu, avec des replis **neutres**.
+ *
+ * Ils étaient en dur, en vocabulaire d'Unbound : le dashboard d'un autre jeu
+ * parlait de ses missions, de sa Frontier et de ses Bottle Caps. Un repli
+ * emprunté à un jeu précis reproduirait le bug, d'où des replis qui ne nomment
+ * rien.
+ */
+const copy = computed(() => ({
+  completionSummary: current.value.content.dashboard?.completionSummary ?? '.',
+  overallLabel: current.value.content.dashboard?.overallLabel ?? 'Progression suivie',
+  nextActionsHint: current.value.content.dashboard?.nextActionsHint
+    ?? 'Une tâche n’apparaît ici que si tous ses prérequis sont cochés.',
+  allDone: current.value.content.dashboard?.allDone ?? 'Tout est coché.',
+}))
+
 const topGroups = computed(() =>
   current.value.content.completionGroups
     .map(group => ({ group, ratio: byCompletionSection.value.get(group.id) }))
@@ -45,8 +61,7 @@ const readyCount = computed(() => active.value.filter(entry => readyRatio(entry.
             Complétion
           </h2>
           <p class="text-sm leading-relaxed text-toned">
-            {{ completion.done }} entrées sur {{ completion.total }} — missions, légendaires,
-            tutors, objets clés et collectibles.
+            {{ completion.done }} entrées sur {{ completion.total }}{{ copy.completionSummary }}
           </p>
           <div class="flex flex-wrap justify-center sm:justify-start gap-2">
             <!--
@@ -61,7 +76,7 @@ const readyCount = computed(() => active.value.filter(entry => readyRatio(entry.
                 trois cases ou trente.
               -->
               <UBadge color="primary" variant="subtle" icon="i-lucide-swords" class="hover:bg-elevated">
-                Équipe &amp; Frontier — {{ overall.done }} tâches sur {{ overall.total }}
+                {{ copy.overallLabel }} — {{ overall.done }} tâches sur {{ overall.total }}
               </UBadge>
             </NuxtLink>
             <UBadge color="neutral" variant="subtle">
@@ -78,7 +93,7 @@ const readyCount = computed(() => active.value.filter(entry => readyRatio(entry.
     <!-- Prochaines actions -->
     <SectionBlock
       title="Prochaines actions"
-      description="Une tâche n’apparaît ici que si tous ses prérequis sont cochés — pas d’EV avant le Macho Brace amélioré, pas de Bottle Caps avant d’avoir lu les IV."
+      :description="copy.nextActionsHint"
     >
       <template #action>
         <span class="text-xs text-dimmed whitespace-nowrap">
@@ -107,7 +122,7 @@ const readyCount = computed(() => active.value.filter(entry => readyRatio(entry.
         title="Plus rien d’actionnable"
         :description="blocked.length
           ? `Il reste ${blocked.length} tâches, mais toutes attendent un prérequis. Regarde la Complétion pour voir ce qui les bloque.`
-          : 'Tout est coché. Direction le Battle Frontier.'"
+          : copy.allDone"
       />
     </SectionBlock>
 

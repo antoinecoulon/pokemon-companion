@@ -21,6 +21,7 @@ import type {
 } from './types'
 import { buildTaskEntries } from '~/utils/tasks'
 import { eliteReduxContent } from './elite-redux'
+import { emeraldSeaglassContent } from './emerald-seaglass'
 import { unboundContent } from './unbound'
 
 /**
@@ -48,7 +49,7 @@ import { unboundContent } from './unbound'
  * une sauvegarde ne se renomme jamais.
  */
 
-export type GameId = 'unbound' | 'elite-redux'
+export type GameId = 'unbound' | 'elite-redux' | 'emerald-seaglass'
 
 /** Ce qu'un jeu doit fournir pour que la machinerie commune fonctionne. */
 export interface GameContent {
@@ -68,6 +69,29 @@ export interface GameContent {
   resourceKeys: string[]
   /** Entrées de navigation, routes relatives à la racine du jeu. */
   nav: NavItem[]
+
+  /**
+   * Textes du dashboard qui **nomment le contenu du jeu**.
+   *
+   * Même motif que `reference.descriptions`, et pour la même raison : ils étaient
+   * écrits en dur dans le template, avec le vocabulaire d'Unbound. Le dashboard
+   * d'Emerald Seaglass annonçait donc « missions, tutors et collectibles »,
+   * « Équipe & **Frontier** » et des prérequis en `Macho Brace` et `Bottle Caps`
+   * — quatre choses que ce jeu n'a pas. Aucune erreur, juste du texte faux.
+   *
+   * Facultatif : les replis du template sont neutres, jamais empruntés à un
+   * autre jeu.
+   */
+  dashboard?: {
+    /** Ce que comptent les entrées de complétion, ex. « missions, objets clés ». */
+    completionSummary?: string
+    /** Libellé du badge qui porte `overall`, ex. « Équipe & Frontier ». */
+    overallLabel?: string
+    /** Pourquoi une tâche n'apparaît pas encore dans « prochaines actions ». */
+    nextActionsHint?: string
+    /** Message quand plus rien n'est actionnable ni bloqué. */
+    allDone?: string
+  }
 
   /*
    * Deux pages facultatives. Un jeu qui ne les fournit pas ne les met pas non
@@ -245,6 +269,14 @@ export const games: Game[] = [
     saveKey: 'pokemon-companion:save:elite-redux',
     gistFile: 'pokemon-companion.elite-redux.json',
     content: eliteReduxContent,
+  }),
+  defineGame({
+    id: 'emerald-seaglass',
+    label: 'Pokémon Emerald Seaglass',
+    subtitle: 'première partie',
+    saveKey: 'pokemon-companion:save:emerald-seaglass',
+    gistFile: 'pokemon-companion.emerald-seaglass.json',
+    content: emeraldSeaglassContent,
   }),
 ]
 

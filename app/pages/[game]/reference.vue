@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EncounterMethodId } from '~/data/types'
+import type { EncounterMethodId, ReferenceSection } from '~/data/types'
 import { natures } from '~/data/natures'
 
 const { current } = useGame()
@@ -31,15 +31,39 @@ function sectionOf(id: string) {
   return mechanics.find(section => section.id === id)
 }
 
-function openSection(id: string) {
+/**
+ * Ouvre la section de premier niveau `id`, puis fait défiler jusqu'à `target`.
+ *
+ * Les deux diffèrent quand l'ancre visée est une **sous-section** : seul le
+ * premier niveau est un panneau d'accordéon, donc c'est lui qu'il faut déplier,
+ * mais c'est bien la sous-section qu'on veut à l'écran.
+ */
+function openSection(id: string, target: string = id) {
   if (!openMechanics.value.includes(id)) openMechanics.value.push(id)
-  nextTick(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  nextTick(() => {
+    const element = document.getElementById(target) ?? document.getElementById(id)
+    element?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
+
+/**
+ * Section de premier niveau contenant `id`, à n'importe quelle profondeur.
+ *
+ * `pnpm validate` accepte une ancre de sous-section **à tout niveau** : ne
+ * chercher que `subsections[].id` laissait une ancre plus profonde ouvrir la
+ * page en haut, sans rien signaler.
+ */
+function rootSectionOf(id: string) {
+  const contains = (sections: ReferenceSection[]): boolean =>
+    sections.some(section => section.id === id || contains(section.subsections ?? []))
+  return mechanics.find(section => section.id === id || contains(section.subsections ?? []))
 }
 
 onMounted(() => {
   const hash = useRoute().hash.slice(1)
-  const match = sectionOf(hash) ?? mechanics.find(section => section.subsections?.some(sub => sub.id === hash))
-  if (match) openSection(match.id)
+  if (!hash) return
+  const match = rootSectionOf(hash)
+  if (match) openSection(match.id, hash)
 })
 
 /*
@@ -174,7 +198,7 @@ const filteredNatures = computed(() => {
               :key="sub.id"
               class="space-y-3 pl-3 border-l border-default"
             >
-              <div class="flex items-baseline gap-2 flex-wrap">
+              <div :id="sub.id" class="flex items-baseline gap-2 flex-wrap scroll-mt-20">
                 <h4 class="text-sm font-semibold text-highlighted">
                   {{ sub.title }}
                 </h4>
@@ -188,7 +212,7 @@ const filteredNatures = computed(() => {
                 :key="subsub.id"
                 class="space-y-2 pl-3 border-l border-default"
               >
-                <div class="flex items-baseline gap-2 flex-wrap">
+                <div :id="subsub.id" class="flex items-baseline gap-2 flex-wrap scroll-mt-20">
                   <h5 class="text-xs font-semibold text-highlighted">
                     {{ subsub.title }}
                   </h5>

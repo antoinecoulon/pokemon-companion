@@ -65,6 +65,13 @@ export const eliteReduxContent: GameContent = {
     { label: 'Référence', to: '/reference', icon: 'i-lucide-book-open', primary: false },
   ]),
 
+  dashboard: {
+    completionSummary: ' — Mega Stones, Primal Forms, starters, Adoption Center et Battle Frontier.',
+    overallLabel: 'Équipe & progression',
+    nextActionsHint: 'Une tâche n’apparaît ici que si tous ses prérequis sont cochés — pas de starter avant d’avoir réglé la difficulté et les level caps.',
+    allDone: 'Tout est coché. Les quatre phases sont bouclées.',
+  },
+
   reference: {
     mechanics,
     tools,

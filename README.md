@@ -3,12 +3,13 @@
 Application web de suivi de mes parties de hack ROMs Pokémon. On y coche sa progression, on y saisit
 les IV/EV réels de son équipe, et l’app dit quoi faire ensuite.
 
-**Deux jeux suivis en parallèle**, chacun avec sa propre sauvegarde et ses propres sections :
+**Trois jeux suivis en parallèle**, chacun avec sa propre sauvegarde et ses propres sections :
 
 | Jeu | Racine | État |
 | --- | --- | --- |
 | **Pokémon Unbound** | `/unbound` | post-game, partie avancée. Remplace le guide markdown de 996 lignes archivé dans `docs/` |
 | **Pokémon Elite Redux** | `/elite-redux` | mode Elite, partie qui démarre. Doc de référence dans `docs/elite-redux/` |
+| **Pokémon Emerald Seaglass** | `/emerald-seaglass` | première partie, pas encore commencée. Doc de référence dans `docs/emerald-seaglass/` |
 
 Mono-utilisateur, sans compte, sans backend : tout l’état vit dans le navigateur.
 
@@ -74,12 +75,20 @@ app/
 │   │   ├── mechanics.ts §1–4, §10, §13.0 · glossary.ts §13.3
 │   │   ├── readiness.ts §13.2 — les 7 critères
 │   │   └── counters.ts  compteurs de ressources et leurs objectifs
-│   └── elite-redux/ écrit à la main depuis docs/elite-redux/
-│       ├── index.ts      assemble le GameContent d’Elite Redux
-│       ├── phases.ts     les 4 phases : Débuter → Équipe → Compléter → Post-game
-│       ├── completion.ts Mega Stones, Primal Forms, starters, Adoption Center, Frontier
-│       ├── readiness.ts  pas d’IV (31 par défaut), un critère `innates` à la place
-│       └── counters.ts   BP et argent — ni Bottle Caps ni Heart Scales dans ce jeu
+│   ├── elite-redux/ écrit à la main depuis docs/elite-redux/
+│   │   ├── index.ts      assemble le GameContent d’Elite Redux
+│   │   ├── phases.ts     les 4 phases : Débuter → Équipe → Compléter → Post-game
+│   │   ├── completion.ts Mega Stones, Primal Forms, starters, Adoption Center, Frontier
+│   │   ├── encounters.ts ⚙ généré · abilities.ts ⚙ (pnpm gen:elite)
+│   │   ├── readiness.ts  pas d’IV (31 par défaut), un critère `innates` à la place
+│   │   └── counters.ts   BP et argent — ni Bottle Caps ni Heart Scales dans ce jeu
+│   └── emerald-seaglass/ écrit à la main depuis docs/emerald-seaglass/
+│       ├── index.ts      ni encounters, ni abilities, ni resources — rien à générer
+│       ├── phases.ts     4 phases, dont une phase 1 détaillée : tout s’y rate
+│       ├── completion.ts légendaires du Sailor, easter eggs, minigames, Pokédex
+│       ├── reference.ts  soft level caps, DexNav, deux Shiny Charm, minigames
+│       ├── readiness.ts  les 7 critères, mais un `level` non déduit (caps souples)
+│       └── counters.ts   Wishing Stars, Pinball Points, Heart Scales, argent
 ├── composables/
 │   ├── useGame.ts        jeu actif et bascule
 │   ├── useSave.ts        seul point d’accès au localStorage, une clé par jeu

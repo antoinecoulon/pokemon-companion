@@ -116,7 +116,7 @@ check(
  * deux côtés ont changé » — donc une divergence, donc un écrasement. C'est
  * exactement le genre de perte silencieuse que ce fichier existe pour empêcher.
  */
-const GAMES = ['unbound', 'elite-redux']
+const GAMES = ['unbound', 'elite-redux', 'emerald-seaglass']
 const legacyMarker = { remoteUpdatedAt: T1, localUpdatedAt: T2 }
 
 check(
@@ -124,20 +124,30 @@ check(
   readMarkers({ marker: legacyMarker }, GAMES, 'unbound').unbound,
   legacyMarker,
 )
-check(
-  'config héritée : le nouveau jeu part d’un marqueur vide',
-  readMarkers({ marker: legacyMarker }, GAMES, 'unbound')['elite-redux'],
-  emptyMarker(),
-)
+/*
+ * L'héritage ne vaut que pour le jeu historique, et cela doit rester vrai pour
+ * **chaque** jeu ajouté depuis : hériter du marqueur d'Unbound ferait passer la
+ * première synchro du nouveau jeu pour une divergence, donc pour un écrasement.
+ * Boucler plutôt que nommer un jeu évite qu'un quatrième arrive sans ce contrôle.
+ */
+for (const game of GAMES.filter(id => id !== 'unbound')) {
+  check(
+    `config héritée : « ${game} » part d’un marqueur vide`,
+    readMarkers({ marker: legacyMarker }, GAMES, 'unbound')[game],
+    emptyMarker(),
+  )
+}
 
 const perGame = {
   markers: {
     'unbound': { remoteUpdatedAt: T1, localUpdatedAt: T1 },
     'elite-redux': { remoteUpdatedAt: T2, localUpdatedAt: T2 },
+    'emerald-seaglass': { remoteUpdatedAt: T1, localUpdatedAt: T2 },
   },
 }
 check('marqueurs par jeu : unbound relu tel quel', readMarkers(perGame, GAMES, 'unbound').unbound, perGame.markers.unbound)
 check('marqueurs par jeu : indépendants', readMarkers(perGame, GAMES, 'unbound')['elite-redux'], perGame.markers['elite-redux'])
+check('marqueurs par jeu : le troisième jeu aussi', readMarkers(perGame, GAMES, 'unbound')['emerald-seaglass'], perGame.markers['emerald-seaglass'])
 
 /*
  * La forme nouvelle prime sur l'ancienne : une fois les marqueurs par jeu
@@ -152,6 +162,7 @@ check(
 check('config absente : tous les marqueurs sont vides', readMarkers(undefined, GAMES, 'unbound'), {
   'unbound': emptyMarker(),
   'elite-redux': emptyMarker(),
+  'emerald-seaglass': emptyMarker(),
 })
 check('marqueur corrompu : ramené à vide plutôt que propagé', readMarkers({ markers: { unbound: { remoteUpdatedAt: 42 } } }, GAMES, 'unbound').unbound, emptyMarker())
 

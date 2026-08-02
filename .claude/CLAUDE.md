@@ -1,8 +1,8 @@
 # Pokemon Companion
 
 Companion de suivi de mes parties de hack ROMs Pokémon. **L'app est multi-jeux** : aujourd'hui
-**Pokémon Unbound** (post-game, partie avancée) et **Pokémon Elite Redux** (mode Elite, partie qui
-démarre).
+**Pokémon Unbound** (post-game, partie avancée), **Pokémon Elite Redux** (mode Elite, partie qui
+démarre) et **Pokémon Emerald Seaglass** (première partie, pas encore commencée).
 
 ## Contexte
 
@@ -158,6 +158,19 @@ TypeScript est épinglé en **5.9** : `vue-tsc` n'est pas encore compatible avec
   cliquable qui ne navigue nulle part, sans erreur. Envelopper dans un `NuxtLink` (voir le badge
   « Complétion » du dashboard). Vérifier une navigation en cherchant un `<a href>` dans le DOM, jamais
   en se fiant à l'apparence.
+- **Même famille, troisième cas : une route de tâche se passe en prop, elle ne se lit pas sur la
+  tâche.** `task.link` est **relatif à la racine du jeu** et c'est `buildTaskEntries` qui le préfixe.
+  `TaskItem` retombe sur `task.link` brut quand on ne lui donne pas de `route` — c'était le cas de
+  `/completion`, donc cliquer une tâche d'Elite Redux ou de Seaglass ouvrait `/reference#…`, une
+  ancienne URL que le middleware redirige vers **Unbound**. Le bon jeu s'affichait avant le clic, le
+  mauvais après, sans erreur. Toujours passer `:route="routeFor(task.id)"`
+  (`current.taskEntriesById`), jamais compter sur le repli.
+- **Une ancre de sous-section de référence doit exister dans le DOM.** `pnpm validate` accepte une
+  ancre à **n'importe quelle profondeur** de `mechanics`, mais seul le premier niveau est un panneau
+  d'accordéon : sans `:id` sur les sous-sections, le lien atterrissait en haut de page. `openSection`
+  déplie donc la section **racine** et défile jusqu'à la **cible**, qui peuvent différer. Corollaire :
+  un contrôle d'ancre qui ne regarde que `subsections[].id` sur un seul niveau rate les ancres plus
+  profondes. `pnpm smoke` vérifie les deux points.
 - **`pnpm typecheck` peut passer sur des types périmés.** `pnpm check` lance donc `nuxt prepare` d'abord :
   une erreur de `nuxt.config.ts` est restée invisible jusqu'à une régénération.
 - **La sauvegarde se synchronise entre appareils via un gist privé.** Le `localStorage` reste la
@@ -343,3 +356,49 @@ le plus rapide à lever est le level cap avant Roxanne, qui doit afficher **16**
   ⚠️ `wiki.elite-redux.com` est **hors service** et `dex.elite-redux.com` injoignable en CLI (à
   ouvrir au navigateur). `eliteredux.net` et consorts sont des fermes SEO : ne jamais s'y fier ni y
   télécharger le patch — le patcher officiel est `elite-redux.com`.
+
+### Pokémon Emerald Seaglass
+
+Doc de référence hors-ligne dans **`docs/emerald-seaglass/`** (la ROM, checklist de début de partie,
+sources). Le contenu de l'app en est tiré — `01-la-rom.md` et `02-bien-debuter.md` sont transcrits
+dans `app/data/emerald-seaglass/{reference,phases,completion}.ts`, et le markdown reste l'archive de
+la démarche. Son README porte **dix points « à vérifier en jeu »** ; le plus important, et de loin,
+est le **chiffrage des soft level caps**, qu'aucune source ne publie.
+
+- **C'est un Emerald *vanilla* côté trame et exploration** — même région, même histoire, même ordre
+  des 8 badges de Hoenn. La doc de l'auteur écrit « This is *NOT* a "difficulty hack" » et ne promet
+  que des « new additions to some maps ». **Ne pas construire une phase par badge** : ce serait
+  transcrire un walkthrough d'Emerald. La valeur du hack est ailleurs — refonte visuelle style GBC,
+  gen 1-3 intégralement capturable (421 entrées), et un confort de jeu qui supprime le grind. C'est
+  aussi pourquoi il ne répond pas au reproche fait à Elite Redux sur l'histoire et l'exploration :
+  c'est établi, ce n'est pas une déception à découvrir deux fois.
+- **Pas de code source public.** C'est l'écart décisif avec Elite Redux : rien ne s'extrait d'un
+  dépôt, donc **aucun script `gen:*` pour ce jeu**. La source primaire est un **PDF de 8 pages** de
+  l'auteur (**Nemo622**, they/them), et c'est tout.
+  ⚠️ **Ko-fi est derrière Cloudflare** : ni `WebFetch` ni `curl` ne passent, même avec un User-Agent
+  de navigateur. Le PDF se relit par le **mirror** `pokeharbor.com`, confirmé fidèle, avec
+  **`python3 scripts/read-seaglass-doc.py`** — c'est la voie à reprendre à chaque nouvelle version du
+  patch. Deux pièges y sont documentés : le PDF est en **polices Type0/CID** (une extraction naïve
+  rend une chaîne **vide**, sans erreur) et **chaque mot a son propre `BT…ET`** (aucun espace dans le
+  flux). Sans dépendance, faute de `pip` et de `poppler` ici.
+- **Le patch ne se télécharge que sur Ko-fi.** `pokemonemeraldseaglass.com` s'annonce « Official Game
+  Download » **sans être confirmé** comme le site de l'auteur ; avec `gbacodes.com`, `pokeharbor.com`,
+  `pokehacks.net`, `pokepatched.com`, `ducumon.click`, `visualboyadvance.org`, `pokemon-roms.net` et
+  `gigachadgamers.com`, ce sont des fermes SEO qui réhébergent le patch. `romhackdex.net` **ne couvre
+  pas** ce jeu.
+- **Ce jeu n'a ni missions numérotées, ni Zygarde Cells, ni move tutors à cocher, ni raid dens** —
+  rien à décalquer d'Unbound. Sa complétion, c'est le **Pokédex** (jalons, pas 421 cases), la **quête
+  des légendaires** du Sailor de Mossdeep, les **easter eggs** et les **minigames**.
+- **Ses soft level caps ne sont pas des caps.** Dépasser le niveau du Gym Leader courant divise l'EXP
+  par deux, puis la réduit davantage : rien ne bloque, et le **Hard Mode** (livre sur le bureau de la
+  chambre) les retire. D'où un critère `level` en `derived: false`, contrairement au « niveau 100 »
+  d'Unbound. Pas de critère `innates` : c'est une particularité d'Elite Redux.
+- **Ni `encounters`, ni `abilities`, ni `resources`.** Les deux premiers n'ont rien à générer, et le
+  jeu embarque un Pokédex refait sur le modèle de HGSS qui fait mieux que toute transcription.
+  `/ressources` répond **404**, volontairement : les marchands (Happy Trainer Merchant Stand,
+  Pretty Petal, stands de pierres) sont documentés dans la référence, où ils informent, plutôt qu'en
+  cases `npc:` qui recopieraient une entrée existant déjà ailleurs.
+- **Deux gisements volontairement non exploités** : un **guide fan** (`jimineybillybob1/PokemonEmeraldSeaglassGuide`,
+  données en tableaux JS dans un `index.html` statique) serait le seul matériau automatisable, mais il
+  est **non officiel et à 0 star** — le retenir exigerait de le croiser avec le PDF. Et la **table des
+  421 entrées de dex** du PDF n'est pas transcrite : elle doublonnerait le Pokédex du jeu.

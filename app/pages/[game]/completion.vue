@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { ResourceKey, TaskId } from '~/data/types'
 import type { CompletionEntry } from '~/utils/completion'
-import type { ResourceKey } from '~/data/types'
 
 useHead({ title: 'Complétion · Pokémon Companion' })
 
@@ -23,6 +23,21 @@ const { blockersFor } = useNextActions()
 
 function toggle(key: ResourceKey, value: unknown) {
   setAcquired(key, Boolean(value))
+}
+
+/*
+ * Route d'une tâche de phase, **préfixée par le jeu**.
+ *
+ * `task.link` est délibérément relatif à la racine du jeu (`/reference#dexnav`) :
+ * c'est `buildTaskEntries` qui le préfixe, et `pnpm validate` refuse un lien déjà
+ * préfixé. Passer `task` seul à `TaskItem` le faisait retomber sur ce lien brut,
+ * donc naviguer vers `/reference#…` — une ancienne URL, que le middleware
+ * redirige vers **Unbound**. Une tâche d'Elite Redux ou de Seaglass ouvrait ainsi
+ * la référence d'un autre jeu, sans la moindre erreur. Le dashboard n'avait pas
+ * le bug : il passe déjà `route`.
+ */
+function routeFor(id: TaskId) {
+  return current.value.taskEntriesById.get(id)?.route
 }
 
 /** `label` est en markdown inline ; l'attribut aria le veut en texte brut. */
@@ -151,6 +166,7 @@ onMounted(() => {
           v-for="task in phase.tasks"
           :key="task.id"
           :task="task"
+          :route="routeFor(task.id)"
           :blocked-by="blockersFor(task.id)"
         />
       </div>

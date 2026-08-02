@@ -38,7 +38,7 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'description', content: 'Suivi de parties de hack ROMs Pokémon — Unbound, Elite Redux' },
+        { name: 'description', content: 'Suivi de parties de hack ROMs Pokémon — Unbound, Elite Redux, Emerald Seaglass' },
         { name: 'theme-color', content: '#0f172a' },
       ],
       link: [
@@ -126,7 +126,7 @@ export default defineNuxtConfig({
     manifest: {
       name: 'Pokémon Companion',
       short_name: 'Companion',
-      description: 'Suivi de parties de hack ROMs Pokémon — Unbound, Elite Redux',
+      description: 'Suivi de parties de hack ROMs Pokémon — Unbound, Elite Redux, Emerald Seaglass',
       lang: 'fr',
       start_url: baseURL,
       scope: baseURL,

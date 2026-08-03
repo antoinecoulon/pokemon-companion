@@ -407,6 +407,19 @@ for (const game of games) {
       break
     }
   }
+
+  /*
+   * Une espèce du Pokédex de référence peut être capturée en jeu sans fiche
+   * manuscrite (`state.catches`, voir `useRoster`) — `knownContent.slugs` doit
+   * donc la connaître, sinon « Nettoyer » prendrait la capture pour une
+   * orpheline dès le premier passage.
+   */
+  for (const entry of game.content.reference?.pokedex ?? []) {
+    if (!known.slugs.has(entry.id)) {
+      errors.push(`${game.id} : l'espèce de Pokédex « ${entry.id} » n'est pas dans knownContent.slugs`)
+      break
+    }
+  }
 }
 
 /* --- 7 ter. Contenu généré : sources et comptes ------------------------ */

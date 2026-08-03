@@ -342,6 +342,65 @@ if (await trackedTotal() !== totalBefore) {
 
 await rosterContext.close()
 
+/* --- Capture en direct (Emerald Seaglass) -------------------------------- */
+
+/*
+ * `/equipe` est game-agnostic, mais seul un jeu avec un Pokédex de référence
+ * (Seaglass) propose le picker. On vérifie le parcours complet : une capture
+ * sans fiche manuscrite apparaît quand même dans « Autres Pokémon
+ * enregistrés », sa fiche détail se rend (pas de 404), et rien n'atteint la
+ * sauvegarde Unbound — le cloisonnement inter-jeux tient pour ce nouvel état
+ * comme pour les autres.
+ */
+const catchContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } })
+const catchPage = await catchContext.newPage()
+catchPage.on('pageerror', error => failures.push(`capture — exception : ${error.message.split('\n')[0]}`))
+
+await catchPage.goto(`${baseUrl}/emerald-seaglass/equipe`, { waitUntil: 'networkidle' })
+await catchPage.waitForTimeout(600)
+
+await catchPage.getByRole('button', { name: 'Ajouter' }).click()
+await catchPage.waitForTimeout(300)
+
+await catchPage.getByPlaceholder('Nom, type ou lieu…').fill('zigzagoon')
+await catchPage.waitForTimeout(300)
+
+const captureButton = catchPage.getByRole('button', { name: 'Capturer' }).first()
+if (await captureButton.count() === 0) {
+  failures.push('capture — aucun résultat pour « zigzagoon » dans le picker')
+}
+else {
+  await captureButton.click()
+  await catchPage.waitForTimeout(400)
+  await catchPage.keyboard.press('Escape')
+  await catchPage.waitForTimeout(400)
+
+  if (await catchPage.getByText('Zigzagoon').count() === 0) {
+    failures.push('capture — Zigzagoon n’apparaît pas sur /equipe après capture')
+  }
+
+  await catchPage.getByText('Zigzagoon').first().click()
+  await catchPage.waitForTimeout(400)
+
+  if (catchPage.url().includes('404') || await catchPage.getByText('Pokémon inconnu').count() > 0) {
+    failures.push('capture — la fiche détail d’une espèce capturée sans fiche manuscrite 404')
+  }
+}
+
+const seaglassCatches = await catchPage.evaluate(() =>
+  JSON.parse(localStorage.getItem('pokemon-companion:save:emerald-seaglass') ?? '{}').catches ?? {})
+if (!Object.keys(seaglassCatches).length) {
+  failures.push('capture — rien n’est persisté sous la clé de sauvegarde Seaglass')
+}
+
+const unboundLeak = await catchPage.evaluate(() =>
+  JSON.parse(localStorage.getItem('pokemon-companion:save') ?? '{}').catches ?? {})
+if (Object.keys(unboundLeak).length) {
+  failures.push('capture — une capture Seaglass a fuité dans la sauvegarde Unbound')
+}
+
+await catchContext.close()
+
 /* --- Purge des clés mortes ---------------------------------------------- */
 
 /*

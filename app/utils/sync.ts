@@ -46,6 +46,7 @@ export function isPristineSave(save: SaveState): boolean {
     && Object.keys(save.counters).length === 0
     && Object.keys(save.resources).length === 0
     && Object.keys(save.roster).length === 0
+    && Object.keys(save.catches).length === 0
     && save.journal.length === 0
 }
 

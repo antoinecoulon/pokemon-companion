@@ -25,7 +25,17 @@ function check(label, actual, expected) {
 
 /** Sauvegarde vierge, avec l'horodatage voulu. */
 function pristine(updatedAt) {
-  return { version: 1, tasks: {}, pokemon: {}, counters: {}, resources: {}, roster: {}, journal: [], updatedAt }
+  return {
+    version: 1,
+    tasks: {},
+    pokemon: {},
+    counters: {},
+    resources: {},
+    roster: {},
+    catches: {},
+    journal: [],
+    updatedAt,
+  }
 }
 
 /** Sauvegarde portant une progression. */
@@ -49,6 +59,7 @@ check(
 check('un compteur', isPristineSave({ ...pristine(T0), counters: { money: 1 } }), false)
 check('une ressource', isPristineSave({ ...pristine(T0), resources: { 'npc:x': true } }), false)
 check('un roster modifié', isPristineSave({ ...pristine(T0), roster: { tyranitar: { slot: 2 } } }), false)
+check('une capture enregistrée', isPristineSave({ ...pristine(T0), catches: { zigzagoon: true } }), false)
 check('une entrée de journal', isPristineSave({ ...pristine(T0), journal: [{ id: 'a', date: T0, title: '', body: '' }] }), false)
 
 /* --- Le garde-fou de l'appareil neuf ----------------------------------- */

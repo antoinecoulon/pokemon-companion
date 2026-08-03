@@ -40,6 +40,7 @@ export function createEmptySave(): SaveState {
     counters: {},
     resources: {},
     roster: {},
+    catches: {},
     journal: [],
     updatedAt: new Date().toISOString(),
   }
@@ -133,6 +134,16 @@ function normalize(raw: unknown): SaveState | null {
       }
       // Une entrée vide ne dit rien : on ne la garde pas.
       if (clean.status || clean.slot) save.roster[slug] = clean
+    }
+  }
+
+  /*
+   * Même logique que `resources`/`roster` : champ additif, absent des
+   * sauvegardes antérieures, qui repartent du `{}`.
+   */
+  if (input.catches && typeof input.catches === 'object') {
+    for (const [slug, value] of Object.entries(input.catches)) {
+      if (value === true) save.catches[slug] = true
     }
   }
 
@@ -415,6 +426,23 @@ export function useSave() {
 
   const rosterModified = computed(() => Object.keys(state.value.roster).length > 0)
 
+  /* --- Captures en direct (sans fiche statique) ------------------------- */
+
+  /*
+   * Écriture brute, comme le roster : c'est `useRoster` qui synthétise une
+   * fiche à partir d'une entrée de Pokédex et décide du statut/slot par
+   * défaut.
+   */
+  function addCatch(slug: string) {
+    state.value.catches[slug] = true
+  }
+
+  function removeCatch(slug: string) {
+    delete state.value.catches[slug]
+    // Une capture retirée n'a plus de raison de garder un écart de composition.
+    delete state.value.roster[slug]
+  }
+
   /* --- Journal de bord ------------------------------------------------- */
 
   const journal = computed(() =>
@@ -504,6 +532,8 @@ export function useSave() {
     setRosterOverride,
     clearRoster,
     rosterModified,
+    addCatch,
+    removeCatch,
     journal,
     addJournalEntry,
     updateJournalEntry,

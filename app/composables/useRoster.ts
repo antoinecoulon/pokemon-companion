@@ -1,6 +1,6 @@
-import type { PokemonSheet, PokemonStatus } from '~/data/types'
+import type { PokedexEntry, PokemonSheet, PokemonStatus } from '~/data/types'
 import type { RosterEntry } from '~/utils/roster'
-import { activeEntries, resolveRoster, withDemoted, withMoved, withPromoted, withSwapped } from '~/utils/roster'
+import { activeEntries, resolveRoster, synthesizeSheet, withDemoted, withMoved, withPromoted, withSwapped } from '~/utils/roster'
 
 /**
  * Source de vérité unique de la composition jouée.
@@ -11,10 +11,46 @@ import { activeEntries, resolveRoster, withDemoted, withMoved, withPromoted, wit
  * donc par ici.
  */
 export function useRoster() {
-  const { state, clearRoster, rosterModified } = useSave()
+  const { state, clearRoster, rosterModified, addCatch, removeCatch } = useSave()
   const { current } = useGame()
 
-  const pokemon = computed(() => current.value.content.pokemon)
+  /*
+   * Fiches manuscrites d'abord ; les espèces capturées en jeu sans fiche
+   * (`state.catches`) sont synthétisées depuis le Pokédex de référence, et
+   * une fiche manuscrite l'emporte toujours dès qu'elle existe pour ce slug —
+   * c'est pour ça qu'on la filtre en amont plutôt que de dédupliquer après.
+   */
+  const pokemon = computed<PokemonSheet[]>(() => {
+    const staticSheets = current.value.content.pokemon
+    const staticSlugs = new Set(staticSheets.map(sheet => sheet.slug))
+    const pokedex = current.value.content.reference?.pokedex ?? []
+    const byId = new Map(pokedex.map(entry => [entry.id, entry]))
+
+    const synthesized = Object.keys(state.value.catches)
+      .filter(slug => !staticSlugs.has(slug))
+      .map(slug => byId.get(slug))
+      .filter((entry): entry is PokedexEntry => !!entry)
+      .map(synthesizeSheet)
+
+    return [...staticSheets, ...synthesized]
+  })
+
+  /** Espèces du Pokédex de référence pas encore capturées ni fichées. */
+  const catchable = computed<PokedexEntry[]>(() => {
+    const known = new Set(pokemon.value.map(sheet => sheet.slug))
+    return (current.value.content.reference?.pokedex ?? []).filter(entry => !known.has(entry.id))
+  })
+
+  /** Enregistre une capture, avec entrée directe en équipe optionnelle. */
+  function addCatchEntry(slug: string, { promote = false }: { promote?: boolean } = {}) {
+    addCatch(slug)
+    if (promote) return apply(withPromoted(pokemon.value, state.value.roster, slug))
+    return true
+  }
+
+  function removeCatchEntry(slug: string) {
+    removeCatch(slug)
+  }
 
   const entries = computed<RosterEntry[]>(() => resolveRoster(pokemon.value, state.value.roster))
 
@@ -59,6 +95,7 @@ export function useRoster() {
     others,
     bySlug,
     activeSlugs,
+    catchable,
     statusOf,
     slotOf,
     modified: rosterModified,
@@ -71,5 +108,7 @@ export function useRoster() {
       apply(withSwapped(pokemon.value, state.value.roster, incoming, outgoing)),
     move: (slug: string, delta: number) => apply(withMoved(pokemon.value, state.value.roster, slug, delta)),
     reset: clearRoster,
+    addCatch: addCatchEntry,
+    removeCatch: removeCatchEntry,
   }
 }

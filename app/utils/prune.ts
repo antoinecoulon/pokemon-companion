@@ -27,6 +27,7 @@ export interface PruneReport {
   resources: string[]
   counters: string[]
   roster: string[]
+  catches: string[]
   /**
    * Fiches connues dont la progression est vide.
    *
@@ -59,6 +60,7 @@ export function findOrphans(save: SaveState, known: KnownContent): PruneReport {
   const resources = Object.keys(save.resources).filter(key => !known.resourceKeys.has(key))
   const counters = Object.keys(save.counters).filter(id => !known.counterIds.has(id))
   const roster = Object.keys(save.roster).filter(slug => !known.slugs.has(slug))
+  const catches = Object.keys(save.catches).filter(slug => !known.slugs.has(slug))
 
   const empty = Object.entries(save.pokemon)
     .filter(([slug, progress]) => known.slugs.has(slug) && isEmptyProgress(progress))
@@ -70,8 +72,9 @@ export function findOrphans(save: SaveState, known: KnownContent): PruneReport {
     resources,
     counters,
     roster,
+    catches,
     empty,
-    total: tasks.length + pokemon.length + resources.length + counters.length + roster.length,
+    total: tasks.length + pokemon.length + resources.length + counters.length + roster.length + catches.length,
   }
 }
 
@@ -88,5 +91,6 @@ export function pruneSave(save: SaveState, known: KnownContent): SaveState {
     resources: drop(save.resources, report.resources),
     counters: drop(save.counters, report.counters),
     roster: drop(save.roster, report.roster),
+    catches: drop(save.catches, report.catches),
   }
 }

@@ -647,6 +647,14 @@ export interface SaveState {
   resources: Record<string, boolean>
   /** Composition jouée, par slug, quand elle s'écarte de celle du guide. */
   roster: Record<string, RosterOverride>
+  /**
+   * Espèces attrapées en jeu et pas encore dotées d'une fiche statique. Clé =
+   * id du Pokédex de référence (`PokedexEntry.id`), qui est aussi le slug
+   * qu'une fiche écrite à la main pour cette espèce utiliserait plus tard —
+   * la coïncidence n'est pas un hasard, elle permet à une fiche manuscrite de
+   * prendre le relais sans rien migrer : voir `useRoster`.
+   */
+  catches: Record<string, true>
   journal: JournalEntry[]
   updatedAt: string
 }

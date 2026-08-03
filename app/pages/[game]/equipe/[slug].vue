@@ -2,8 +2,14 @@
 
 const route = useRoute('game-equipe-slug')
 const { current } = useGame()
+const roster = useRoster()
 
-const mon = computed(() => current.value.pokemonBySlug.get(String(route.params.slug)))
+/*
+ * Résolu via le roster, pas `current.pokemonBySlug` (statique-only) : une
+ * espèce capturée en jeu sans fiche manuscrite n'existe que par la fiche
+ * synthétisée que `useRoster` fabrique depuis le Pokédex de référence.
+ */
+const mon = computed(() => roster.bySlug.value.get(String(route.params.slug))?.sheet)
 
 if (!mon.value) {
   throw createError({ statusCode: 404, statusMessage: 'Pokémon inconnu', fatal: true })
@@ -13,7 +19,6 @@ useHead({ title: () => `${mon.value?.name ?? 'Fiche'} · Pokémon Companion` })
 
 const { forPokemon } = useProgress()
 const { blockersFor } = useNextActions()
-const roster = useRoster()
 
 /** Statut et slot effectifs : la composition jouée, pas celle de la fiche. */
 const entry = computed(() => (mon.value ? roster.bySlug.value.get(mon.value.slug) : undefined))

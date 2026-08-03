@@ -6,6 +6,7 @@ import { completionSections } from './completion'
 import { counters } from './counters'
 import { phases } from './phases'
 import { pokedex } from './pokedex'
+import { pokemon } from './pokemon'
 import { readinessCriteria } from './readiness'
 import { glossary, mechanics, tools } from './reference'
 import { tms } from './tms'
@@ -31,8 +32,13 @@ import { tms } from './tms'
  *   Pretty Petal, stands de pierres) sont documentés dans la référence, où ils
  *   informent, plutôt qu'en cases `npc:` à cocher — ce qui recopierait une
  *   entrée existant déjà ailleurs, ce que ce projet s'interdit.
- * - **`pokemon: []`.** La partie n'a pas commencé et une fiche ne s'écrit pas
- *   d'avance. `useRoster` et la progression s'accommodent d'une liste vide.
+ * - **`pokemon` ne contient que le starter.** Le reste de la composition se
+ *   construit en jeu : une capture s'enregistre depuis `/equipe` (picker
+ *   « Ajouter »), sans fiche à écrire — `useRoster` synthétise une fiche
+ *   minimale depuis `pokedex` pour toute espèce présente dans
+ *   `state.catches`. Une vraie fiche manuscrite reste possible plus tard pour
+ *   un membre qui le mérite, sur le modèle de `pokemon/treecko.ts` ; elle
+ *   prend alors le relais de la synthèse sans rien migrer.
  *
  * ⚠️ La section `pokedex` **ne remplace pas** le Pokédex du jeu, refait sur le
  * modèle de HGSS et meilleur. Sa raison d'être est ce que l'écran ne peut pas
@@ -40,7 +46,7 @@ import { tms } from './tms'
  */
 export const emeraldSeaglassContent: GameContent = {
   phases,
-  pokemon: [],
+  pokemon,
   readinessCriteria,
   completionGroups: completionSections.map(section => ({
     id: section.id,

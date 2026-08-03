@@ -1,4 +1,4 @@
-import type { PokemonSheet, PokemonStatus, RosterOverride } from '~/data/types'
+import type { PokedexEntry, PokemonSheet, PokemonStatus, RosterOverride } from '~/data/types'
 import { TEAM_SIZE } from '~/data/types'
 
 /**
@@ -24,6 +24,26 @@ export interface RosterResult {
   overrides: RosterOverrides
   /** Renseigné quand l'opération est refusée ; `overrides` est alors inchangé. */
   error?: string
+}
+
+/**
+ * Fabrique une fiche minimale pour une espèce capturée en jeu, sans fiche
+ * manuscrite.
+ *
+ * Pas de `sprite` (non résolvable sans le pipeline `pnpm sprites`, sur un
+ * pipeline dédié à une seule fiche à la fois) : `PokemonSprite` retombe déjà
+ * sur une icône neutre en son absence. Pas de `builds`/`analysis`/`tasks` non
+ * plus — tous optionnels, déjà gérés par les `v-if` de `/equipe`.
+ */
+export function synthesizeSheet(entry: PokedexEntry): PokemonSheet {
+  return {
+    slug: entry.id,
+    name: entry.name,
+    status: 'utility',
+    role: 'Capturé — rôle à préciser',
+    types: entry.types,
+    obtention: entry.locations.join(' · '),
+  }
 }
 
 /**

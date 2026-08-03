@@ -11,7 +11,7 @@
  */
 import { loadApp, loadPokemon } from './lib/data.mjs'
 
-const { activeEntries, resolveRoster, withDemoted, withMoved, withPromoted, withSwapped }
+const { activeEntries, resolveRoster, synthesizeSheet, withDemoted, withMoved, withPromoted, withSwapped }
   = await loadApp('utils/roster.ts')
 const { pokemon } = await loadPokemon()
 
@@ -120,6 +120,27 @@ check(
   ['flagadoss', 'scorvol'],
 )
 
+/* --- Fiche synthétisée depuis une capture -------------------------------- */
+
+const dexEntry = {
+  id: 'zigzagoon',
+  name: 'Zigzagoon',
+  hoennDex: 263,
+  nationalDex: 263,
+  types: ['Normal'],
+  locations: ['Route 101 (wild)'],
+  stats: { hp: { seaglass: 38, official: 38 }, atk: { seaglass: 30, official: 30 }, def: { seaglass: 41, official: 41 }, spa: { seaglass: 30, official: 30 }, spd: { seaglass: 41, official: 41 }, spe: { seaglass: 60, official: 60 } },
+  abilities: [{ name: 'Pickup', description: '' }],
+  eggGroups: ['Field'],
+}
+
+const synthesized = synthesizeSheet(dexEntry)
+check('fiche synthétisée : slug = id du dex', synthesized.slug, 'zigzagoon')
+check('fiche synthétisée : statut par défaut utilitaire', synthesized.status, 'utility')
+check('fiche synthétisée : types repris du dex', synthesized.types, ['Normal'])
+check('fiche synthétisée : sans sprite', synthesized.sprite, undefined)
+check('fiche synthétisée : sans builds', synthesized.builds, undefined)
+
 /* --- Purge des clés mortes --------------------------------------------- */
 
 /*
@@ -147,6 +168,7 @@ const save = {
   counters: { money: 1000, ancien: 5 },
   resources: { 'npc:nurse': true, 'quest:objets-pouvoir': true, 'goal:sceptilite': true, 'npc:aboli': true },
   roster: { tyranitar: { slot: 2 }, disparu: { status: 'active' } },
+  catches: { togekiss: true, disparu: true },
   journal: [],
   updatedAt: '2026-07-30T00:00:00.000Z',
 }
@@ -158,8 +180,9 @@ check('fiche orpheline détectée', report.pokemon, ['disparu'])
 check('ressource orpheline détectée', report.resources, ['npc:aboli'])
 check('compteur orphelin détecté', report.counters, ['ancien'])
 check('composition orpheline détectée', report.roster, ['disparu'])
+check('capture orpheline détectée', report.catches, ['disparu'])
 check('fiche vide repérée à part', report.empty, ['togekiss'])
-check('total = clés mortes seulement, sans les fiches vides', report.total, 5)
+check('total = clés mortes seulement, sans les fiches vides', report.total, 6)
 
 /*
  * Le critère « Endgame Ready » est le piège : son id n'existe nulle part dans le
@@ -176,6 +199,7 @@ check('compteur valide conservé', pruned.counters, { money: 1000 })
 check('ressources valides conservées', Object.keys(pruned.resources).sort(), ['goal:sceptilite', 'npc:nurse', 'quest:objets-pouvoir'])
 check('un objectif de complétion n’est pas une orpheline', report.resources.includes('goal:sceptilite'), false)
 check('composition valide conservée', pruned.roster, { tyranitar: { slot: 2 } })
+check('capture valide conservée, orpheline retirée', pruned.catches, { togekiss: true })
 check('journal et version intacts', [pruned.version, pruned.journal.length], [1, 0])
 check('purger deux fois ne change plus rien', findOrphans(pruned, known).total, 0)
 

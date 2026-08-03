@@ -6,6 +6,10 @@ const { readyRatio, forPokemon } = useProgress()
 const roster = useRoster()
 
 const editing = ref(false)
+const catching = ref(false)
+
+/** Un jeu sans Pokédex de référence n'a pas de quoi peupler le picker. */
+const canCatch = computed(() => !!current.value.content.reference?.pokedex?.length)
 
 /*
  * Les fiches que le guide laisse en plan (§6 ne couvre ni Excadrill ni
@@ -24,15 +28,27 @@ const incomplete = computed(() => roster.entries.value.filter(entry => entry.she
       description="Les 6 slots de §7.3. L’anneau indique les critères « Endgame Ready » atteints."
     >
       <template #action>
-        <UButton
-          icon="i-lucide-arrow-left-right"
-          color="neutral"
-          variant="subtle"
-          size="xs"
-          @click="editing = true"
-        >
-          Modifier
-        </UButton>
+        <div class="flex gap-2">
+          <UButton
+            v-if="canCatch"
+            icon="i-lucide-plus"
+            color="neutral"
+            variant="subtle"
+            size="xs"
+            @click="catching = true"
+          >
+            Ajouter
+          </UButton>
+          <UButton
+            icon="i-lucide-arrow-left-right"
+            color="neutral"
+            variant="subtle"
+            size="xs"
+            @click="editing = true"
+          >
+            Modifier
+          </UButton>
+        </div>
       </template>
 
       <UAlert
@@ -184,5 +200,6 @@ const incomplete = computed(() => roster.entries.value.filter(entry => entry.she
     </SectionBlock>
 
     <RosterEditor v-model="editing" />
+    <CatchPicker v-if="canCatch" v-model="catching" />
   </div>
 </template>

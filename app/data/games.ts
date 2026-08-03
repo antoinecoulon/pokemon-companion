@@ -225,7 +225,17 @@ function defineGame(def: GameDef): Game {
           content.readinessCriteria.map(criterion => `ready-${mon.slug}-${criterion.key}`),
         ),
       ]),
-      slugs: new Set(content.pokemon.map(mon => mon.slug)),
+      /*
+       * Le pokedex de référence entre ici aussi, quand il existe : c'est de là
+       * que `useRoster` synthétise une fiche pour une espèce capturée en jeu
+       * (`state.catches`), sans qu'une fiche statique existe. Sans cette
+       * ligne, « Nettoyer » verrait chaque capture comme orpheline dès le
+       * premier passage.
+       */
+      slugs: new Set([
+        ...content.pokemon.map(mon => mon.slug),
+        ...(content.reference?.pokedex?.map(entry => entry.id) ?? []),
+      ]),
       resourceKeys: new Set([
         ...content.resourceKeys,
         ...completionEntries.map(entry => entry.key),

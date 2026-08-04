@@ -1,7 +1,8 @@
-import type { JournalEntry, PokemonProgress, PokemonStatus, ResourceKey, RosterOverride, SaveState, TaskId } from '~/data/types'
+import type { JournalEntry, PokemonProgress, PokemonSheetOverride, PokemonStatus, ResourceKey, RosterOverride, SaveState, TaskId } from '~/data/types'
 import { games } from '~/data/games'
 import { ROSTER_STATUSES, SAVE_VERSION, TEAM_SIZE } from '~/data/types'
 import { migrations } from '~/utils/migrations'
+import { sanitizePokemonOverride } from '~/utils/pokemon-overrides'
 import { findOrphans, pruneSave } from '~/utils/prune'
 
 /**
@@ -41,6 +42,7 @@ export function createEmptySave(): SaveState {
     resources: {},
     roster: {},
     catches: {},
+    pokemonOverrides: {},
     journal: [],
     updatedAt: new Date().toISOString(),
   }
@@ -144,6 +146,20 @@ function normalize(raw: unknown): SaveState | null {
   if (input.catches && typeof input.catches === 'object') {
     for (const [slug, value] of Object.entries(input.catches)) {
       if (value === true) save.catches[slug] = true
+    }
+  }
+
+  /*
+   * Même logique que `roster` : champ additif, absent des sauvegardes
+   * antérieures, qui repartent du `{}`. Le nettoyage détaillé champ par champ
+   * vit dans `sanitizePokemonOverride` (partagé avec la validation formulaire) ;
+   * l'appartenance à une fiche existante est vérifiée par la purge, pas ici —
+   * `normalize()` n'a pas accès à `knownContent`, même chose que pour `roster`.
+   */
+  if (input.pokemonOverrides && typeof input.pokemonOverrides === 'object') {
+    for (const [slug, value] of Object.entries(input.pokemonOverrides)) {
+      const clean = sanitizePokemonOverride(value)
+      if (Object.keys(clean).length > 0) save.pokemonOverrides[slug] = clean
     }
   }
 
@@ -426,6 +442,25 @@ export function useSave() {
 
   const rosterModified = computed(() => Object.keys(state.value.roster).length > 0)
 
+  /* --- Corrections locales de fiche ------------------------------------- */
+
+  /*
+   * Écriture brute, comme le roster : c'est `PokemonEditor` qui construit le
+   * patch (et le valide avec `validatePokemonOverride` avant d'appeler ceci).
+   */
+  function pokemonOverride(slug: string): PokemonSheetOverride | undefined {
+    return state.value.pokemonOverrides[slug]
+  }
+
+  function setPokemonOverride(slug: string, patch: PokemonSheetOverride) {
+    state.value.pokemonOverrides[slug] = { ...state.value.pokemonOverrides[slug], ...patch }
+  }
+
+  /** Revient au contenu canonique de la fiche. */
+  function clearPokemonOverride(slug: string) {
+    delete state.value.pokemonOverrides[slug]
+  }
+
   /* --- Captures en direct (sans fiche statique) ------------------------- */
 
   /*
@@ -532,6 +567,9 @@ export function useSave() {
     setRosterOverride,
     clearRoster,
     rosterModified,
+    pokemonOverride,
+    setPokemonOverride,
+    clearPokemonOverride,
     addCatch,
     removeCatch,
     journal,

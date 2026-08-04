@@ -1,6 +1,7 @@
 import type { PokedexEntry, PokemonSheet, PokemonStatus } from '~/data/types'
 import type { RosterEntry } from '~/utils/roster'
 import { activeEntries, resolveRoster, synthesizeSheet, withDemoted, withMoved, withPromoted, withSwapped } from '~/utils/roster'
+import { applyPokemonOverride } from '~/utils/pokemon-overrides'
 
 /**
  * Source de vérité unique de la composition jouée.
@@ -32,7 +33,10 @@ export function useRoster() {
       .filter((entry): entry is PokedexEntry => !!entry)
       .map(synthesizeSheet)
 
+    // Fusion des corrections locales, en dernier : une fiche synthétisée qu'un
+    // import manuscrit vient de remplacer doit recevoir ses propres overrides.
     return [...staticSheets, ...synthesized]
+      .map(sheet => applyPokemonOverride(sheet, state.value.pokemonOverrides[sheet.slug]))
   })
 
   /** Espèces du Pokédex de référence pas encore capturées ni fichées. */

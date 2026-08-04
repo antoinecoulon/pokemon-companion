@@ -33,6 +33,10 @@ const status = computed(() => entry.value?.status ?? mon.value?.status ?? 'retir
 const trackable = computed(() =>
   status.value === 'active' || !!mon.value?.builds?.length || !!mon.value?.tasks?.length,
 )
+
+const { pokemonOverride } = useSave()
+const modified = computed(() => Object.keys(pokemonOverride(mon.value?.slug ?? '') ?? {}).length > 0)
+const editorOpen = ref(false)
 </script>
 
 <template>
@@ -47,6 +51,8 @@ const trackable = computed(() =>
     >
       Équipe
     </UButton>
+
+    <PokemonEditor v-if="mon" v-model="editorOpen" :mon="mon" />
 
     <!-- En-tête. Le h1 est ici et non dans la barre du layout, qui affiche
          « Équipe » sur toutes les routes /equipe/*. -->
@@ -70,6 +76,19 @@ const trackable = computed(() =>
             <UBadge v-if="mon.badge && status === mon.status" color="neutral" variant="outline">
               {{ mon.badge }}
             </UBadge>
+            <UBadge v-if="modified" color="warning" variant="subtle" icon="i-lucide-pencil">
+              corrigée
+            </UBadge>
+            <UButton
+              icon="i-lucide-pencil"
+              color="neutral"
+              variant="subtle"
+              size="xs"
+              class="ml-auto"
+              @click="editorOpen = true"
+            >
+              Éditer la fiche
+            </UButton>
           </div>
 
           <p class="text-sm leading-relaxed text-toned">

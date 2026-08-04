@@ -169,6 +169,7 @@ const save = {
   resources: { 'npc:nurse': true, 'quest:objets-pouvoir': true, 'goal:sceptilite': true, 'npc:aboli': true },
   roster: { tyranitar: { slot: 2 }, disparu: { status: 'active' } },
   catches: { togekiss: true, disparu: true },
+  pokemonOverrides: { tyranitar: { role: 'Sweeper physique corrigé' }, disparu: { role: 'x' } },
   journal: [],
   updatedAt: '2026-07-30T00:00:00.000Z',
 }
@@ -181,8 +182,9 @@ check('ressource orpheline détectée', report.resources, ['npc:aboli'])
 check('compteur orphelin détecté', report.counters, ['ancien'])
 check('composition orpheline détectée', report.roster, ['disparu'])
 check('capture orpheline détectée', report.catches, ['disparu'])
+check('correction de fiche orpheline détectée', report.pokemonOverrides, ['disparu'])
 check('fiche vide repérée à part', report.empty, ['togekiss'])
-check('total = clés mortes seulement, sans les fiches vides', report.total, 6)
+check('total = clés mortes seulement, sans les fiches vides', report.total, 7)
 
 /*
  * Le critère « Endgame Ready » est le piège : son id n'existe nulle part dans le
@@ -200,6 +202,11 @@ check('ressources valides conservées', Object.keys(pruned.resources).sort(), ['
 check('un objectif de complétion n’est pas une orpheline', report.resources.includes('goal:sceptilite'), false)
 check('composition valide conservée', pruned.roster, { tyranitar: { slot: 2 } })
 check('capture valide conservée, orpheline retirée', pruned.catches, { togekiss: true })
+check(
+  'correction de fiche valide conservée, orpheline retirée',
+  pruned.pokemonOverrides,
+  { tyranitar: { role: 'Sweeper physique corrigé' } },
+)
 check('journal et version intacts', [pruned.version, pruned.journal.length], [1, 0])
 check('purger deux fois ne change plus rien', findOrphans(pruned, known).total, 0)
 

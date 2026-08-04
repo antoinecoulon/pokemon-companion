@@ -638,6 +638,25 @@ export interface RosterOverride {
   slot?: number
 }
 
+/**
+ * Champs de fiche corrigés localement, par slug.
+ *
+ * Même logique que RosterOverride : un remplacement de champ entier, jamais un
+ * merge profond — un builds réécrit remplace tous les builds, un preamble
+ * réécrit remplace tout le préambule. C'est un outil de correction, pas un
+ * éditeur structurel : la fiche canonique reste dans le dépôt, versionnée.
+ *
+ * slug, sprite, spritePixelSet, slot et status ne sont volontairement pas
+ * éditables ici : slot/status appartiennent à RosterOverride (useRoster),
+ * sprite/spritePixelSet au pipeline d'assets, slug à l'identité de la fiche.
+ * tasks est exclu aussi : l'édition des tâches/objectifs est une phase future.
+ */
+export type PokemonSheetOverride = Pick<Partial<PokemonSheet>,
+  | 'role' | 'types' | 'baseStats' | 'bst' | 'abilities' | 'targetAbility'
+  | 'mega' | 'obtention' | 'badge' | 'analysis' | 'preamble' | 'extra'
+  | 'builds' | 'ivGuidance' | 'incomplete' | 'incompleteNote'
+>
+
 export interface SaveState {
   version: typeof SAVE_VERSION
   tasks: Record<TaskId, boolean>
@@ -655,6 +674,8 @@ export interface SaveState {
    * prendre le relais sans rien migrer : voir `useRoster`.
    */
   catches: Record<string, true>
+  /** Corrections locales de fiche, par slug — voir PokemonSheetOverride. */
+  pokemonOverrides: Record<string, PokemonSheetOverride>
   journal: JournalEntry[]
   updatedAt: string
 }
